@@ -1,0 +1,5 @@
+.vscode/settings.json
+.idea/
+.env
+.DS_Store
+vendor/

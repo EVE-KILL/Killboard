@@ -1,0 +1,34 @@
+{
+    "name": "eve-kill/esi-proxy",
+    "description": "WebService that proxies calls to ESI",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Michael Karbowiak",
+            "email": "michael@karbowiak.dk"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "EK\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "ext-apcu": "*",
+        "ext-openswoole": "*",
+        "ext-mongodb": "*",
+        "openswoole/core": "*",
+        "monolog/monolog": "*",
+        "league/container": "*",
+        "mongodb/mongodb": "*",
+        "slim/slim": "*",
+        "slim/psr7": "*",
+        "guzzle/guzzle": "*"
+    },
+    "require-dev": {
+        "openswoole/ide-helper": "*",
+        "symfony/var-dumper": "*"
+    }
+}
