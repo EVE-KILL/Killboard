@@ -1,0 +1,18 @@
+<?php
+
+use Composer\Autoload\ClassLoader;
+use EK\Bootstrap;
+
+/** @var Bootstrap $bootstrap */
+/** @var ClassLoader $autoloader */
+[$bootstrap, $autoloader] = require_once __DIR__ . '/../src/init.php';
+
+$console = new \EK\Console\Console(
+    $bootstrap->getContainer(),
+    $autoloader,
+    commandsNamespace: 'EK\Commands',
+    consoleName: 'EK',
+    version: '1.0.0'
+);
+
+$console->run();

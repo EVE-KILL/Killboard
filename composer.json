@@ -11,24 +11,34 @@
     ],
     "autoload": {
         "psr-4": {
-            "EK\\": "src/"
+            "EK\\": ["src/", "app/"]
         }
     },
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "ext-apcu": "*",
         "ext-openswoole": "*",
         "ext-mongodb": "*",
+        "ext-redis": "*",
         "openswoole/core": "*",
         "monolog/monolog": "*",
         "league/container": "*",
         "mongodb/mongodb": "*",
         "slim/slim": "*",
         "slim/psr7": "*",
-        "guzzle/guzzle": "*"
+        "symfony/console": "*",
+        "guzzlehttp/guzzle": "*",
+        "bandwidth-throttle/token-bucket": "*",
+        "kcs/class-finder": "*",
+        "illuminate/collections": "*",
+        "predis/predis": "*",
+        "psy/psysh": "*",
+        "twig/twig": "*"
     },
     "require-dev": {
+        "zeuxisoo/slim-whoops": "*",
         "openswoole/ide-helper": "*",
-        "symfony/var-dumper": "*"
+        "symfony/var-dumper": "*",
+        "roave/security-advisories": "dev-latest"
     }
 }

@@ -4,8 +4,24 @@ namespace EK\Config;
 
 class Config
 {
-    public function get(string $key): mixed
+    protected $options = [];
+    public function __construct() {
+        $this->options = require_once BASE_DIR . '/config/config.php';
+    }
+
+    public function get(string $key, mixed $default = null): mixed
     {
-        return $_ENV[$key] ?? null;
+        $keys = explode('/', $key);
+        $result = $this->options;
+
+        foreach($keys as $key) {
+            if (isset($result[$key])) {
+                $result = $result[$key];
+            } else {
+                return $default;
+            }
+        }
+
+        return $result;
     }
 }

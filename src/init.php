@@ -7,4 +7,14 @@ if (!file_exists($autoloaderPath)) {
 
 $autoloader = require_once $autoloaderPath;
 
-return new EK\Bootstrap($autoloader);
+// Add a global var to tell where the base dir is
+if (!defined('BASE_DIR')) {
+    define('BASE_DIR', dirname(__DIR__, 1));
+}
+
+// Ensure the cache folder exists
+if (!file_exists(BASE_DIR . '/cache')) {
+    @mkdir(BASE_DIR . '/cache', 0777, true);
+}
+
+return [new EK\Bootstrap($autoloader), $autoloader];
