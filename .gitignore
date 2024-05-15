@@ -3,3 +3,6 @@
 .env
 .DS_Store
 vendor/
+cache/*
+logs/*
+logs/exceptions/*
