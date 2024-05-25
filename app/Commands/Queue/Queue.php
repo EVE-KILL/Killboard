@@ -45,7 +45,7 @@ class Queue extends ConsoleCommand
             do {
                 // Listen on multiple queues
                 foreach ($queuesToListenOn as $queue) {
-                    list($queueName, $job) = $client->blpop($queue, 0.1);
+                    list($queueName, $job) = $client->blpop($queue, 5);
 
                     if ($job !== null) {
                         $startTime = microtime(true);

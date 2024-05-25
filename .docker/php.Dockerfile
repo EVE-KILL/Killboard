@@ -1,6 +1,6 @@
 FROM bitnami/minideb:latest
 
-LABEL org.opencontainers.image.source = "https://github.com/EVE-KILL/ESI-Proxy"
+LABEL org.opencontainers.image.source = "https://github.com/EVE-KILL/Killboard"
 
 # Run as root
 USER root
@@ -103,5 +103,5 @@ RUN chmod +x /entrypoint.sh
 WORKDIR /app
 ARG PHP_VERSION="8.3"
 ENV PHP_VERSION=${PHP_VERSION}
-EXPOSE 9501
-CMD ["php", "/app/server.php"]
+EXPOSE 9201
+CMD ["php", "/app/bin/console", "server"]

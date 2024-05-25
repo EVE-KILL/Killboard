@@ -108,7 +108,7 @@ class Server extends ConsoleCommand
             return $response;
         });
 
-        $server->set([
+        $serverSettings = [
             'daemonize' => false,
             'worker_num' => $this->workers,
             'max_request' => 10000,
@@ -120,8 +120,11 @@ class Server extends ConsoleCommand
             'http_compression' => true,
             'http_compression_level' => 1,
             'buffer_output_size' => 4 * 1024 * 1024
-        ]);
+        ];
 
+        $this->tableOneRow($serverSettings);
+
+        $server->set($serverSettings);
         $server->start();
     }
 }

@@ -358,6 +358,7 @@ class ConsoleHelper extends Command
         try {
             $table = new Table($this->output);
             $rows = array_map(static function ($a, $b) {
+                $b = is_bool($b) ? $b === true ? 'yes' : 'no' : $b;
                 return ["<info>{$a}</info>", $b];
             }, array_keys($tableData), $tableData);
             $table->addRows($rows);
