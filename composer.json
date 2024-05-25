@@ -20,6 +20,9 @@
         "ext-openswoole": "*",
         "ext-mongodb": "*",
         "ext-redis": "*",
+        "ext-pcntl": "*",
+        "ext-simplexml": "*",
+        "ext-bz2": "*",
         "openswoole/core": "*",
         "monolog/monolog": "*",
         "league/container": "*",
@@ -33,7 +36,11 @@
         "illuminate/collections": "*",
         "predis/predis": "*",
         "psy/psysh": "*",
-        "twig/twig": "*"
+        "twig/twig": "*",
+        "poliander/cron": "*",
+        "siriusphp/validation": "^4.0",
+        "league/csv": "*",
+        "marcj/topsort": "*"
     },
     "require-dev": {
         "zeuxisoo/slim-whoops": "*",

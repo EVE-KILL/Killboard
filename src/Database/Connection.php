@@ -2,17 +2,10 @@
 
 namespace EK\Database;
 
-use EK\Config\MongoDB;
-use EK\Server\Server;
 use MongoDB\Client;
 
 class Connection
 {
-    public function __construct(
-        protected Server $server,
-    ) {
-    }
-
     public function getConnectionString(): string
     {
         return "mongodb://127.0.0.1:27017";

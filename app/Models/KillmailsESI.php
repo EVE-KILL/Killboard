@@ -3,6 +3,7 @@
 namespace EK\Models;
 
 use EK\Database\Collection;
+use MongoDB\BSON\UTCDateTime;
 
 class KillmailsESI extends Collection
 {
@@ -23,6 +24,21 @@ class KillmailsESI extends Collection
 
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
-        'unique' => [ 'killmail_id' ]
+        'unique' => [ 'killmail_id' ],
+        'desc' => [ 'last_modified', 'killmail_time' ]
     ];
+
+    public function setData(array $data = []): void
+    {
+        if (!isset($data['killmail_id'])) {
+            throw new \Exception('Missing killmail_id');
+        }
+
+        $data['last_modified'] = new UTCDateTime();
+        $data['killmail_time_str'] = $data['killmail_time'];
+        $data['killmail_time'] = new UTCDateTime(strtotime($data['killmail_time']) * 1000);
+
+        ksort($data);
+        parent::setData($data);
+    }
 }

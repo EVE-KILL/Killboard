@@ -3,7 +3,7 @@
 namespace EK\Commands\MongoDB;
 
 use Composer\Autoload\ClassLoader;
-use EK\Api\ConsoleCommand;
+use EK\Api\Abstracts\ConsoleCommand;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
 
@@ -28,10 +28,10 @@ class EnsureIndexes extends ConsoleCommand
         $finder->inNamespace('EK\Models');
 
         foreach ($finder as $className => $reflection) {
-            // @var \EK\Database\Collection $model
+            // @var \EK\Database\CollectionInterface $model
             $model = $this->container->get($className);
             $this->out('Ensuring indexes for ' . $className);
-            $model->handleIndexes();
+            $model->ensureIndexes();
         }
     }
 }

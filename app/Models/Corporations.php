@@ -13,7 +13,7 @@ class Corporations extends Collection
     public string $databaseName = 'app';
 
     /** @var string Primary index key */
-    public string $indexField = 'corporationID';
+    public string $indexField = 'corporation_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
@@ -23,8 +23,8 @@ class Corporations extends Collection
 
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
-        'unique' => ['corporationID'],
-        'desc' => ['kills', 'losses', 'allianceID', 'factionID', 'homeStationID', 'memberCount', 'updated'],
-        'text' => ['corporationName']
+        'unique' => ['corporation_id'],
+        'desc' => ['kills', 'losses', 'alliance_id', 'faction_id', 'home_station_id', 'member_count', 'updated', 'name' ],
+        'text' => ['corporation_name']
     ];
 }

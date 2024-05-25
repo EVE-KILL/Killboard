@@ -13,7 +13,7 @@ class InvFlags extends Collection
     public string $databaseName = 'ccp';
 
     /** @var string Primary index key */
-    public string $indexField = 'flagID';
+    public string $indexField = 'flag_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];

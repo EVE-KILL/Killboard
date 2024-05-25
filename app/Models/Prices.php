@@ -14,43 +14,36 @@ class Prices extends Collection
     public string $databaseName = 'app';
 
     /** @var string Primary index key */
-    public string $indexField = 'typeID';
+    public string $indexField = 'type_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
 
     /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
-    public array $required = ['typeID', 'average', 'highest', 'lowest', 'regionID', 'date'];
+    public array $required = ['type_id', 'average', 'highest', 'lowest', 'region_id', 'date'];
 
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
-        'unique' => [['typeID', 'date', 'regionID']],
-        'desc' => ['regionID'],
+        'unique' => [['type_id', 'date', 'region_id']],
+        'desc' => ['region_id', 'date'],
         'asc' => [],
         'text' => []
     ];
 
-    public function getPriceByTypeId(int $typeId, string $date = null): float
+    public function getPriceByTypeId(int $typeId, UTCDateTime $date, int $region_id = 10000002): float
     {
-        // If the date is older than 2007-12-05, then we ain't got any market information on it..
-        if ($date <= '2007-12-05') {
-            $date = '2007-12-05';
-        }
-
         // Early return the custom price if it exists
         $customPrice = $this->getCustomPrice($typeId, $date);
         if ($customPrice > 0) {
             return $customPrice;
         }
 
-        $date = $date === null ? new UTCDateTime(time() * 1000) : new UTCDateTime(strtotime($date) * 1000);
-
         // First we try to get the price from the database by the date of the kill
-        $price = $this->findOne(['typeID' => $typeId, 'date' => $date]);
+        $price = $this->findOne(['type_id' => $typeId, 'date' => $date, 'region_id' => $region_id]);
 
         // If $price is empty, we get it without date to get the latest price
         if ($price->isEmpty()) {
-            $price = $this->findOne(['typeID' => $typeId]);
+            $price = $this->findOne(['type_id' => $typeId, 'region_id' => $region_id], ['sort' => ['date' => -1]]); // Always get the latest price
         }
 
         return $price['average'] ?? 0.01;

@@ -1,5 +1,7 @@
 <?php
 
+//ini_set('memory_limit', '2048M');
+
 $autoloaderPath = dirname(__DIR__, 1) . '/vendor/autoload.php';
 if (!file_exists($autoloaderPath)) {
     throw new \RuntimeException('Autoloader not found, please run composer install');

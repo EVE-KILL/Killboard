@@ -2,7 +2,7 @@
 
 namespace EK\Controllers;
 
-use EK\Api\Controller;
+use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Http\Twig\Twig;
 use EK\Models\Killmails;
@@ -27,8 +27,10 @@ class Index extends Controller
     #[RouteAttribute('/test', ['GET'])]
     public function test(): ResponseInterface
     {
-        $this->killmails->findOne();
-        return $this->render('test.twig');
+        //$killmail = $this->killmails->findOne();
+        // Get a random killmail
+        $killmail = $this->killmails->getRandom();
+        return $this->json($killmail->toArray() ?? []);
     }
 
     #[RouteAttribute('/[{name}]', ['GET'])]

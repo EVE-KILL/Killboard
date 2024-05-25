@@ -2,7 +2,8 @@
 
 namespace EK\Commands\Cron;
 
-use EK\Api\ConsoleCommand;
+use EK\Api\Abstracts\ConsoleCommand;
+use EK\Api\Abstracts\Cronjob;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
 use Poliander\Cron\CronExpression;
@@ -20,25 +21,43 @@ class Cron extends ConsoleCommand
 
     final public function handle(): void
     {
-        $finder = new ComposerFinder($this->autoloader);
-        $finder->inNamespace('EK\\Cronjobs');
+        ini_set('memory_limit', '-1');
+        $this->table(['Cronjob', 'Cron Time'], array_map(fn($cronjob) => [$cronjob['className'], $cronjob['cronTime']], $this->getCronjobs()));
 
-        foreach ($finder as $className => $reflection) {
-            /** @var \EK\Cron\Api\Cronjob $instance */
-            $instance = $this->container->get($className);
-            $cronTime = $instance->getCronTime();
-
-            $cronExpression = new CronExpression($cronTime);
+        foreach($this->getCronjobs() as $cronjob) {
+            $cronExpression = new CronExpression($cronjob['cronTime']);
             $shouldRun = $cronExpression->isMatching();
 
             if ($shouldRun === true) {
                 try {
-                    $this->out('Running cronjob: ' . $className);
-                    $instance->handle();
+                    $this->out('Running cronjob: ' . $cronjob['className']);
+                    $cronjob['instance']->handle();
                 } catch (\Exception $e) {
-                    $this->out("Error while running cron job {$className}: {$e->getMessage()}");
+                    $this->out("Error while running cron job {$cronjob['className']}: {$e->getMessage()}");
                 }
             }
         }
+    }
+
+    protected function getCronjobs(): array
+    {
+        $cronjobs = [];
+
+        $finder = new ComposerFinder($this->autoloader);
+        $finder->inNamespace('EK\\Cronjobs');
+
+        foreach ($finder as $className => $reflection) {
+            /** @var Cronjob $instance */
+            $instance = $this->container->get($className);
+            $cronTime = $instance->getCronTime();
+
+            $cronjobs[] = [
+                'className' => $className,
+                'cronTime' => $cronTime,
+                'instance' => $instance
+            ];
+        }
+
+        return $cronjobs;
     }
 }

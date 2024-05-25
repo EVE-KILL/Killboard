@@ -1,10 +1,10 @@
 <?php
 
-namespace EK\Commands\Routes;
+namespace EK\Commands\Information;
 
 use Composer\Autoload\ClassLoader;
-use EK\Api\ConsoleCommand;
-use EK\Http\Attributes\RouteAttribute;
+use EK\Api\Abstracts\ConsoleCommand;
+use EK\Api\Attributes\RouteAttribute;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use ReflectionClass;
 use RuntimeException;
@@ -32,15 +32,33 @@ class Routes extends ConsoleCommand
         /** @var ReflectionClass $reflection */
         foreach ($controllers as $className => $reflection) {
             try {
+                // Extract the last part of the namespace
+                $namespaceParts = explode('\\', $className);
+                $prependNamespace = strtolower($namespaceParts[count($namespaceParts) - 2]);
+
+                // If the namespace is 'EK\Controllers', don't prepend anything
+                $prepend = $prependNamespace === 'controllers' ? '' : '/' . $prependNamespace;
+
                 foreach ($reflection->getMethods() as $method) {
                     $attributes = $method->getAttributes(RouteAttribute::class);
                     foreach ($attributes as $attribute) {
                         $apiUrl = $attribute->newInstance();
                         $endpoints[] = [
-                            $apiUrl->getRoute(),
+                            $prepend . $apiUrl->getRoute(),
                             implode(',', $apiUrl->getType()),
                             $className,
                             $method->getName()
+                        ];
+                    }
+
+                    // Get the protected array $routes from the controller if it exists
+                    $routes = $reflection->getDefaultProperties()['routes'] ?? [];
+                    foreach ($routes as $route => $methods) {
+                        $endpoints[] = [
+                            $prepend . $route,
+                            implode(',', $methods),
+                            $className,
+                            'handle'
                         ];
                     }
                 }

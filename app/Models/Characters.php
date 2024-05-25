@@ -13,7 +13,7 @@ class Characters extends Collection
     public string $databaseName = 'app';
 
     /** @var string Primary index key */
-    public string $indexField = 'characterID';
+    public string $indexField = 'character_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
@@ -23,9 +23,9 @@ class Characters extends Collection
 
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
-        'unique' => ['characterID'],
-        'desc' => ['kills', 'losses', 'corporationID', 'allianceID', 'factionID', 'updated'],
-        'text' => ['characterName']
+        'unique' => ['character_id'],
+        'desc' => ['kills', 'losses', 'corporation_id', 'alliance_id', 'faction_id', 'updated', 'name'],
+        'text' => ['character_name']
     ];
 
 }

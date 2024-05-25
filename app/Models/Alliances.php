@@ -13,18 +13,18 @@ class Alliances extends Collection
     public string $databaseName = 'app';
 
     /** @var string Primary index key */
-    public string $indexField = 'allianceID';
+    public string $indexField = 'alliance_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
 
     /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
-    public array $required = [];
+    public array $required = ['alliance_id'];
 
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
-        'unique' => ['allianceID'],
-        'desc' => ['creatorCorporationID', 'executorCorporationID', 'kills', 'losses', 'updated'],
-        'text' => ['allianceName']
+        'unique' => ['alliance_id'],
+        'desc' => ['creator_corporation_id', 'executor_corporation_id', 'kills', 'losses', 'updated', 'name'],
+        'text' => ['name']
     ];
 }

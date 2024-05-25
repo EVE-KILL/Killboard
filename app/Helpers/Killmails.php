@@ -4,19 +4,6 @@ declare(strict_types=1);
 
 namespace EK\Helpers;
 
-use EK\Models\Alliances;
-use EK\Models\Characters;
-use EK\Models\Corporations;
-use EK\Models\InvFlags;
-use EK\Models\Factions;
-use EK\Models\GroupIDs;
-use EK\Models\Killmails as KillmailModel;
-use EK\Models\KillmailsESI;
-use EK\Models\Prices;
-use EK\Models\TypeIDs;
-use EK\Models\UniverseCelestials;
-use EK\Models\UniverseSystems;
-use Exception;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use RuntimeException;
@@ -26,306 +13,330 @@ class Killmails
     protected string $imageServerUrl = 'https://images.evetech.net';
 
     public function __construct(
-        protected KillmailModel $killmails,
-        protected KillmailsESI $killmailsESI,
-        protected UniverseSystems $universeSystems,
-        protected UniverseCelestials $celestials,
-        protected Prices $prices,
-        protected TypeIDs $typeIDs,
-        protected InvFlags $invFlags,
-        protected Characters $characters,
-        protected Corporations $corporations,
-        protected Alliances $alliances,
-        protected Factions $factions,
-        protected GroupIDs $groupIDs,
-    ) {
-
+        protected \EK\Models\Killmails      $killmails,
+        protected \EK\Models\KillmailsESI   $killmailsESI,
+        protected \EK\ESI\Killmails         $esiKillmails,
+        protected \EK\Models\SolarSystems   $solarSystems,
+        protected \EK\ESI\SolarSystems      $esiSolarSystems,
+        protected \EK\Models\Regions        $regions,
+        protected \EK\ESI\Regions           $esiRegions,
+        protected \EK\Models\Constellations $constellations,
+        protected \EK\ESI\Constellations    $esiConstellations,
+        protected \EK\Models\Prices         $prices,
+        protected \EK\Models\TypeIDs        $typeIDs,
+        protected \EK\ESI\TypeIDs           $esiTypeIDs,
+        protected \EK\Models\GroupIDs       $groupIDs,
+        protected \EK\ESI\GroupIDs          $esiGroupIDs,
+        protected \EK\Models\Celestials     $celestials,
+        protected \EK\Models\InvFlags       $invFlags,
+        protected \EK\Models\Characters     $characters,
+        protected \EK\Models\Corporations   $corporations,
+        protected \EK\Models\Alliances      $alliances,
+        protected \EK\Models\Factions       $factions,
+        protected \EK\ESI\Characters        $esiCharacters,
+        protected \EK\ESI\Corporations      $esiCorporations,
+        protected \EK\ESI\Alliances         $esiAlliances,
+    )
+    {
     }
 
-    public function getKillMailHash(int $killId): string
+    public function getKillMailHash(int $killmail_id): string
     {
-        return (string) $this->killmails->findOne(['killID' => $killId])->get('hash');
+        return (string)$this->killmails->findOne(['killmail_id' => $killmail_id])->get('hash');
     }
 
-    /**
-     * @throws Exception
-     */
-    public function getKillmail(int $killId, string $hash = '', bool $debug = false): Collection
+    public function getKillmail(int $killmail_id, string $hash = ''): array
     {
-        // Check if we got the killmail in the $this->killmailesi
-        $killmail = $this->killmailsESI->findOne(['killmail_id' => $killId]);
+        // Check if we got the killmail
+        $killmail = $this->killmailsESI->findOne(['killmail_id' => $killmail_id]);
         if ($killmail->isNotEmpty()) {
-            return collect($killmail);
+            return $killmail->toArray();
         }
 
         // Get killmail from ESI
-        dd("fix fetching killmails from ESI");
-        $killmail = $this->esiKillmails->getKillmail($killId, $hash);
+        $killmail = $this->esiKillmails->getKillmail($killmail_id, $hash);
 
         // Save to the database
-        $this->killmailsESI->setData($killmail->toArray());
+        $this->killmailsESI->setData($killmail);
         $this->killmailsESI->save();
+
+        // Return the data from the model, because the model does stuff to it
+        return $this->killmailsESI->getData()->toArray();
+    }
+
+    public function parseKillmail(int $killmail_id, string $hash = '', int $war_id = 0): array
+    {
+        $killmailData = $this->getKillmail($killmail_id, $hash);
+        $killmail = $this->generateInfoTop($killmailData, $killmail_id, $hash, $war_id);
+        $killmail['victim'] = $this->generateVictim($killmailData['victim']);
+        $pointValue = $killmail['point_value'];
+        $totalDamage = $killmail['victim']['damage_taken'];
+        $killmail['attackers'] = $this->generateAttackers($killmailData['attackers'], $pointValue, $totalDamage);
+        $killmail['items'] = $this->generateItems($killmailData['victim']['items'], $killmailData['killmail_time']);
 
         return $killmail;
     }
 
-    public function parseKillmail(int $killId, string $hash = '', int $warId = 0, bool $debug = false): Collection
+    private function generateInfoTop(array $killmail, int $killmail_id, string $hash, int $war_id = 0): array
     {
-        try {
-            $killmailData = $this->getKillmail($killId, $hash, $debug);
-            $killmail = $this->generateInfoTop($killmailData, $killId, $hash, $warId, $debug);
-            $killmail['victim'] = $this->generateVictim(collect($killmailData['victim']), $debug);
-            $pointValue = $killmail['pointValue'];
-            $totalDamage = $killmail['victim']['damageTaken'];
-            $killmail['attackers'] = $this->generateAttackers(collect($killmailData['attackers']), $pointValue, $totalDamage, $debug);
-            $killmail['items'] = $this->generateItems(collect($killmailData['victim']['items']), $killmailData['killmail_time'], $debug);
-            $killmail['updated'] = new UTCDateTime(time() * 1000);
-
-            return $killmail;
-        } catch (Exception $e) {
-            throw new RuntimeException('Error parsing killmail: ' . $e->getMessage(), 666, $e);
-        }
-    }
-
-    private function generateInfoTop(Collection $killmail, int $killId, string $hash, int $warId = 0, bool $debug = false): Collection
-    {
-        $killTime = strtotime($killmail->get('killmail_time')) * 1000;
-        $solarSystemData = $this->universeSystems->findOne(['solarSystemID' => $killmail->get('solar_system_id')]);
-        $killValues = $this->calculateKillValue($killmail);
-        $pointValue = ceil($killValues['totalValue'] === 0 ? 0 : ($killValues['totalValue'] / 10000) / count($killmail->get('attackers')));
+        $solarSystemData = $this->solarSystems->findOneOrNull(['system_id' => $killmail['solar_system_id']]) ??
+            $this->esiSolarSystems->getSolarSystem($killmail['solar_system_id']);
+        $killValue = $this->calculateKillValue($killmail);
+        $pointValue = ceil($killValue['total_value'] === 0 ? 0 : ($killValue['total_value'] / 10000) / count($killmail['attackers']));
         $x = $killmail['victim']['position']['x'] ?? 0;
         $y = $killmail['victim']['position']['y'] ?? 0;
         $z = $killmail['victim']['position']['z'] ?? 0;
-        $shipTypeID = $killmail['victim->ship_type_id'] ?? 0;
+        $shipTypeID = $killmail['victim']['ship_type_id'] ?? 0;
 
-        return collect([
-            'killID' => (int) $killId,
-            'hash' => (string) $hash,
-            'killTime' => new UTCDateTime($killTime),
-            'killTime_str' => $killmail['killmail_time'],
-            'solarSystemID' => $solarSystemData->get('solarSystemID'),
-            'solarSystemName' => $solarSystemData->get('solarSystemName'),
-            'solarSystemSecurity' => $solarSystemData->get('security'),
-            'regionID' => $solarSystemData->get('regionID'),
-            'regionName' => $solarSystemData->get('regionName'),
-            'near' => $this->getNear($x, $y, $z, $solarSystemData->get('solarSystemID')),
+        return [
+            'killmail_id' => (int)$killmail_id,
+            'hash' => (string)$hash,
+            'kill_time' => $killmail['killmail_time'],
+            'kill_time_str' => $killmail['killmail_time_str'],
+            'system_id' => $solarSystemData['system_id'],
+            'system_name' => $solarSystemData['name'],
+            'system_security' => $solarSystemData['security_status'],
+            'region_id' => $solarSystemData['region_id'],
+            'region_name' => $solarSystemData['region_name'],
+            'near' => $this->getNear($x, $y, $z, $solarSystemData['system_id']),
             'x' => $x,
             'y' => $y,
             'z' => $z,
-            'shipValue' => (float) $killValues['shipValue'],
-            'fittingValue' => (float) $killValues['itemValue'],
-            'totalValue' => (float) $killValues['totalValue'],
-            'pointValue' => $pointValue,
+            'ship_value' => (float)$killValue['ship_value'],
+            'fitting_value' => (float)$killValue['item_value'],
+            'total_value' => (float)$killValue['total_value'],
+            'point_value' => $pointValue,
             'dna' => $this->getDNA($killmail['victim']['items'], $shipTypeID),
-            'isNPC' => $this->isNPC($killmail),
-            'isSolo' => $this->isSolo($killmail),
-            'warID' => $warId,
-        ]);
+            'is_npc' => $this->isNPC($killmail),
+            'is_solo' => $this->isSolo($killmail),
+            'war_id' => $war_id,
+        ];
     }
 
-    /**
-     * @throws Exception
-     */
-    private function generateVictim(Collection $killmail, bool $debug = false): Collection
+    private function getInformation(array $entitiesToFetch): array
     {
-        $characterID = $killmail['character_id'] ?? 0;
-        $corporationID = $killmail['corporation_id'] ?? 0;
-        $allianceID = $killmail['alliance_id'] ?? 0;
-        $factionID = $killmail['faction_id'] ?? 0;
-        $shipTypeID = $killmail['ship_type_id'] ?? 0;
+        $information = [];
 
-        $characterInfo = $characterID > 0 ? $this->characters->getById($characterID) : new Collection();
-        $corporationInfo = $corporationID > 0 ? $this->corporations->getById($corporationID) : new Collection();
-        $allianceInfo = $allianceID > 0 ? $this->alliances->getById($allianceID) : new Collection();
-        $factionInfo = $factionID > 0 ? $this->factions->findOne(['corporationID' => $factionID]) : new Collection();
+        foreach ($entitiesToFetch as $entityType => $entityIds) {
+            $entityIds = is_array($entityIds) ? $entityIds : [$entityIds];
 
-        $shipInfo = $this->typeIDs->getAllByTypeID($shipTypeID);
-        $groupData = $this->groupIDs->getAllByGroupID($shipInfo->get('groupID'));
-
-        $shipTypeName = $shipTypeID > 0 ? $shipInfo->get('name') : '';
-        $shipGroupName = $shipInfo->get('groupID') > 0 ? $groupData->get('name') : '';
-        $victim = [
-            'shipTypeID' => $shipTypeID > 0 ? $shipInfo->get('typeID') : 0,
-            'shipTypeName' => $shipTypeName,
-            'shipImageURL' => $this->imageServerUrl . "/types/{$shipTypeID}/render",
-            'shipGroupID' => $shipInfo->get('groupID'),
-            'shipGroupName' => $shipGroupName,
-            'damageTaken' => $killmail['damage_taken'],
-            'characterID' => $characterID,
-            'characterName' => $characterID > 0 ? $characterInfo->get('characterName') : '',
-            'characterImageURL' => $this->imageServerUrl . '/characters/' . $characterID . '/portrait',
-            'corporationID' => $corporationID,
-            'corporationName' => $corporationID > 0 ? $corporationInfo->get('corporationName') : '',
-            'corporationImageURL' => $this->imageServerUrl . '/corporations/' . $corporationID . '/logo',
-            'allianceID' => $allianceID,
-            'allianceName' => $allianceID > 0 ? $allianceInfo->get('allianceName') : '',
-            'allianceImageURL' => $this->imageServerUrl . '/alliances/' . $allianceID . '/logo',
-            'factionID' => $factionID,
-            'factionName' => $factionID > 0 ? $factionInfo->get('factionName') : '',
-            'factionImageURL' => $this->imageServerUrl . '/alliances/' . $factionID . '/logo',
-        ];
-
-        if ($debug === false) {
-            $this->characters->update(['characterID' => $characterID], ['$inc' => ['losses' => 1]]);
-            $this->corporations->update(['corporationID' => $corporationID], ['$inc' => ['losses' => 1]]);
-            if ($allianceID > 0) {
-                $this->alliances->update(['allianceID' => $allianceID], ['$inc' => ['losses' => 1]]);
+            foreach($entityIds as $id) {
+                $result = $this->fetchEntityInformation($entityType, $id) ?? [];
+                $information[$entityType][$id] = is_a($result, Collection::class) ? $result->toArray() : $result;
             }
         }
 
-        return collect($victim);
+        return $information;
     }
 
-    private function generateAttackers(Collection $attackers, float $pointValue, float $totalDamage = 0, bool $debug = false): Collection
+    private function fetchEntityInformation(string $entityType, int $id): Collection|array|null
+    {
+        return match ($entityType) {
+            'character' => $this->characters->findOneOrNull(['character_id' => $id]) ?? $this->esiCharacters->getCharacterInfo($id),
+            'corporation' => $this->corporations->findOneOrNull(['corporation_id' => $id]) ?? $this->esiCorporations->getCorporationInfo($id),
+            'alliance' => $this->alliances->findOneOrNull(['alliance_id' => $id]) ?? $this->esiAlliances->getAllianceInfo($id),
+            'faction' => $this->factions->findOneOrNull(['$or' => [['corporation_id' => $id], ['faction_id' => $id]]]),
+            'solarSystem' => $this->solarSystems->findOneOrNull(['system_id' => $id]) ?? $this->esiSolarSystems->getSolarSystem($id),
+            'region' => $this->regions->findOneOrNull(['region_id' => $id]) ?? $this->esiRegions->getRegion($id),
+            'constellation' => $this->constellations->findOneOrNull(['constellation_id' => $id]) ?? $this->esiConstellations->getConstellation($id),
+            'celestial' => $this->celestials->findOneOrNull(['item_id' => $id]),
+            default => throw new RuntimeException('Invalid type provided'),
+        };
+    }
+
+    private function generateVictim(array $killmail): array
+    {
+        $information = $this->getInformation([
+            'character' => $killmail['character_id'] ?? 0,
+            'corporation' => $killmail['corporation_id'] ?? 0,
+            'alliance' => $killmail['alliance_id'] ?? 0,
+            'faction' => $killmail['faction_id'] ?? 0,
+        ]);
+
+        $shipData = $this->typeIDs->findOneOrNull(['type_id' => $killmail['ship_type_id']]) ??
+            $this->esiTypeIDs->getTypeInfo($killmail['ship_type_id']);
+        $groupData = $this->groupIDs->findOneOrNull(['group_id' => $shipData->get('group_id')]) ??
+            $this->esiGroupIDs->getGroupInfo($shipData->get('group_id'));
+
+        $shipTypeId = $killmail['ship_type_id'] ?? 0;
+        $factionId = $killmail['faction_id'] ?? 0;
+
+        $victim = [
+            'ship_id' => $shipTypeId,
+            'ship_name' => $shipData['name'] ?? '',
+            'ship_image_url' => $this->imageServerUrl . "/types/{$shipTypeId}/render",
+            'ship_group_id' => $shipData['group_id'] ?? 0,
+            'ship_group_name' => $groupData['name'] ?? '',
+            'damage_taken' => $killmail['damage_taken'],
+            'character_id' => $killmail['character_id'] ?? 0,
+            'character_name' => $information['character'][$killmail['character_id']]['name'] ?? '',
+            'character_image_url' => $this->imageServerUrl . '/characters/' . $killmail['character_id'] ?? 0 . '/portrait',
+            'corporation_id' => $killmail['corporation_id'] ?? 0,
+            'corporation_name' => $information['corporation'][$killmail['corporation_id']]['name'] ?? '',
+            'corporation_image_url' => $this->imageServerUrl . '/corporations/' . $killmail['corporation_id'] ?? 0 . '/logo',
+            'alliance_id' => $killmail['alliance_id'] ?? 0,
+            'alliance_name' => $information['alliance'][$killmail['alliance_id']]['name'] ?? '',
+            'alliance_image_url' => $this->imageServerUrl . '/alliances/' . $killmail['alliance_id'] ?? 0 . '/logo',
+            'faction_id' => $factionId,
+            'faction_name' => $information['faction'][$factionId]['name'] ?? '',
+            'faction_image_url' => $this->imageServerUrl . '/corporations/' . $factionId . '/logo',
+        ];
+
+        $this->characters->update(['character_id' => $killmail['character_id']], ['$inc' => ['losses' => 1]]);
+        $this->corporations->update(['corporation_id' => $killmail['corporation_id']], ['$inc' => ['losses' => 1]]);
+        if ($killmail['alliance_id'] > 0) {
+            $this->alliances->update(['alliance_id' => $killmail['alliance_id']], ['$inc' => ['losses' => 1]]);
+        }
+
+        return $victim;
+    }
+
+    private function generateAttackers(array $attackers, float $pointValue, float $totalDamage = 0): array
     {
         $return = [];
 
         foreach ($attackers as $attacker) {
-            try {
-                $characterID = $attacker['character_id'] ?? 0;
-                $corporationID = $attacker['corporation_id'] ?? 0;
-                $allianceID = $attacker['alliance_id'] ?? 0;
-                $factionID = $attacker['faction_id'] ?? 0;
-                $weaponTypeID = $attacker['weapon_type_id'] ?? 0;
-                $shipTypeID = $attacker['ship_type_id'] ?? 0;
-                $characterInfo = $characterID > 0 ? $this->characters->getById($characterID) : new Collection();
-                $corporationInfo = $corporationID > 0 ? $this->corporations->getById($corporationID) : new Collection();
-                $allianceInfo = $allianceID > 0 ? $this->alliances->getById($allianceID) : new Collection();
-                $factionInfo = $factionID > 0 ? $this->factions->findOne(['corporationID' => $factionID]) : new Collection();
+            $information = $this->getInformation([
+                'character' => $attacker['character_id'] ?? 0,
+                'corporation' => $attacker['corporation_id'] ?? 0,
+                'alliance' => $attacker['alliance_id'] ?? 0,
+                'faction' => $attacker['faction_id'] ?? 0,
+            ]);
 
-                $weaponTypeData = $weaponTypeID > 0 ? $this->typeIDs->getAllByTypeID($weaponTypeID) : '';
-                $shipData = $this->typeIDs->getAllByTypeID($shipTypeID) ?? collect(['groupID' => 0]);
-                $groupData = $shipData->get('groupID') > 0 ? $this->groupIDs->getAllByGroupID($shipData->get('groupID')) : collect([]);
+            $weaponTypeID = $attacker['weapon_type_id'] ?? 0;
+            $shipTypeID = $attacker['ship_type_id'] ?? 0;
 
-                $shipTypeName = $shipTypeID > 0 ?  $shipData->get('name') : '';
-                $shipGroupName = $shipData->get('groupID') > 0 ? $groupData->get('name') : '';
-                $weaponTypeName = $weaponTypeID > 0 ? $weaponTypeData->get('name') : '';
-                $inner = [
-                    'shipTypeID' => $shipTypeID > 0 ? $shipData->get('typeID') : 0,
-                    'shipTypeName' => $shipTypeName,
-                    'shipImageURL' => $this->imageServerUrl . "/types/{$shipTypeID}/render",
-                    'shipGroupID' => $shipData->get('groupID'),
-                    'shipGroupName' => $shipGroupName,
-                    'characterID' => $characterID,
-                    'characterName' => $characterID > 0 ? $characterInfo->get('characterName') : '',
-                    'characterImageURL' => $this->imageServerUrl . '/characters/' . $characterID . '/portrait',
-                    'corporationID' => $corporationID,
-                    'corporationName' => $corporationID > 0 ? $corporationInfo->get('corporationName') : '',
-                    'corporationImageURL' => $this->imageServerUrl . '/corporations/' . $corporationID . '/logo',
-                    'allianceID' => $allianceID,
-                    'allianceName' => $allianceID > 0 ? $allianceInfo->get('allianceName') : '',
-                    'allianceImageURL' => $this->imageServerUrl . '/alliances/' . $allianceID . '/logo',
-                    'factionID' => $factionID,
-                    'factionName' => $factionID > 0 ? $factionInfo->get('factionName') : '',
-                    'factionImageURL' => $this->imageServerUrl . '/alliances/' . $factionID . '/logo',
-                    'securityStatus' => $attacker['security_status'],
-                    'damageDone' => $attacker['damage_done'],
-                    'finalBlow' => $attacker['final_blow'],
-                    'weaponTypeID' => $weaponTypeID,
-                    'weaponTypeName' => $weaponTypeName,
-                ];
-                if ($attacker['damage_done'] === 0 || $totalDamage === 0) {
-                    $inner['points'] = 0;
-                } else {
-                    $percentDamage = (int) $attacker['damage_done'] / $totalDamage;
-                    $points = ceil($pointValue * $percentDamage);
-                    if ($points > 0) {
-                        $inner['points'] = $points;
-                        if ($characterID > 0 && $debug === false) {
-                            $this->characters->update(
-                                ['characterID' => $characterID],
-                                ['$inc' => ['points' => $inner['points']]]
-                            );
-                        }
-                        if ($corporationID > 0 && $debug === false) {
-                            $this->corporations->update(
-                                ['corporationID' => $corporationID],
-                                ['$inc' => ['points' => $inner['points']]]
-                            );
-                        }
-                        if ($allianceID > 0 && $debug === false) {
-                            $this->alliances->update(
-                                ['allianceID' => $allianceID],
-                                ['$inc' => ['points' => $inner['points']]]
-                            );
-                        }
+            $weaponTypeData = $this->typeIDs->findOneOrNull(['type_id' => $weaponTypeID]) ??
+                $this->esiTypeIDs->getTypeInfo($weaponTypeID);
+            $shipData = $this->typeIDs->findOneOrNull(['type_id' => $shipTypeID]) ??
+                $this->esiTypeIDs->getTypeInfo($shipTypeID);
+            $groupData = $this->groupIDs->findOneOrNull(['group_id' => $shipData->get('group_id')]) ??
+                $this->esiGroupIDs->getGroupInfo($shipData->get('group_id'));
+
+            $shipTypeName = $shipData['name'] ?? '';
+            $shipGroupName = $groupData['name'] ?? '';
+            $weaponTypeName = $weaponTypeData['name'] ?? '';
+            $factionId = $attacker['faction_id'] ?? 0;
+
+            $inner = [
+                'ship_id' => $shipTypeID,
+                'ship_name' => $shipTypeName,
+                'ship_image_url' => $this->imageServerUrl . "/types/{$shipTypeID}/render",
+                'ship_group_id' => $shipData['group_id'] ?? 0,
+                'ship_group_name' => $shipGroupName,
+                'character_id' => $attacker['character_id'],
+                'character_name' => $information['character'][$attacker['character_id']]['name'] ?? '',
+                'character_image_url' => $this->imageServerUrl . '/characters/' . $attacker['character_id'] . '/portrait',
+                'corporation_id' => $attacker['corporation_id'],
+                'corporation_name' => $information['corporation'][$attacker['corporation_id']]['name'] ?? '',
+                'corporation_image_url' => $this->imageServerUrl . '/corporations/' . $attacker['corporation_id'] . '/logo',
+                'alliance_id' => $attacker['alliance_id'] ?? 0,
+                'alliance_name' => $attacker['alliance_id'] > 0 ? $information['alliance'][$attacker['alliance_id']]['name'] : '',
+                'alliance_image_url' => $this->imageServerUrl . '/alliances/' . $attacker['alliance_id'] ?? 0 . '/logo',
+                'faction_id' => $factionId,
+                'faction_name' => $factionId > 0 ? $information['faction'][$factionId]['name'] : '',
+                'faction_image_url' => $this->imageServerUrl . '/alliances/' . $factionId . '/logo',
+                'security_status' => $attacker['security_status'],
+                'damage_done' => $attacker['damage_done'],
+                'final_blow' => $attacker['final_blow'],
+                'weapon_type_id' => $weaponTypeID,
+                'weapon_type_name' => $weaponTypeName,
+            ];
+
+            if ($attacker['damage_done'] === 0 || $totalDamage === 0) {
+                $inner['points'] = 0;
+            } else {
+                $percentDamage = (int)$attacker['damage_done'] / $totalDamage;
+                $points = ceil($pointValue * $percentDamage);
+                if ($points > 0) {
+                    $inner['points'] = $points;
+                    if ($attacker['character_id'] > 0) {
+                        $this->characters->update(
+                            ['character_id' => $attacker['character_id']],
+                            ['$inc' => ['points' => $points]]
+                        );
+                    }
+                    if ($attacker['corporation_id'] > 0) {
+                        $this->corporations->update(
+                            ['corporation_id' => $attacker['corporation_id']],
+                            ['$inc' => ['points' => $points]]
+                        );
+                    }
+                    if ($attacker['alliance_id'] > 0) {
+                        $this->alliances->update(
+                            ['alliance_id' => $attacker['alliance_id']],
+                            ['$inc' => ['points' => $points]]
+                        );
                     }
                 }
-                if ($characterID > 0 && $debug === false) {
-                    $this->characters->update(['characterID' => $characterID], ['$inc' => ['kills' => 1]]);
-                }
-                if ($corporationID > 0 && $debug === false) {
-                    $this->corporations->update(['corporationID' => $corporationID], ['$inc' => ['kills' => 1]]);
-                }
-                if ($allianceID > 0 && $debug === false) {
-                    $this->alliances->update(['allianceID' => $allianceID], ['$inc' => ['kills' => 1]]);
-                }
-                $return[] = $inner;
-            } catch (Exception $e) {
-                throw new RuntimeException($e->getMessage());
             }
+            if ($attacker['character_id'] > 0) {
+                $this->characters->update(['character_id' => $attacker['character_id']], ['$inc' => ['kills' => 1]]);
+            }
+            if ($attacker['corporation_id'] > 0) {
+                $this->corporations->update(['corporationID' => $attacker['corporation_id']], ['$inc' => ['kills' => 1]]);
+            }
+            if ($attacker['alliance_id'] > 0) {
+                $this->alliances->update(['allianceID' => $attacker['alliance_id']], ['$inc' => ['kills' => 1]]);
+            }
+
+            $return[] = $inner;
         }
 
-        return collect($return);
+        return $return;
     }
 
-    private function generateItems(Collection $items, string $killmailTime, bool $debug = false): Collection
+    private function generateItems(array $items, UTCDateTime $killmailTime): array
     {
         $itemCollection = [];
 
         foreach ($items as $item) {
-            try {
-                $itemData = $this->typeIDs->getAllByTypeID($item['item_type_id']);
-                $groupData = new Collection();
-                if ($itemData->has('groupID')) {
-                    $groupData = $this->groupIDs->getAllByGroupID((int) $itemData->get('groupID'));
-                }
-                $qtyDropped = $item['quantity_dropped'] ?? 0;
-                $qtyDestroyed = $item['quantity_destroyed'] ?? 0;
-                $typeName = $itemData->has('name') ? $itemData->get('name') : '';
-                $groupName = $groupData->has('name') ? $groupData->get('name') : '';
-                $dataForItemCollection = [
-                    'typeID' => $item['item_type_id'],
-                    'typeName' => $typeName,
-                    'typeImageURL' => $this->imageServerUrl . '/types/' . $item['item_type_id'] . '/icon',
-                    'groupID' => $itemData->get('groupID'),
-                    'groupName' => $groupName,
-                    'categoryID' => $groupData->get('categoryID'),
-                    'flag' => $item['flag'],
-                    'qtyDropped' => $qtyDropped,
-                    'qtyDestroyed' => $qtyDestroyed,
-                    'singleton' => $item['singleton'],
-                    'value' => $this->prices->getPriceByTypeId($item['item_type_id'], date('Y-m-d', strtotime($killmailTime)))
-                ];
+            $itemData = $this->typeIDs->findOneOrNull(['type_id' => $item['item_type_id']]) ??
+                $this->esiTypeIDs->getTypeInfo($item['item_type_id']);
 
-                // If it's a container, it has items set inside of it
-                if (isset($item['items'])) {
-                    $dataForItemCollection['containerItems'] = $this->generateItems(collect($item['items']), $killmailTime, $debug)->toArray();
-                }
+            $groupData = $this->groupIDs->findOneOrNull(['group_id' => $itemData['group_id']]) ??
+                $this->esiGroupIDs->getGroupInfo($itemData['group_id']);
 
-                $itemCollection[] = $dataForItemCollection;
-            } catch (Exception $e) {
-                throw new RuntimeException($e->getMessage());
+            $qtyDropped = $item['quantity_dropped'] ?? 0;
+            $qtyDestroyed = $item['quantity_destroyed'] ?? 0;
+            $typeName = $itemData['name'] ?? '';
+            $groupName = $groupData['name'] ?? '';
+
+            $dataForItemCollection = [
+                'type_id' => $item['item_type_id'],
+                'type_name' => $typeName,
+                'type_image_url' => $this->imageServerUrl . '/types/' . $item['item_type_id'] . '/icon',
+                'group_id' => $itemData['group_id'] ?? 0,
+                'group_name' => $groupName,
+                'category_id' => $groupData['category_id'] ?? 0,
+                'flag' => $item['flag'],
+                'qty_dropped' => $qtyDropped,
+                'qty_destroyed' => $qtyDestroyed,
+                'singleton' => $item['singleton'],
+                'value' => $this->prices->getPriceByTypeId($item['item_type_id'], $killmailTime),
+            ];
+
+            // If it's a container, it has items set inside of it
+            if (isset($item['items'])) {
+                $dataForItemCollection['container_items'] = $this->generateItems($item['items'], $killmailTime)->toArray();
             }
+
+            $itemCollection[] = $dataForItemCollection;
         }
 
-        return collect($itemCollection);
+        return $itemCollection;
     }
 
-    private function calculateKillValue(Collection $killmail): array
+    private function calculateKillValue(array $killmail): array
     {
-        if ($killmail->isEmpty()) {
-            return ['itemValue' => 0, 'shipValue' => 0, 'totalValue' => 0];
-        }
-
         $shipTypeId = $killmail['victim']['ship_type_id'] ?? 0;
-        $victimShipValue = $this->prices->getPriceByTypeId($shipTypeId, date('Y-m-d', strtotime($killmail['killmail_time'])));
+        $victimShipValue = $this->prices->getPriceByTypeId($shipTypeId, $killmail['killmail_time']);
         $killValue = 0;
 
-        foreach($killmail['victim']['items'] as $item) {
+        foreach ($killmail['victim']['items'] as $item) {
             // If the $item contains it's own items, it's a container
             if (isset($item['items'])) {
-                foreach($item['items'] as $cargoItem) {
+                foreach ($item['items'] as $cargoItem) {
                     $killValue += $this->getItemValue($cargoItem, $killmail['killmail_time'], true);
                 }
             }
@@ -333,30 +344,21 @@ class Killmails
             $killValue += $this->getItemValue($item, $killmail['killmail_time']);
         }
 
-        return ['itemValue' => $killValue, 'shipValue' => $victimShipValue, 'totalValue' => $killValue + $victimShipValue];
+        return ['item_value' => $killValue, 'ship_value' => $victimShipValue, 'total_value' => $killValue + $victimShipValue];
     }
 
-    private function getItemValue(array $item, string $killTime, bool $isCargo = false): float
+    private function getItemValue(array $item, UTCDateTime $killTime, bool $isCargo = false): float
     {
         $typeId = $item['item_type_id'] ?? $item['type_id'];
         $flag = $item['flag'];
-        $id = $this->typeIDs->getAllByTypeID($typeId);
-
-        $itemName = null;
-
-        if ($id->has('name')) {
-            $itemName = $id->get('name');
-        }
-
-        if (!$itemName) {
-            $itemName = 'TypeID ' . $typeId;
-        }
+        $id = $this->typeIDs->findOneOrNull(['type_id' => $typeId]) ?? $this->esiTypeIDs->getTypeInfo($typeId);
+        $itemName = $id['name'] ?? 'Type ID ' . $typeId;
 
         // Golden Pod
         if ($typeId === 33329 && $flag === 89) {
             $price = 0.01;
         } else {
-            $price = $this->prices->getPriceByTypeId($typeId, date('Y-m-d', strtotime($killTime)));
+            $price = $this->prices->getPriceByTypeId($typeId, $killTime);
         }
 
         if ($isCargo && str_contains($itemName, 'Blueprint')) {
@@ -379,7 +381,7 @@ class Killmails
             return '';
         }
 
-        $celestials = $this->celestials->find(['solarSystemID' => $solarSystemId])->toArray();
+        $celestials = $this->celestials->find(['solar_system_id' => $solarSystemId])->toArray();
         $minimumDistance = null;
         $celestialName = '';
 
@@ -400,10 +402,10 @@ class Killmails
         $celestialName = '';
         $types = ['Stargate', 'Moon', 'Planet', 'Asteroid Belt', 'Sun'];
         foreach ($types as $type) {
-            if (isset($celestial['typeName']) && str_contains($celestial['typeName'], $type)) {
+            if (isset($celestial['type_name']) && str_contains($celestial['type_name'], $type)) {
                 $string = $type;
                 $string .= ' (';
-                $string .= $celestial['itemName'] ?? $celestial['solarSystemName'];
+                $string .= $celestial['item_name'] ?? $celestial['solar_system_name'];
                 $string .= ')';
                 $celestialName = $string;
             }
@@ -415,18 +417,18 @@ class Killmails
     private function getDNA(array $items, $shipTypeID): string
     {
         $slots = [
-            'LoSlot0','LoSlot1','LoSlot2','LoSlot3','LoSlot4','LoSlot5','LoSlot6','LoSlot7','MedSlot0',
-            'MedSlot1','MedSlot2','MedSlot3','MedSlot4','MedSlot5','MedSlot6','MedSlot7','HiSlot0','HiSlot1','HiSlot2',
-            'HiSlot3','HiSlot4','HiSlot5','HiSlot6','HiSlot7','DroneBay','RigSlot0','RigSlot1','RigSlot2','RigSlot3',
-            'RigSlot4','RigSlot5','RigSlot6','RigSlot7','SubSystem0','SubSystem1','SubSystem2','SubSystem3',
-            'SubSystem4','SubSystem5','SubSystem6','SubSystem7','SpecializedFuelBay',
+            'LoSlot0', 'LoSlot1', 'LoSlot2', 'LoSlot3', 'LoSlot4', 'LoSlot5', 'LoSlot6', 'LoSlot7', 'MedSlot0',
+            'MedSlot1', 'MedSlot2', 'MedSlot3', 'MedSlot4', 'MedSlot5', 'MedSlot6', 'MedSlot7', 'HiSlot0', 'HiSlot1', 'HiSlot2',
+            'HiSlot3', 'HiSlot4', 'HiSlot5', 'HiSlot6', 'HiSlot7', 'DroneBay', 'RigSlot0', 'RigSlot1', 'RigSlot2', 'RigSlot3',
+            'RigSlot4', 'RigSlot5', 'RigSlot6', 'RigSlot7', 'SubSystem0', 'SubSystem1', 'SubSystem2', 'SubSystem3',
+            'SubSystem4', 'SubSystem5', 'SubSystem6', 'SubSystem7', 'SpecializedFuelBay',
         ];
 
         $fittingArray = [];
         $fittingString = $shipTypeID . ':';
 
         foreach ($items as $item) {
-            $flagName = $this->invFlags->findOne(['flagID' => $item['flag']])->get('flagName');
+            $flagName = $this->invFlags->findOne(['flag_id' => $item['flag']])->get('flag_name');
             $categoryID = $item['category_id'] ?? 0;
             if ($categoryID === 8 || in_array($flagName, $slots)) {
                 $typeID = $item['item_type_id'] ?? 0;
@@ -447,7 +449,7 @@ class Killmails
         return $fittingString;
     }
 
-    private function isNPC(Collection $killmail): bool
+    private function isNPC(array $killmail): bool
     {
         $npc = 0;
         $calc = 0;
@@ -466,7 +468,7 @@ class Killmails
         return $calc === 1;
     }
 
-    private function isSolo(Collection $killmail): bool
+    private function isSolo(array $killmail): bool
     {
         $npc = 0;
         $calc = 0;

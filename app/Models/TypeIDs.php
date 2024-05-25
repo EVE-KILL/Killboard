@@ -13,17 +13,17 @@ class TypeIDs extends Collection
     public string $databaseName = 'ccp';
 
     /** @var string Primary index key */
-    public string $indexField = 'typeID';
+    public string $indexField = 'type_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
 
     /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
-    public array $required = ['typeID'];
+    public array $required = ['type_id'];
 
     public array $indexes = [
-        'unique' => ['typeID'],
-        'desc' => ['groupID', 'iconID'],
+        'unique' => ['type_id'],
+        'desc' => ['group_id', 'name'],
         'text' => ['name']
     ];
 }

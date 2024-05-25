@@ -2,24 +2,23 @@
 
 namespace EK\Database;
 
-use EK\Api\CollectionInterface;
+use EK\Cache\Cache;
 use Exception;
 use Illuminate\Support\Collection as IlluminateCollection;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Client;
 use MongoDB\DeleteResult;
+use MongoDB\Driver\BulkWrite;
 use MongoDB\GridFS\Bucket;
-use MongoDB\InsertOneResult;
 use MongoDB\UpdateResult;
-use Traversable;
 
-class Collection implements CollectionInterface
+class Collection
 {
     /** @var string Name of collection in database */
     public string $collectionName = '';
     /** @var string Name of database that the collection is stored in */
     public string $databaseName = 'esi';
-    /** @var \MongoDB\Collection MongoDB Collection */
+    /** @var \MongoDB\Collection MongoDB CollectionInterface */
     public \MongoDB\Collection $collection;
     /** @var Bucket MongoDB GridFS Bucket for storing files */
     public Bucket $bucket;
@@ -42,6 +41,7 @@ class Collection implements CollectionInterface
     private Client $client;
 
     public function __construct(
+        protected Cache $cache,
         protected Connection $connection,
     ) {
         $this->client = $connection->getConnection();
@@ -57,9 +57,31 @@ class Collection implements CollectionInterface
         $this->data = new IlluminateCollection();
     }
 
+    private function fixTimestamps(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value) && isset($value['$date'])) {
+                $data[$key] = new UTCDateTime($value['$date']['$numberLong']);
+            }
+        }
+
+        return $data;
+    }
+
     public function find(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
-        $result = $this->collection->find($filter, $options)->toArray();
+        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden);
+        $cacheKeyExists = $this->cache->exists($cacheKey);
+
+        $result = $cacheTime > 0 && $cacheKeyExists ?
+            $this->cache->get($cacheKey) :
+            $this->collection->find($filter, $options)->toArray();
+
+        $result = $this->fixTimestamps($result);
+
+        if ($cacheTime > 0 && !$cacheKeyExists) {
+            $this->cache->set($cacheKey, $result, $cacheTime);
+        }
 
         if ($showHidden) {
             return collect($result);
@@ -70,7 +92,19 @@ class Collection implements CollectionInterface
 
     public function findOne(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
-        $result = $this->collection->findOne($filter, $options) ?? [];
+        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden);
+        $cacheKeyExists = $this->cache->exists($cacheKey);
+
+        $result = $cacheTime > 0 && $cacheKeyExists ?
+            $this->cache->get($cacheKey) :
+            $this->collection->findOne($filter, $options) ?? [];
+
+        $result = $this->fixTimestamps($result);
+
+        if ($cacheTime > 0 && !$cacheKeyExists) {
+            $this->cache->set($cacheKey, $result, $cacheTime);
+        }
+
         if ($showHidden) {
             return collect($result);
         }
@@ -78,9 +112,48 @@ class Collection implements CollectionInterface
         return (collect($result))->forget($this->hiddenFields);
     }
 
-    public function aggregate(array $pipeline = [], array $options = []): Traversable
+    public function findOneOrNull(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): ?IlluminateCollection
     {
-        return $this->collection->aggregate($pipeline, $options);
+        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden);
+        $cacheKeyExists = $this->cache->exists($cacheKey);
+
+        $result = $cacheTime > 0 && $cacheKeyExists ?
+            $this->cache->get($cacheKey) :
+            $this->collection->findOne($filter, $options) ?? [];
+
+        $result = $this->fixTimestamps($result);
+
+        if ($cacheTime > 0 && !$cacheKeyExists && !empty($result)) {
+            $this->cache->set($cacheKey, $result, $cacheTime);
+        }
+
+        if (empty($result)) {
+            return null;
+        }
+
+        if ($showHidden) {
+            return collect($result);
+        }
+
+        return (collect($result))->forget($this->hiddenFields);
+    }
+
+    public function aggregate(array $pipeline = [], array $options = [], int $cacheTime = 60): IlluminateCollection
+    {
+        $cacheKey = $this->generateCacheKey($pipeline, $options);
+        $cacheKeyExists = $this->cache->exists($cacheKey);
+
+        $result = $cacheKeyExists ?
+            $this->cache->get($cacheKey) :
+            $this->collection->aggregate($pipeline, $options)->toArray();
+
+        $result = $this->fixTimestamps($result);
+
+        if ($cacheTime > 0 && !$cacheKeyExists) {
+            $this->cache->set($cacheKey, $result, $cacheTime);
+        }
+
+        return collect($result);
     }
 
     public function count(array $filter = [], array $options = [], int $cacheTime = 60): int
@@ -117,7 +190,8 @@ class Collection implements CollectionInterface
 
     public function setData(array $data = []): void
     {
-        $this->data = collect($data);
+        $fieldsToRemove = ['_id', 'last_modified'];
+        $this->data = collect($data)->forget($fieldsToRemove);
     }
 
     public function getData(): IlluminateCollection
@@ -125,107 +199,211 @@ class Collection implements CollectionInterface
         return $this->data;
     }
 
-    public function saveMany(): void
+    public function saveMany(): int
     {
-        $this->collection->insertMany($this->data->all());
+        $bulkWrite = new BulkWrite();
+        $bulkWrites = [];
+
+        foreach($this->data->all() as $document) {
+            // Does it have the required fields?
+            $this->hasRequired($document);
+
+            // Do we have an indexField? Otherwise throw an exception
+            if (empty($this->indexField)) {
+                throw new Exception('Error: indexField is empty. Cannot save data in class ' . get_class($this) . ' without an indexField.');
+            }
+
+            // Create match array for unique fields
+            $match = [];
+            if (isset($this->indexes['unique'])) {
+                foreach ($this->indexes['unique'] as $uniqueField) {
+                    if (is_array($uniqueField)) {
+                        foreach ($uniqueField as $field) {
+                            if (isset($document[$field])) {
+                                $match[$field] = $document[$field];
+                            }
+                        }
+                    } else {
+                        if (isset($document[$uniqueField])) {
+                            $match[$uniqueField] = $document[$uniqueField];
+                        }
+                    }
+                }
+            } else {
+                $match[$this->indexField] = $this->data->get($this->indexField);
+            }
+
+            $bulkWrites[] = ['updateOne' => [
+                    // Use the unique index fields to match the document
+                    $match,
+                    [
+                        '$set' => $document,
+                        '$currentDate' => ['last_modified' => true],
+                    ],
+                    [
+                        'upsert' => true
+                    ]
+                ]
+            ];
+        }
+
+        $result = $this->collection->bulkWrite($bulkWrites);
+        return $result->getUpsertedCount() + $result->getInsertedCount();
     }
 
-    public function save(): UpdateResult|InsertOneResult
+    public function save(): int
     {
         // Does it have the required fields?
-        $this->hasRequired();
+        $this->hasRequired($this->data->all());
 
         // Do we have an indexField? Otherwise throw an exception
         if (empty($this->indexField)) {
             throw new Exception('Error: indexField is empty. Cannot save data in class ' . get_class($this) . ' without an indexField.');
         }
 
-        try {
-            return $this->collection->updateOne(
-                [$this->indexField => $this->data->get($this->indexField)],
-                [
-                    '$set' => $this->data->all(),
-                    '$currentDate' => ['lastModified' => true],
-                ],
-                [
-                    'upsert' => true
-                ]
-            );
-        } catch (Exception $e) {
-            throw new Exception('Error occurred during transaction: ' . $e->getMessage());
+        // Create match array for unique fields
+        $match = [];
+        if (isset($this->indexes['unique'])) {
+            foreach ($this->indexes['unique'] as $uniqueField) {
+                if (is_array($uniqueField)) {
+                    foreach ($uniqueField as $field) {
+                        if (isset($document[$field])) {
+                            $match[$field] = $document[$field];
+                        }
+                    }
+                } else {
+                    if (isset($document[$uniqueField])) {
+                        $match[$uniqueField] = $document[$uniqueField];
+                    }
+                }
+            }
+        } else {
+            $match[$this->indexField] = $this->data->get($this->indexField);
         }
+
+        $result = $this->collection->updateOne(
+            $match,
+            [
+                '$set' => $this->data->all(),
+                '$currentDate' => ['last_modified' => true],
+            ],
+            [
+                'upsert' => true
+            ]
+        );
+
+        return $result->getUpsertedCount() + $result->getModifiedCount();
     }
 
     public function clear(array $data = []): self
     {
-        $this->data = new IlluminateCollection();
-        if (!empty($data)) {
-            $this->data = $this->data->merge($data);
-        }
-
+        $this->data = new IlluminateCollection($data);
         return $this;
     }
 
-    public function makeTimeFromDateTime(string $dateTime): UTCDateTime
+    public function hasRequired(array $data): void
     {
-        return new UTCDateTime(strtotime($dateTime) * 1000);
-    }
-
-    public function makeTimeFromUnixTime(int $unixTime): UTCDateTime
-    {
-        return new UTCDateTime($unixTime * 1000);
-    }
-
-    public function makeTime(string|int $time): UTCDateTime
-    {
-        if (is_int($time)) {
-            return $this->makeTimeFromUnixTime($time);
-        }
-
-        return $this->makeTimeFromDateTime($time);
-    }
-
-    public function hasRequired(): bool
-    {
-        if (!empty($this->required)) {
-            foreach ($this->required as $key) {
-                if (!$this->data->has($key)) {
-                    throw new Exception('Error: ' . $key . ' does not exist in data..' . PHP_EOL . print_r($this->data->all(), true));
-                }
+        foreach ($this->required as $requiredField) {
+            if (!isset($data[$requiredField])) {
+                throw new Exception('Error: Required field ' . $requiredField . ' is missing in data.');
             }
         }
-
-        return true;
     }
 
     public function ensureIndexes(): void
     {
-        foreach ($this->indexes as $indexType => $indexes) {
-            // If indexType is text, and there are multiple entries in the indexes array, we need to throw an exception, there can only be one text index
-            if ($indexType === 'text' && count($indexes) > 1) {
-                throw new Exception('Error: There can only be one text index in a collection, refer to https://www.mongodb.com/docs/manual/core/indexes/index-types/index-text/');
-            }
+        $existingIndexes = $this->listIndexes();
+        $indexNames = [];
 
-            foreach ($indexes as $index) {
-                $modifier = ($indexType === 'desc') ? -1 : (($indexType === 'asc') ? 1 : (($indexType === 'unique') ? -1 : ($indexType === 'text' ? 'text' : null)));
-                if (is_array($index)) {
-                    if ($modifier !== null) {
-                        $modifiedIndex = [];
-                        foreach ($index as $key) {
-                            $modifiedIndex[$key] = $modifier;
-                        }
-                        $options = ($indexType === 'unique') ? ['unique' => true] : ['sparse' => true];
-                        $this->createIndex($modifiedIndex, $options);
-                    }
-                } else {
-                    if ($modifier !== null) {
-                        $this->createIndex([$index => $modifier], ($indexType === 'unique') ? ['unique' => true] : ['sparse' => true]);
-                    }
+        // Add a last_modified index to all collections if it doesn't exist, as desc
+        foreach($this->indexes as $indexType => $indexes) {
+            if ($indexType === 'desc') {
+                if (!in_array('last_modified', $indexes)) {
+                    $this->indexes['desc'][] = 'last_modified';
                 }
             }
         }
 
+        foreach ($this->indexes as $indexType => $indexes) {
+            foreach($indexes as $index) {
+                if (is_array($index)) {
+                    $name = implode('_', $index);
+                } else {
+                    $name = $index . (($indexType === 'text') ? '_text' : '');
+                }
 
+                $indexNames[] = $name;
+            }
+        }
+
+        // Drop indexes that shouldn't exist
+        foreach ($existingIndexes as $index) {
+            if (!in_array($index['name'], $indexNames)) {
+                $this->dropIndex([$index['name']]);
+            }
+        }
+
+        // Create indexes that should exist
+        foreach ($this->indexes as $indexType => $indexes) {
+            if ($indexType === 'text' && count($indexes) > 1) {
+                throw new Exception('Error: There can only be one text index in a collection, refer to https://www.mongodb.com/docs/manual/core/indexes/index-types/index-text/');
+            }
+
+            foreach($indexes as $index) {
+                if (is_array($index)) {
+                    $name = implode('_', $index);
+
+                    // Set the direction of the index
+                    $direction = match($indexType) {
+                        'desc', 'unique' => -1,
+                        'asc' => 1,
+                        'text' => 'text',
+                        default => null
+                    };
+
+                    // Set the options of the index
+                    $options = match($indexType) {
+                        'unique' => ['unique' => true],
+                        default => ['sparse' => true]
+                    };
+
+                    // Add the name to the options
+                    $options['name'] = $name;
+
+                    // Modify the index to add the direction
+                    $modifiedIndex = [];
+                    foreach ($index as $key) {
+                        $modifiedIndex[$key] = $direction;
+                    }
+
+                    // Create the index
+                    $this->createIndex($modifiedIndex, $options);
+                } else {
+                    // Give the index a name
+                    $name = $index . (($indexType === 'text') ? '_text' : '');
+
+                    // Set the direction of the index
+                    $direction = match($indexType) {
+                        'desc', 'unique' => -1,
+                        'asc' => 1,
+                        'text' => 'text',
+                        default => null
+                    };
+
+                    // Set the options of the index
+                    $options = match($indexType) {
+                        'unique' => ['unique' => true],
+                        default => ['sparse' => true]
+                    };
+
+                    // Add the name to the options
+                    $options['name'] = $name;
+
+                    // Create the index
+                    $this->createIndex([$index => $direction], $options);
+                }
+            }
+        }
     }
 
     public function createIndex(array $keys = [], array $options = []): void
@@ -247,7 +425,16 @@ class Collection implements CollectionInterface
 
     public function listIndexes(): array
     {
-        return collect($this->collection->listIndexes())->toArray();
+        $indexes = $this->collection->listIndexes();
+
+        // We need to filter out the _id_ index
+        return collect($indexes)->filter(function ($index) {
+            return $index['name'] !== '_id_';
+        })->toArray();
     }
 
+    public function generateCacheKey(...$args): string
+    {
+        return md5(serialize($args));
+    }
 }

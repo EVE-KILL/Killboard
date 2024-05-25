@@ -1,6 +1,6 @@
 <?php
 
-namespace EK\Api;
+namespace EK\Api\Abstracts;
 
 use EK\Console\ConsoleHelper;
 

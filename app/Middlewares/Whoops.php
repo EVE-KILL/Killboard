@@ -40,24 +40,32 @@ class Whoops implements MiddlewareInterface
 
             if ($developmentMode === false) {
                 $exceptionId = uniqid('exception_', true);
-                $exceptionRender = $this->renderWhoops($e, ['text/plain']);
+                $acceptHeaders = explode(',', $request->getHeader('accept')[0] ?? '');
+
+                $exceptionRender = $this->renderWhoops($e, $acceptHeaders);
                 $this->exceptionLogger->log($exceptionRender, $exceptionId);
 
                 $response = $this->responseFactory->createResponse(500);
-                $render = $this->twig->render('errors/exception.twig', ['exceptionId' => $exceptionId]);
+
+                $render = match ($acceptHeaders[0]) {
+                    // Return json
+                    'application/json' => json_encode(['error' => 'There has been an exception, you can tell the developers to look at the following id', 'exceptionId' => $exceptionId]),
+                    // Return XML
+                    'application/xml', 'text/xml' => (new \SimpleXMLElement('<error>There has been an exception, you can tell the developers to look at the following id</error><exceptionId>' . $exceptionId . '</exceptionId>'))->asXML(),
+                    // Reply with plaintext
+                    'text/plain', 'text/css', 'text/javascript' => 'There has been an exception, you can tell the developers to look at the following id: ' . $exceptionId,
+                    default => $this->twig->render('errors/exception.twig', ['exceptionId' => $exceptionId])
+                };
+
                 $response->getBody()->write($render);
-
-                return $response;
-
             } else {
                 // Handle the exception with Whoops
                 $response = $this->responseFactory->createResponse(500);
 
                 $acceptHeaders = explode(',', $request->getHeader('accept')[0] ?? '');
                 $response->getBody()->write($this->renderWhoops($e, $acceptHeaders));
-
-                return $response;
             }
+            return $response;
         }
     }
 
@@ -67,7 +75,7 @@ class Whoops implements MiddlewareInterface
         $whoops->allowQuit(false);
         $whoops->writeToOutput(false);
 
-        /** @var \Whoops\Handler\PrettyPageHandler|\Whoops\Handler\JsonResponseHandler|\Whoops\Handler\XmlResponseHandler|\Whoops\Handler\PlainTextHandler $handler */
+        /** @var PrettyPageHandler|JsonResponseHandler|XmlResponseHandler|PlainTextHandler $handler */
         $handler = null;
 
         foreach ($acceptHeaders as $acceptHeader) {

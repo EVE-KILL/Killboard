@@ -3,7 +3,8 @@
 namespace EK\Commands\Killmails;
 
 use Composer\Autoload\ClassLoader;
-use EK\Api\ConsoleCommand;
+use EK\Api\Abstracts\ConsoleCommand;
+use EK\Jobs\processKillmail;
 use EK\Models\Killmails;
 
 class zkbRedisQ extends ConsoleCommand
@@ -14,6 +15,7 @@ class zkbRedisQ extends ConsoleCommand
     public function __construct(
         protected ClassLoader $autoloader,
         protected Killmails $killmails,
+        protected processKillmail $processKillmail
     ) {
         parent::__construct();
     }
@@ -34,12 +36,15 @@ class zkbRedisQ extends ConsoleCommand
                 $kill = json_decode(file_get_contents($queueUrl), true);
                 if ($kill['package'] !== null) {
                     // Check the killmail doesn't already exist
-                    if ($this->killmails->findOne(['killID' => $kill['package']['killID']])->isNotEmpty()) {
+                    if ($this->killmails->findOne(['killmail_id' => $kill['package']['killID']])->isNotEmpty()) {
                         $this->out('Killmail already exists: ' . $kill['package']['killID']);
                         continue;
                     }
                     $this->out('Inserting killmail: ' . $kill['package']['killID']);
                     $this->killmails->collection->insertOne($this->formatKillmail($kill));
+
+                    // Send to the queue
+                    $this->processKillmail->enqueue(['killmail_id' => $kill['package']['killID']]);
                 }
             } catch (\Exception $e) {
                 $this->out('Error: ' . $e->getMessage());
@@ -51,7 +56,7 @@ class zkbRedisQ extends ConsoleCommand
     private function formatKillmail(array $killmail): array
     {
         return [
-            'killID' => $killmail['package']['killID'],
+            'killmail_id' => $killmail['package']['killID'],
             'hash' => $killmail['package']['zkb']['hash']
         ];
     }

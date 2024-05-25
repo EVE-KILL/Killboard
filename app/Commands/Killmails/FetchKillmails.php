@@ -3,7 +3,8 @@
 namespace EK\Commands\Killmails;
 
 use Composer\Autoload\ClassLoader;
-use EK\Api\ConsoleCommand;
+use EK\Api\Abstracts\ConsoleCommand;
+use EK\Http\Fetcher;
 use EK\Models\Killmails;
 use Illuminate\Support\Collection;
 
@@ -15,19 +16,24 @@ class FetchKillmails extends ConsoleCommand
     public function __construct(
         protected ClassLoader $autoloader,
         protected Killmails $killmails,
+        protected Fetcher $fetcher
     ) {
         parent::__construct();
     }
 
     protected function fetchAndCacheData($date): array
     {
-        $file = BASE_DIR . "/resources/cache/{$date}.json";
+        $file = BASE_DIR . "/cache/zkb/{$date}.json";
+        if(!is_dir(dirname($file))) {
+            mkdir(dirname($file), 0777, true);
+        }
 
         if (file_exists($file)) {
             return json_decode(file_get_contents($file), true);
         } else {
             $this->out("Fetching from: https://zkillboard.com/api/history/{$date}.json");
-            $kills = file_get_contents("https://zkillboard.com/api/history/{$date}.json");
+            $data = $this->fetcher->fetch("https://zkillboard.com/api/history/{$date}.json");
+            $kills = $data->getBody()->getContents();
 
             if (!empty($kills)) {
                 file_put_contents($file, $kills);
@@ -43,8 +49,8 @@ class FetchKillmails extends ConsoleCommand
         $processed = 1;
         $totalKillmails = 0;
 
-        $totalData = file_get_contents('https://zkillboard.com/api/history/totals.json') ?? [];
-        $totalAvailable = new Collection(json_decode($totalData, true, flags: \JSON_THROW_ON_ERROR));
+        $totalData = $this->fetcher->fetch('https://zkillboard.com/api/history/totals.json') ?? [];
+        $totalAvailable = new Collection(json_decode($totalData->getBody()->getContents(), true, flags: \JSON_THROW_ON_ERROR));
 
 
         $totalAvailable->each(function ($row) use (&$totalKillmails) {
@@ -65,22 +71,19 @@ class FetchKillmails extends ConsoleCommand
             }
 
             $batch = [];
-            $index = 0;
-
             foreach ($kills as $killId => $hash) {
                 if ($killId === 'day') {
                     continue;
                 }
 
-                if ($this->killmails->findOne(['killID' => $killId])->isNotEmpty()) {
+                if ($this->killmails->findOne(['killmail_id' => $killId])->isNotEmpty()) {
                     $processed++;
                     continue;
                 }
 
                 $batch[] = [
-                    'killID' => (int) $killId,
-                    'hash' => $hash,
-                    'fetched' => false,
+                    'killmail_id' => (int) $killId,
+                    'hash' => $hash
                 ];
 
                 $processed++;
@@ -93,7 +96,8 @@ class FetchKillmails extends ConsoleCommand
             // Split the batch into smaller chunks of 1000
             $chunks = array_chunk($batch, 1000);
             foreach($chunks as $chunk) {
-                $this->killmails->collection->insertMany($chunk);
+                $this->killmails->setData($chunk);
+                $this->killmails->saveMany();
             }
         }
     }

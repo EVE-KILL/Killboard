@@ -1,26 +1,28 @@
 <?php
 
-namespace EK\Api;
+namespace EK\Api\Abstracts;
 
+use EK\Http\Twig\Twig;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Http\Message\StreamInterface;
-use EK\Http\Twig\Twig;
-use Slim\Psr7\Stream;
+use Sirius\Validation\Validator;
 
 abstract class Controller
 {
     protected ServerRequestInterface $request;
     protected ResponseInterface $response;
-
+    protected string $body;
     private array $preload = [];
+    protected array $routes = [];
+    protected Validator $validator;
     protected Collection $arguments;
 
     public function __construct(
         protected Twig $twig
     ) {
+        $this->validator = new Validator();
     }
 
     public function __invoke(string $actionName = 'handle'): \Closure
@@ -38,6 +40,7 @@ abstract class Controller
             $controller->arguments = new Collection($args);
             $controller->setRequest($request);
             $controller->setResponse($response);
+            $controller->setBody($request->getBody()->getContents());
 
             return call_user_func_array([$controller, $actionName], $args);
         };
@@ -51,6 +54,21 @@ abstract class Controller
     protected function setResponse(ResponseInterface $response): void
     {
         $this->response = $response;
+    }
+
+    protected function setBody(string $body): void
+    {
+        $this->body = $body;
+    }
+
+    protected function getBody(): string
+    {
+        return $this->body;
+    }
+
+    public function getRoutes(): array
+    {
+        return $this->routes;
     }
 
     /**
@@ -124,6 +142,11 @@ abstract class Controller
         ]));
 
         return new Collection($post);
+    }
+
+    protected function getPostData(): string
+    {
+        return $this->getBody();
     }
 
     /**

@@ -2,31 +2,24 @@
 
 namespace EK\Cache;
 
-use EK\Logger\Logger;
-use EK\Server\Server;
+use EK\Config\Config;
 use Predis\Client;
-use Predis\Response\Status;
 
 class Cache
 {
     protected Client $redis;
-    public function __construct(
-        protected Server $server,
-        protected Logger $logger
-    ) {
-        $redisHost = $this->server->getOptions()['redisHost'];
-        $redisPort = $this->server->getOptions()['redisPort'];
-        $redisPassword = $this->server->getOptions()['redisPassword'];
-        $redisDatabase = $this->server->getOptions()['redisDatabase'];
 
+    public function __construct(
+        protected Config $config
+    ) {
         $this->redis = new Client([
             'scheme' => 'tcp',
-            'host' => $redisHost,
-            'port' => $redisPort,
-            'password' => $redisPassword,
-            'database' => $redisDatabase,
+            'host' => $config->get('redis/host'),
+            'port' => $config->get('redis/port'),
+            'password' => $config->get('redis/password'),
+            'database' => $config->get('redis/database'),
         ], [
-            'prefix' => 'esi:',
+            'prefix' => '',
             'persistent' => true,
             'timeout' => 10,
             'read_write_timeout' => 5,
@@ -36,9 +29,15 @@ class Cache
         ]);
     }
 
-    public function clean(): void
+    public function generateKey(...$args): string
     {
-        $this->redis->flushDB();
+        // Generate a unique key based on the arguments
+        return md5(serialize($args));
+    }
+
+    public function getTTL(string $key): int
+    {
+        return $this->redis->ttl($key);
     }
 
     public function get(string $key): mixed
@@ -51,13 +50,13 @@ class Cache
         return json_decode($result, true);
     }
 
-    public function set(string $key, mixed $value, int $ttl = 0): Status
+    public function set(string $key, mixed $value, int $ttl = 0): void
     {
         if ($ttl > 0) {
-            return $this->redis->setex($key, $ttl, json_encode($value));
+            $this->redis->setex($key, $ttl, json_encode($value));
+        } else {
+            $this->redis->set($key, json_encode($value));
         }
-
-        return $this->redis->set($key, json_encode($value));
     }
 
     public function exists(string $key): bool

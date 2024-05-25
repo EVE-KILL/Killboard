@@ -2,7 +2,7 @@
 
 namespace EK\Commands\Updates;
 
-use EK\Api\ConsoleCommand;
+use EK\Api\Abstracts\ConsoleCommand;
 use EK\Models\Characters;
 
 class UpdateCharacters extends ConsoleCommand
