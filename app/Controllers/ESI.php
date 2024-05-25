@@ -209,7 +209,8 @@ class ESI extends Controller
         // Sort the query params so caching is the same regardless of how the query is sorted
         ksort($query);
         $requestMethod = $this->request->getMethod();
-        $requestBody = $this->request->getBody()->getContents() !== 'php://memory' ? $this->request->getBody()->getContents() : '';
+        $body = $this->request->getBody()->getContents();
+        $requestBody = $body !== 'php://memory' ? $body : '';
 
         dump($path, $query, $requestMethod, $requestBody, $version, $args);
         return $this->json(['status' => 'OK']);
