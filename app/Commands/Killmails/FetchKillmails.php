@@ -76,11 +76,6 @@ class FetchKillmails extends ConsoleCommand
                     continue;
                 }
 
-                if ($this->killmails->findOne(['killmail_id' => $killId])->isNotEmpty()) {
-                    $processed++;
-                    continue;
-                }
-
                 $batch[] = [
                     'killmail_id' => (int) $killId,
                     'hash' => $hash

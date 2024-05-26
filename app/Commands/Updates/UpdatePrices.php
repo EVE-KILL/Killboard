@@ -13,6 +13,7 @@ use MongoDB\BSON\UTCDateTime;
 class UpdatePrices extends ConsoleCommand
 {
     protected string $signature = 'update:prices
+        { --startFrom= : The date to start fetching prices from }
         { --reverse : Reverse the order of the price fetching }
         { --days=7 : The number of days to fetch prices for }
         { --historic : Gets _ALL_ Prices going back to 2016 from the Historic everef dataset }
@@ -37,10 +38,11 @@ class UpdatePrices extends ConsoleCommand
         $daysToFetch = $this->days ?? 7;
         $historicFetch = $this->historic ?? false;
         $oldestToNewest = $this->reverse ?? false;
+        $startFrom = $this->startFrom ?? null;
 
         if ($historicFetch) {
             $this->out('Fetching historic prices...');
-            $this->fetchHistoricPrices($oldestToNewest);
+            $this->fetchHistoricPrices($oldestToNewest, $startFrom);
         } else {
             $this->out('Fetching prices for the last ' . $daysToFetch . ' days...');
             $this->fetchPrices($daysToFetch);
@@ -55,10 +57,10 @@ class UpdatePrices extends ConsoleCommand
         }
     }
 
-    private function fetchHistoricPrices(bool $oldestToNewest): void
+    private function fetchHistoricPrices(bool $oldestToNewest, ?string $startFrom): void
     {
         // The earliest date we have market history for
-        $earliestMarketHistory = new \DateTime('2003-10-01');
+        $earliestMarketHistory = $startFrom !== null ? new \DateTime($startFrom) : new \DateTime('2003-10-01');
         $currentDate = new \DateTime();
         $daysSinceOldestDate = $currentDate->diff($earliestMarketHistory)->days;
 
@@ -81,7 +83,8 @@ class UpdatePrices extends ConsoleCommand
         if ($records !== null) {
             $this->out('Inserting prices for ' . $date);
             $generator = $this->marketHistory->generateData($records);
-            $this->marketHistory->insertData($generator);
+            $insertCount = $this->marketHistory->insertData($generator);
+            $this->out('Inserted ' . $insertCount . ' prices for ' . $date);
         }
     }
 }

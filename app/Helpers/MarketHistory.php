@@ -81,9 +81,9 @@ class MarketHistory
         return $bigInsert;
     }
 
-    public function insertData(array $marketHistory): void
+    public function insertData(array $marketHistory): int
     {
         $this->prices->setData($marketHistory);
-        $this->prices->saveMany();
+        return $this->prices->saveMany();
     }
 }
