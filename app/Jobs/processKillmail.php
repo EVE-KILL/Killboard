@@ -45,7 +45,7 @@ class processKillmail extends Jobs
         $parsedKillmail = $this->killmailHelper->parseKillmail($killmail_id, $hash, $war_id);
 
         // Insert the parsed killmail into the killmails collection
-        $this->killmails->setData($parsedKillmail->toArray());
+        $this->killmails->setData($parsedKillmail);
         $this->killmails->save();
     }
 }
