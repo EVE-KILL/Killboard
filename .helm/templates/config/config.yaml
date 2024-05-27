@@ -1,0 +1,39 @@
+# Redis config stored as a configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: evekill-config
+data:
+  config.php: |-
+    <?php
+
+    return [
+      'development' => true,
+      'mongodb' => [
+        'hosts' => [
+            'evekill-mongodb-headless.svc.cluster.local:27017'
+        ]
+      ],
+      'redis' => [
+        'host' =>'redis',
+        'port' => 6379,
+        'password' => '',
+        'database' => 0,
+      ],
+      'twig' => [
+        'debug' => false,
+        'autoReload' => true,
+        'strictVariables' => false,
+        'optimizations' => -1,
+      ],
+      'cloudflare' => [
+        'token' => '',
+      ],
+      'fetcher' => [
+        'user-agent' => 'EK/1.0',
+      ],
+      'esi' => [
+        'user-agent' => 'EK/1.0',
+        'global-rate-limit' => 500,
+      ]
+    ];

@@ -1,5 +1,5 @@
 namespace: evekill
-imagePullPolicy: IfNotPresent
+imagePullPolicy: Always
 
 ingress:
   clusterIssuer: letsencrypt

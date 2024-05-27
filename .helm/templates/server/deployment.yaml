@@ -25,6 +25,7 @@ spec:
             - php
             - bin/console
             - server
+            - --host=0.0.0.0
           image: {{ .Values.server.image }}:{{ .Values.server.version }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           {{- if or (eq .Values.server.resources.limits.enabled true) (eq .Values.server.resources.requests.enabled true) }}

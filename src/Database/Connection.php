@@ -2,13 +2,20 @@
 
 namespace EK\Database;
 
+use EK\Config\Config;
 use MongoDB\Client;
 
 class Connection
 {
+    public function __construct(
+        protected Config $config
+    ) {
+    }
+
     public function getConnectionString(): string
     {
-        return "mongodb://127.0.0.1:27017";
+        $mongoDbHosts = $this->config->get('mongodb/hosts');
+        return "mongodb://" . implode(',', $mongoDbHosts);
     }
 
     public function getConnection(): Client
