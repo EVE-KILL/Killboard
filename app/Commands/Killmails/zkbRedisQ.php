@@ -44,7 +44,10 @@ class zkbRedisQ extends ConsoleCommand
                     $this->killmails->collection->insertOne($this->formatKillmail($kill));
 
                     // Send to the queue
-                    $this->processKillmail->enqueue(['killmail_id' => $kill['package']['killID']]);
+                    $this->processKillmail->enqueue([
+                        'killmail_id' => $kill['package']['killID'],
+                        'hash' => $kill['package']['zkb']['hash']
+                    ]);
                 }
             } catch (\Exception $e) {
                 $this->out('Error: ' . $e->getMessage());
