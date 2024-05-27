@@ -40,9 +40,24 @@ spec:
                 - bin/console
                 - cron
               volumeMounts:
-                - mountPath: /app/resources
-                  name: resources
+                - name: evekill-config
+                  mountPath: /app/config/config.php
+                  subPath: config.php
+                  readOnly: true
+                - mountPath: /app/cache
+                  name: cache
+                - mountPath: /app/logs
+                  name: logs
           volumes:
-            - name: resources
+            - name: evekill-config
+              configMap:
+                name: evekill-config
+                items:
+                  - key: config.php
+                    path: config.php
+            - name: cache
               persistentVolumeClaim:
-                claimName: resources
+                claimName: cache
+            - name: logs
+              persistentVolumeClaim:
+                claimName: logs

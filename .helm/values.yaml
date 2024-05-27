@@ -9,7 +9,7 @@ ingress:
     secretName: evekill-tls
 
 server:
-  image: ghcr.io/eve-kill/eve-kill
+  image: ghcr.io/eve-kill/killboard
   version: latest
   replicas: 1
   hpa:
@@ -27,7 +27,7 @@ server:
       memory: 1024Mi
 
 queue:
-  image: ghcr.io/eve-kill/eve-kill
+  image: ghcr.io/eve-kill/killboard
   version: latest
   replicas: 1
   hpa:
@@ -45,7 +45,7 @@ queue:
       memory: 1024Mi
 
 cronjob:
-  image: ghcr.io/eve-kill/eve-kill
+  image: ghcr.io/eve-kill/killboard
   version: latest
   schedule: "* * * * *"
   restartPolicy: Never
@@ -64,7 +64,7 @@ cronjob:
       memory: 512Mi
 
 redisq:
-  image: ghcr.io/eve-kill/eve-kill
+  image: ghcr.io/eve-kill/killboard
   version: latest
   resources:
     limits:

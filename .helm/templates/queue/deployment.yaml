@@ -1,8 +1,14 @@
 apiVersion: apps/v1
-kind: DaemonSet
+kind: Deployment
 metadata:
   name: queue
 spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: queue
@@ -41,11 +47,21 @@ spec:
             {{- end }}
           {{- end }}
           volumeMounts:
+            - name: evekill-config
+              mountPath: /app/config/config.php
+              subPath: config.php
+              readOnly: true
             - mountPath: /app/cache
               name: cache
             - mountPath: /app/logs
               name: logs
       volumes:
+        - name: evekill-config
+          configMap:
+            name: evekill-config
+            items:
+              - key: config.php
+                path: config.php
         - name: cache
           persistentVolumeClaim:
             claimName: cache

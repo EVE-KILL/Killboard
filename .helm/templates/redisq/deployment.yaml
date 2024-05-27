@@ -46,11 +46,21 @@ spec:
             {{- end }}
           {{- end }}
           volumeMounts:
+            - name: evekill-config
+              mountPath: /app/config/config.php
+              subPath: config.php
+              readOnly: true
             - mountPath: /app/cache
               name: cache
             - mountPath: /app/logs
               name: logs
       volumes:
+        - name: evekill-config
+          configMap:
+            name: evekill-config
+            items:
+              - key: config.php
+                path: config.php
         - name: cache
           persistentVolumeClaim:
             claimName: cache

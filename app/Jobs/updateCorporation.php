@@ -12,7 +12,7 @@ class updateCorporation extends Jobs
         protected \EK\Models\Alliances $alliances,
         protected \EK\Models\Corporations $corporations,
         protected \EK\Models\Characters $characters,
-        protected \EK\models\Stations $stations,
+        protected \EK\Models\Stations $stations,
         protected \EK\Models\Factions $factions,
         protected \EK\ESI\Alliances $esiAlliances,
         protected \EK\ESI\Corporations $esiCorporations,
