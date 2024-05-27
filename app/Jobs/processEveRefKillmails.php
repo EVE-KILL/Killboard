@@ -9,6 +9,8 @@ use MongoDB\BSON\UTCDateTime;
 
 class processEveRefKillmails extends Jobs
 {
+    protected string $defaultQueue = 'low';
+
     public function __construct(
         protected KillmailsESI $killmailsESI,
         protected Redis $redis

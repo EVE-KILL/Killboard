@@ -24,7 +24,22 @@ class Characters extends ESIInterface
 
     public function getCharacterInfo(int $characterID): array
     {
-        $characterData = $this->fetch('/latest/characters/' . $characterID);
+        if ($characterID < 10000) {
+            return [];
+        }
+
+        try {
+            $characterData = $this->fetch('/latest/characters/' . $characterID);
+        } catch (\Exception $e) {
+            $characterData = [
+                'name' => 'Unknown',
+                'corporation_id' => 0,
+                'alliance_id' => 0,
+                'faction_id' => 0,
+                'security_status' => 0,
+                'birthday' => '1970-01-01T00:00:00Z',
+            ];
+        }
         $characterData['character_id'] = $characterID;
 
         ksort($characterData);

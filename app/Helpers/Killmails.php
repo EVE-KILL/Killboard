@@ -155,11 +155,18 @@ class Killmails
 
         $shipData = $this->typeIDs->findOneOrNull(['type_id' => $killmail['ship_type_id']]) ??
             $this->esiTypeIDs->getTypeInfo($killmail['ship_type_id']);
-        $groupData = $this->groupIDs->findOneOrNull(['group_id' => $shipData->get('group_id')]) ??
-            $this->esiGroupIDs->getGroupInfo($shipData->get('group_id'));
+        $groupData = $this->groupIDs->findOneOrNull(['group_id' => $shipData['group_id']]) ??
+            $this->esiGroupIDs->getGroupInfo($shipData['group_id']);
 
         $shipTypeId = $killmail['ship_type_id'] ?? 0;
+        $characterId = $killmail['character_id'] ?? 0;
+        $characterName = $information['character'][$characterId]['name'] ?? '';
+        $corporationId = $killmail['corporation_id'] ?? 0;
+        $corporationName = $information['corporation'][$corporationId]['name'] ?? '';
+        $allianceId = $killmail['alliance_id'] ?? 0;
+        $allianceName = $information['alliance'][$allianceId]['name'] ?? '';
         $factionId = $killmail['faction_id'] ?? 0;
+        $factionName = $information['faction'][$factionId]['name'] ?? '';
 
         $victim = [
             'ship_id' => $shipTypeId,
@@ -168,24 +175,24 @@ class Killmails
             'ship_group_id' => $shipData['group_id'] ?? 0,
             'ship_group_name' => $groupData['name'] ?? '',
             'damage_taken' => $killmail['damage_taken'],
-            'character_id' => $killmail['character_id'] ?? 0,
-            'character_name' => $information['character'][$killmail['character_id']]['name'] ?? '',
-            'character_image_url' => $this->imageServerUrl . '/characters/' . $killmail['character_id'] ?? 0 . '/portrait',
-            'corporation_id' => $killmail['corporation_id'] ?? 0,
-            'corporation_name' => $information['corporation'][$killmail['corporation_id']]['name'] ?? '',
-            'corporation_image_url' => $this->imageServerUrl . '/corporations/' . $killmail['corporation_id'] ?? 0 . '/logo',
-            'alliance_id' => $killmail['alliance_id'] ?? 0,
-            'alliance_name' => $information['alliance'][$killmail['alliance_id']]['name'] ?? '',
-            'alliance_image_url' => $this->imageServerUrl . '/alliances/' . $killmail['alliance_id'] ?? 0 . '/logo',
+            'character_id' => $characterId,
+            'character_name' => $characterName,
+            'character_image_url' => $this->imageServerUrl . '/characters/' . $characterId . '/portrait',
+            'corporation_id' => $corporationId,
+            'corporation_name' => $corporationName,
+            'corporation_image_url' => $this->imageServerUrl . '/corporations/' . $corporationId . '/logo',
+            'alliance_id' => $allianceId,
+            'alliance_name' => $allianceName,
+            'alliance_image_url' => $this->imageServerUrl . '/alliances/' . $allianceId . '/logo',
             'faction_id' => $factionId,
-            'faction_name' => $information['faction'][$factionId]['name'] ?? '',
+            'faction_name' => $factionName,
             'faction_image_url' => $this->imageServerUrl . '/corporations/' . $factionId . '/logo',
         ];
 
-        $this->characters->update(['character_id' => $killmail['character_id']], ['$inc' => ['losses' => 1]]);
-        $this->corporations->update(['corporation_id' => $killmail['corporation_id']], ['$inc' => ['losses' => 1]]);
-        if ($killmail['alliance_id'] > 0) {
-            $this->alliances->update(['alliance_id' => $killmail['alliance_id']], ['$inc' => ['losses' => 1]]);
+        $this->characters->update(['character_id' => $characterId], ['$inc' => ['losses' => 1]]);
+        $this->corporations->update(['corporation_id' => $corporationId], ['$inc' => ['losses' => 1]]);
+        if ($allianceId > 0) {
+            $this->alliances->update(['alliance_id' => $allianceId], ['$inc' => ['losses' => 1]]);
         }
 
         return $victim;
@@ -210,13 +217,20 @@ class Killmails
                 $this->esiTypeIDs->getTypeInfo($weaponTypeID);
             $shipData = $this->typeIDs->findOneOrNull(['type_id' => $shipTypeID]) ??
                 $this->esiTypeIDs->getTypeInfo($shipTypeID);
-            $groupData = $this->groupIDs->findOneOrNull(['group_id' => $shipData->get('group_id')]) ??
-                $this->esiGroupIDs->getGroupInfo($shipData->get('group_id'));
+            $groupData = $this->groupIDs->findOneOrNull(['group_id' => $shipData['group_id']]) ??
+                $this->esiGroupIDs->getGroupInfo($shipData['group_id']);
 
             $shipTypeName = $shipData['name'] ?? '';
             $shipGroupName = $groupData['name'] ?? '';
             $weaponTypeName = $weaponTypeData['name'] ?? '';
             $factionId = $attacker['faction_id'] ?? 0;
+            $factionName = $information['faction'][$factionId]['name'] ?? '';
+            $characterId = $attacker['character_id'] ?? 0;
+            $characterName = $information['character'][$characterId]['name'] ?? '';
+            $corporationId = $attacker['corporation_id'] ?? 0;
+            $corporationName = $information['corporation'][$corporationId]['name'] ?? '';
+            $allianceId = $attacker['alliance_id'] ?? 0;
+            $allianceName = $information['alliance'][$allianceId]['name'] ?? '';
 
             $inner = [
                 'ship_id' => $shipTypeID,
@@ -224,18 +238,18 @@ class Killmails
                 'ship_image_url' => $this->imageServerUrl . "/types/{$shipTypeID}/render",
                 'ship_group_id' => $shipData['group_id'] ?? 0,
                 'ship_group_name' => $shipGroupName,
-                'character_id' => $attacker['character_id'],
-                'character_name' => $information['character'][$attacker['character_id']]['name'] ?? '',
-                'character_image_url' => $this->imageServerUrl . '/characters/' . $attacker['character_id'] . '/portrait',
-                'corporation_id' => $attacker['corporation_id'],
-                'corporation_name' => $information['corporation'][$attacker['corporation_id']]['name'] ?? '',
-                'corporation_image_url' => $this->imageServerUrl . '/corporations/' . $attacker['corporation_id'] . '/logo',
-                'alliance_id' => $attacker['alliance_id'] ?? 0,
-                'alliance_name' => $attacker['alliance_id'] > 0 ? $information['alliance'][$attacker['alliance_id']]['name'] : '',
-                'alliance_image_url' => $this->imageServerUrl . '/alliances/' . $attacker['alliance_id'] ?? 0 . '/logo',
+                'character_id' => $characterId,
+                'character_name' => $characterName,
+                'character_image_url' => $this->imageServerUrl . '/characters/' . $characterId . '/portrait',
+                'corporation_id' => $corporationId,
+                'corporation_name' => $corporationName,
+                'corporation_image_url' => $this->imageServerUrl . '/corporations/' . $corporationId . '/logo',
+                'alliance_id' => $allianceId,
+                'alliance_name' => $allianceName,
+                'alliance_image_url' => $this->imageServerUrl . '/alliances/' . $allianceId . '/logo',
                 'faction_id' => $factionId,
-                'faction_name' => $factionId > 0 ? $information['faction'][$factionId]['name'] : '',
-                'faction_image_url' => $this->imageServerUrl . '/alliances/' . $factionId . '/logo',
+                'faction_name' => $factionName,
+                'faction_image_url' => $this->imageServerUrl . '/corporations/' . $factionId . '/logo',
                 'security_status' => $attacker['security_status'],
                 'damage_done' => $attacker['damage_done'],
                 'final_blow' => $attacker['final_blow'],
@@ -250,34 +264,34 @@ class Killmails
                 $points = ceil($pointValue * $percentDamage);
                 if ($points > 0) {
                     $inner['points'] = $points;
-                    if ($attacker['character_id'] > 0) {
+                    if ($characterId > 0) {
                         $this->characters->update(
-                            ['character_id' => $attacker['character_id']],
+                            ['character_id' => $characterId],
                             ['$inc' => ['points' => $points]]
                         );
                     }
-                    if ($attacker['corporation_id'] > 0) {
+                    if ($corporationId > 0) {
                         $this->corporations->update(
-                            ['corporation_id' => $attacker['corporation_id']],
+                            ['corporation_id' => $corporationId],
                             ['$inc' => ['points' => $points]]
                         );
                     }
-                    if ($attacker['alliance_id'] > 0) {
+                    if ($allianceId > 0) {
                         $this->alliances->update(
-                            ['alliance_id' => $attacker['alliance_id']],
+                            ['alliance_id' => $allianceId],
                             ['$inc' => ['points' => $points]]
                         );
                     }
                 }
             }
-            if ($attacker['character_id'] > 0) {
-                $this->characters->update(['character_id' => $attacker['character_id']], ['$inc' => ['kills' => 1]]);
+            if ($characterId > 0) {
+                $this->characters->update(['character_id' => $characterId], ['$inc' => ['kills' => 1]]);
             }
-            if ($attacker['corporation_id'] > 0) {
-                $this->corporations->update(['corporationID' => $attacker['corporation_id']], ['$inc' => ['kills' => 1]]);
+            if ($corporationId > 0) {
+                $this->corporations->update(['corporationID' => $corporationId], ['$inc' => ['kills' => 1]]);
             }
-            if ($attacker['alliance_id'] > 0) {
-                $this->alliances->update(['allianceID' => $attacker['alliance_id']], ['$inc' => ['kills' => 1]]);
+            if ($allianceId > 0) {
+                $this->alliances->update(['allianceID' => $allianceId], ['$inc' => ['kills' => 1]]);
             }
 
             $return[] = $inner;
@@ -318,7 +332,7 @@ class Killmails
 
             // If it's a container, it has items set inside of it
             if (isset($item['items'])) {
-                $dataForItemCollection['container_items'] = $this->generateItems($item['items'], $killmailTime)->toArray();
+                $dataForItemCollection['container_items'] = $this->generateItems($item['items'], $killmailTime);
             }
 
             $itemCollection[] = $dataForItemCollection;

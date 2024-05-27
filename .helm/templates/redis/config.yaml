@@ -1,0 +1,12 @@
+# Redis config stored as a configmap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: {{ .Values.namespace }}
+data:
+  redis.conf: |-
+    appendonly no
+    save ""
+    maxmemory {{ .Values.redis.maxmemory }}
+    maxmemory-policy {{ .Values.redis.maxmemoryPolicy }}

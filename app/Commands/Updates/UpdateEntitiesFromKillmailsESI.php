@@ -1,0 +1,72 @@
+<?php
+
+namespace EK\Commands\Updates;
+
+use EK\Api\Abstracts\ConsoleCommand;
+use EK\Jobs\updateAlliance;
+use EK\Jobs\updateCharacter;
+use EK\Jobs\updateCorporation;
+use EK\Models\Characters;
+use EK\Models\KillmailsESI;
+
+class UpdateEntitiesFromKillmailsESI extends ConsoleCommand
+{
+    protected string $signature = 'update:entities
+        { --all : All entities }
+    ';
+    protected string $description = 'Gets all the unique character, corporation, alliance from the killmails_esi collection';
+
+    public function __construct(
+        protected KillmailsESI $killmailsESI,
+        protected updateCharacter $updateCharacter,
+        protected updateCorporation $updateCorporation,
+        protected updateAlliance $updateAlliance,
+        ?string $name = null
+    ) {
+        parent::__construct($name);
+    }
+
+    final public function handle(): void
+    {
+        ini_set('memory_limit', '-1');
+        $types = ['character', 'corporation', 'alliance'];
+        foreach($types as $type) {
+            $this->out("Processing {$type}");
+
+            $entities = $this->killmailsESI->aggregate([
+                ['$group' => ['_id' => '$victim.' . $type . '_id']],
+                // Filter out the IDs that exist in the $type .'s' collection
+                ['$lookup' => [
+                    'from' => $type . 's',
+                    'localField' => '_id',
+                    'foreignField' => $type . '_id',
+                    'as' => 'exists'
+                ]],
+                ['$match' => ['exists' => ['$eq' => []]]]
+            ])->map(function($item) {
+                return $item['_id'];
+            })->toArray();
+
+            $this->out("Found " . count($entities) . " unique {$type} entities");
+
+            foreach($entities as $entity) {
+                $this->enqueue($type, $entity);
+            }
+        }
+    }
+
+    private function enqueue(string $type, int $entityId): void
+    {
+        switch ($type) {
+            case 'character':
+                $this->updateCharacter->enqueue(['character_id' => $entityId]);
+                break;
+            case 'corporation':
+                $this->updateCorporation->enqueue(['corporation_id' => $entityId]);
+                break;
+            case 'alliance':
+                $this->updateAlliance->enqueue(['alliance_id' => $entityId]);
+                break;
+        }
+    }
+}

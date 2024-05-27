@@ -11,6 +11,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class validateProxy extends Jobs
 {
+    protected string $defaultQueue = 'high';
     protected array $knownData = [
         '/latest/characters/268946627' => [
             "birthday" => "2005-04-12T18:22:00Z",

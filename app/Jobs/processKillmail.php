@@ -10,6 +10,7 @@ use EK\Redis\Redis;
 
 class processKillmail extends Jobs
 {
+    protected string $defaultQueue = 'killmail';
     public function __construct(
         protected Killmails $killmails,
         protected KillmailsESI $killmailsESI,

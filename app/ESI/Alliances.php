@@ -17,6 +17,10 @@ class Alliances extends ESIInterface
 
     public function getAllianceInfo(int $allianceID): array
     {
+        if ($allianceID < 10000) {
+            return [];
+        }
+
         $allianceData = $this->fetch('/latest/alliances/' . $allianceID);
         $allianceData['alliance_id'] = $allianceID;
 

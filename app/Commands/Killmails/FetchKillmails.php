@@ -10,7 +10,10 @@ use Illuminate\Support\Collection;
 
 class FetchKillmails extends ConsoleCommand
 {
-    public string $signature = 'fetch:killmails';
+    public string $signature = 'fetch:killmails
+        { --fromDate= : The date to start fetching from }
+        { --direction=latest : The direction to fetch from (latest or oldest) }
+    ';
     public string $description = 'Fetch all the killmails available in the zKillboard History API';
 
     public function __construct(
@@ -32,7 +35,11 @@ class FetchKillmails extends ConsoleCommand
             return json_decode(file_get_contents($file), true);
         } else {
             $this->out("Fetching from: https://zkillboard.com/api/history/{$date}.json");
-            $data = $this->fetcher->fetch("https://zkillboard.com/api/history/{$date}.json");
+
+            do {
+                $data = $this->fetcher->fetch("https://zkillboard.com/api/history/{$date}.json");
+            } while (!in_array($data->getStatusCode(), [200, 304]) && usleep(250000));
+
             $kills = $data->getBody()->getContents();
 
             if (!empty($kills)) {
@@ -46,54 +53,65 @@ class FetchKillmails extends ConsoleCommand
 
     final public function handle(): void
     {
-        $processed = 1;
+        ini_set('memory_limit', '-1');
+
+        // Enable garbage collection
+        gc_enable();
+
+        $date = new \DateTime($this->fromDate ?? 'now');
+        $direction = in_array($this->direction, ['latest', 'oldest']) ? $this->direction : 'latest';
+
         $totalKillmails = 0;
+        $killmailsProcessed = 0;
 
         $totalData = $this->fetcher->fetch('https://zkillboard.com/api/history/totals.json') ?? [];
         $totalAvailable = new Collection(json_decode($totalData->getBody()->getContents(), true, flags: \JSON_THROW_ON_ERROR));
-
-
+        $oldestDate = new \DateTime($totalAvailable->keys()->first());
+        $latestDate = new \DateTime($totalAvailable->keys()->last());
         $totalAvailable->each(function ($row) use (&$totalKillmails) {
             $totalKillmails += $row;
         });
 
         $this->out('Iterating over ' . count($totalAvailable) . ' individual days');
 
-        foreach ($totalAvailable->reverse() as $date => $total) {
-            $this->out("Day: {$date} | {$total} kills available");
+        // Iterate over all days from $date either going forward to the latest date from $totalData, or going backwards to the oldest date from $totalData
+        while(true) {
+            $this->processKillmails($date);
 
-            try {
-                $kills = $this->fetchAndCacheData($date);
-            } catch (\Exception $e) {
-                dump($e->getMessage(), 'fetchKillmails');
-                sleep(10);
-                $kills = $this->fetchAndCacheData($date);
-            }
-
-            $batch = [];
-            foreach ($kills as $killId => $hash) {
-                if ($killId === 'day') {
-                    continue;
+            if ($direction === 'latest') {
+                $date->modify('-1 day');
+                if ($date < $oldestDate) {
+                    break;
                 }
-
-                $batch[] = [
-                    'killmail_id' => (int) $killId,
-                    'hash' => $hash
-                ];
-
-                $processed++;
+            } else {
+                $date->modify('+1 day');
+                if ($date > $latestDate) {
+                    break;
+                }
             }
 
-            // Remove duplicates where the hash is the same (Because it seems to contain duplicates for some reason)
-            $batch = collect($batch)->unique('hash')->toArray();
-
-            $this->out("Inserting batch of " . count($batch) . " records, total processed: {$processed}/{$totalKillmails}");
-            // Split the batch into smaller chunks of 1000
-            $chunks = array_chunk($batch, 1000);
-            foreach($chunks as $chunk) {
-                $this->killmails->setData($chunk);
-                $this->killmails->saveMany();
-            }
+            gc_collect_cycles();
         }
+
+    }
+
+    private function processKillmails(\DateTime $date): void
+    {
+        $date = $date->format('Ymd');
+        $killmails = $this->fetchAndCacheData($date);
+        $this->out("Processing {$date} with " . count($killmails) . " killmails");
+
+        $killmailBatch = [];
+        foreach ($killmails as $killmail_id => $hash) {
+            $killmailBatch[] = [
+                'killmail_id' => (int) $killmail_id,
+                'hash' => $hash
+            ];
+        }
+
+        $this->killmails->setData($killmailBatch);
+        $insertCount = $this->killmails->saveMany();
+
+        $this->out("Inserted {$insertCount} killmails");
     }
 }

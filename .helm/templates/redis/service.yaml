@@ -1,0 +1,15 @@
+{{ if eq .Values.redis.enabled true }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    app: redis
+  ports:
+    - name: redis
+      port: 6379
+      protocol: TCP
+      targetPort: 6379
+{{ end }}

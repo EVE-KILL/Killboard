@@ -4,14 +4,17 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Redis\Redis;
+use Illuminate\Support\Collection;
 
 class updateAlliance extends Jobs
 {
+    protected string $defaultQueue = 'alliance';
     public function __construct(
         protected \EK\Models\Alliances $alliances,
         protected \EK\Models\Corporations $corporations,
         protected \EK\Models\Characters $characters,
         protected \EK\Models\Factions $factions,
+        protected \EK\ESI\Alliances $esiAlliances,
         protected \EK\ESI\Corporations $esiCorporations,
         protected \EK\ESI\Characters $esiCharacters,
         protected Redis $redis
@@ -23,7 +26,10 @@ class updateAlliance extends Jobs
     {
         $allianceId = $data['alliance_id'];
 
-        $allianceData = $this->alliances->findOne(['alliance_id' => $allianceId])->toArray();
+        $allianceData = $this->alliances->findOneOrNull(['alliance_id' => $allianceId]) ??
+            $this->esiAlliances->getAllianceInfo($allianceId);
+        $allianceData = $allianceData instanceof Collection ? $allianceData->toArray() : $allianceData;
+
         $creatorCorporationId = $allianceData['creator_corporation_id'];
         $executor_CorporationId = $allianceData['executor_corporation_id'];
         $creatorCharacterId = $allianceData['creator_id'];

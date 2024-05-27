@@ -25,7 +25,13 @@ class KillmailsESI extends Collection
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
         'unique' => [ 'killmail_id' ],
-        'desc' => [ 'last_modified', 'killmail_time' ]
+        'desc' => [
+            'last_modified',
+            'killmail_time',
+            'victim.character_id',
+            'victim.corporation_id',
+            'victim.alliance_id'
+        ]
     ];
 
     public function setData(array $data = []): void

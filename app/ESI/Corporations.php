@@ -17,6 +17,10 @@ class Corporations extends ESIInterface
 
     public function getCorporationInfo(int $corporationId): array
     {
+        if ($corporationId < 10000) {
+            return [];
+        }
+
         $corporationData = $this->fetch('/latest/corporations/' . $corporationId);
         $corporationData['corporation_id'] = $corporationId;
 

@@ -14,7 +14,7 @@ class Queue extends ConsoleCommand
 {
     protected string $signature = 'queue
         { --workers=4 : Number of queue workers }
-        { --queues=high,low,default : Queues to listen on (Default is high,low,default) }
+        { --queues=high,character,corporation,alliance,universe,killmail,low,default : Queues to listen on (Default is high,low,default) }
     ';
     protected string $description = 'Start the queue worker.';
 
@@ -45,7 +45,7 @@ class Queue extends ConsoleCommand
             do {
                 // Listen on multiple queues
                 foreach ($queuesToListenOn as $queue) {
-                    list($queueName, $job) = $client->blpop($queue, 5);
+                    list($queueName, $job) = $client->blpop($queue, 0.25);
 
                     if ($job !== null) {
                         $startTime = microtime(true);

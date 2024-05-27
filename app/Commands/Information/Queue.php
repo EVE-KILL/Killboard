@@ -27,7 +27,16 @@ class Queue extends ConsoleCommand
 
     final public function handle(): void
     {
-        $queuesAvailable = ['high', 'low', 'default'];
+        $queuesAvailable = [
+            'high',
+            'character',
+            'corporation',
+            'alliance',
+            'universe',
+            'killmail',
+            'low',
+            'default'
+        ];
 
         // Get how many items are in the queue
         $queueInformation = [];

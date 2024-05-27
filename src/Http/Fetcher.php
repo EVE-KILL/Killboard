@@ -21,8 +21,8 @@ class Fetcher
                 'User-Agent' => $userAgent
             ],
 
-            // Timeout after 10 seconds
-            'timeout' => 10
+            // Timeout after 30 seconds
+            'timeout' => 30
         ]);
     }
 

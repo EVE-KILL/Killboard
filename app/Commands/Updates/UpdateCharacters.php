@@ -3,6 +3,7 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
+use EK\Jobs\updateCharacter;
 use EK\Models\Characters;
 
 class UpdateCharacters extends ConsoleCommand
@@ -12,21 +13,22 @@ class UpdateCharacters extends ConsoleCommand
 
     public function __construct(
         protected Characters $characters,
+        protected updateCharacter $updateCharacter
     ) {
         parent::__construct();
     }
 
     final public function handle(): void
     {
-        //$updated = ['updated' => ['$lt' => new \MongoDB\BSON\UTCDateTime(strtotime('-7 days') * 1000)]];
-        //$characterCount = $this->characters->count($this->all ? [] : $updated);
-        //$this->out('Characters to update: ' . $characterCount);
-        //$progress = $this->progressBar($characterCount);
-        //foreach ($this->characters->find($this->all ? [] : $updated) as $character) {
-            //$this->charactersQueue->enqueue(['characterID' => $character['characterID']]);
-            //$progress->advance();
-        //}
+        $updated = ['updated' => ['$lt' => new \MongoDB\BSON\UTCDateTime(strtotime('-7 days') * 1000)]];
+        $characterCount = $this->characters->count($this->all ? [] : $updated);
+        $this->out('Characters to update: ' . $characterCount);
+        $progress = $this->progressBar($characterCount);
+        foreach ($this->characters->find($this->all ? [] : $updated) as $character) {
+            $this->updateCharacter->enqueue(['character_id' => $character['character_id']]);
+            $progress->advance();
+        }
 
-        //$progress->finish();
+        $progress->finish();
     }
 }

@@ -1,0 +1,9 @@
+apiVersion: v2
+name: evekill
+description: Helm Chart for EVE-KILL
+version: 0.1.0
+dependencies:
+  - name: mongodb
+    version: "*"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: mongodb.enabled

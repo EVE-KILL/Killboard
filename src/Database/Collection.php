@@ -70,7 +70,7 @@ class Collection
 
     public function find(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
-        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden);
+        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $this->cache->exists($cacheKey);
 
         $result = $cacheTime > 0 && $cacheKeyExists ?
@@ -79,7 +79,7 @@ class Collection
 
         $result = $this->fixTimestamps($result);
 
-        if ($cacheTime > 0 && !$cacheKeyExists) {
+        if ($cacheTime > 0 && !$cacheKeyExists && !empty($result)) {
             $this->cache->set($cacheKey, $result, $cacheTime);
         }
 
@@ -92,7 +92,7 @@ class Collection
 
     public function findOne(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
-        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden);
+        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $this->cache->exists($cacheKey);
 
         $result = $cacheTime > 0 && $cacheKeyExists ?
@@ -101,7 +101,7 @@ class Collection
 
         $result = $this->fixTimestamps($result);
 
-        if ($cacheTime > 0 && !$cacheKeyExists) {
+        if ($cacheTime > 0 && !$cacheKeyExists && !empty($result)) {
             $this->cache->set($cacheKey, $result, $cacheTime);
         }
 
@@ -114,7 +114,7 @@ class Collection
 
     public function findOneOrNull(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): ?IlluminateCollection
     {
-        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden);
+        $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $this->cache->exists($cacheKey);
 
         $result = $cacheTime > 0 && $cacheKeyExists ?
@@ -140,7 +140,7 @@ class Collection
 
     public function aggregate(array $pipeline = [], array $options = [], int $cacheTime = 60): IlluminateCollection
     {
-        $cacheKey = $this->generateCacheKey($pipeline, $options);
+        $cacheKey = $this->generateCacheKey($pipeline, $options, get_class($this));
         $cacheKeyExists = $this->cache->exists($cacheKey);
 
         $result = $cacheKeyExists ?
@@ -149,7 +149,7 @@ class Collection
 
         $result = $this->fixTimestamps($result);
 
-        if ($cacheTime > 0 && !$cacheKeyExists) {
+        if ($cacheTime > 0 && !$cacheKeyExists && !empty($result)) {
             $this->cache->set($cacheKey, $result, $cacheTime);
         }
 
@@ -190,8 +190,7 @@ class Collection
 
     public function setData(array $data = []): void
     {
-        $fieldsToRemove = ['_id', 'last_modified'];
-        $this->data = collect($data)->forget($fieldsToRemove);
+        $this->data = collect($data);
     }
 
     public function getData(): IlluminateCollection
@@ -206,7 +205,7 @@ class Collection
 
         foreach($this->data->all() as $document) {
             // Does it have the required fields?
-            $this->hasRequired($document);
+            $this->hasRequired($document instanceof IlluminateCollection ? $document->all() : $document);
 
             // Do we have an indexField? Otherwise throw an exception
             if (empty($this->indexField)) {
@@ -233,6 +232,10 @@ class Collection
                 $match[$this->indexField] = $this->data->get($this->indexField);
             }
 
+            // Ensure the document doesn't contain last_modified or _id
+            unset($document['last_modified']);
+            unset($document['_id']);
+
             $bulkWrites[] = ['updateOne' => [
                     // Use the unique index fields to match the document
                     $match,
@@ -248,13 +251,14 @@ class Collection
         }
 
         $result = $this->collection->bulkWrite($bulkWrites);
-        return $result->getUpsertedCount() + $result->getInsertedCount();
+        return $result->getUpsertedCount() + $result->getInsertedCount() + $result->getModifiedCount();
     }
 
     public function save(): int
     {
+        $document = $this->data->all();
         // Does it have the required fields?
-        $this->hasRequired($this->data->all());
+        $this->hasRequired($document);
 
         // Do we have an indexField? Otherwise throw an exception
         if (empty($this->indexField)) {
@@ -278,13 +282,17 @@ class Collection
                 }
             }
         } else {
-            $match[$this->indexField] = $this->data->get($this->indexField);
+            $match[$this->indexField] = $document[$this->indexField];
         }
+
+        // Ensure the document doesn't contain last_modified or _id
+        unset($document['last_modified']);
+        unset($document['_id']);
 
         $result = $this->collection->updateOne(
             $match,
             [
-                '$set' => $this->data->all(),
+                '$set' => $document,
                 '$currentDate' => ['last_modified' => true],
             ],
             [
@@ -293,12 +301,6 @@ class Collection
         );
 
         return $result->getUpsertedCount() + $result->getModifiedCount();
-    }
-
-    public function clear(array $data = []): self
-    {
-        $this->data = new IlluminateCollection($data);
-        return $this;
     }
 
     public function hasRequired(array $data): void

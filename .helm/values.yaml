@@ -1,0 +1,40 @@
+namespace: evekill
+imagePullPolicy: IfNotPresent
+
+redis:
+  enabled: true
+  maxmemory: 16384mb
+  maxmemoryPolicy: allkeys-lru
+  resources:
+    limits:
+      enabled: false
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      enabled: true
+      cpu: 500m
+      memory: 512Mi
+
+mongodb:
+  enabled: true
+  architecture: replicaset
+  directoryPerDB: true
+  auth:
+    enabled: false
+  replicaSetName: rs0
+  replicaCount: 3
+  persistence:
+    enabled: true
+    storageClass: longhorn
+    accessMode: ReadWriteOnce
+    size: 250Gi
+  resources:
+    limits:
+      memory: 32Gi
+    requests:
+      cpu: 500m
+      memory: 1024Mi
+  livenessProbe:
+    enabled: false
+  readinessProbe:
+    enabled: true

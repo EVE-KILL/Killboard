@@ -1,0 +1,50 @@
+{{ if eq .Values.redis.enabled true }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+        app.kubernetes.io/name: redis
+        app.kubernetes.io/component: redis
+    spec:
+      serviceAccountName: evekill
+      restartPolicy: Always
+      containers:
+        - name: redis
+          image: library/redis:latest
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+            - name: redis-config
+              mountPath: /etc/redis/redis.conf
+              subPath: redis.conf
+              readOnly: true
+      volumes:
+        - name: redis-data
+          emptyDir:
+            sizeLimit: 512Mi
+        - name: redis-config
+          configMap:
+            name: redis-config
+            items:
+              - key: redis.conf
+                path: redis.conf
+{{ end }}

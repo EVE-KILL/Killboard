@@ -3,9 +3,11 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use Illuminate\Support\Collection;
 
 class updateCorporation extends Jobs
 {
+    protected string $defaultQueue = 'corporation';
     public function __construct(
         protected \EK\Models\Alliances $alliances,
         protected \EK\Models\Corporations $corporations,
@@ -13,6 +15,7 @@ class updateCorporation extends Jobs
         protected \EK\models\Stations $stations,
         protected \EK\Models\Factions $factions,
         protected \EK\ESI\Alliances $esiAlliances,
+        protected \EK\ESI\Corporations $esiCorporations,
         protected \EK\ESI\Characters $esiCharacters,
         protected \EK\ESI\Stations $esiStations,
         protected \EK\Redis\Redis $redis
@@ -24,7 +27,9 @@ class updateCorporation extends Jobs
     {
         $corporationId = $data['corporation_id'];
 
-        $corporationData = $this->corporations->findOne(['corporation_id' => $corporationId])->toArray();
+        $corporationData = $this->corporations->findOneOrNull(['corporation_id' => $corporationId]) ??
+            $this->esiCorporations->getCorporationInfo($corporationId);
+        $corporationData = $corporationData instanceof Collection ? $corporationData->toArray() : $corporationData;
 
         $allianceId = $corporationData['alliance_id'] ?? 0;
         $factionId = $corporationData['faction_id'] ?? 0;

@@ -36,7 +36,7 @@ abstract class ESIInterface
                     return json_decode($response['body'], true);
                 }
 
-                $errorMessage = 'Error getting data from ESI: ' . $response['status'] . ' ' . $response['body'];
+                $errorMessage = 'Error getting data from ESI: ' . $response['status'] . ' ' . $response['body'] . ' ' . $path . ' ' . $requestMethod . ' ' . json_encode($query) . ' ' . $body . ' ' . json_encode($headers) . ' ' . json_encode($options);
                 throw new \RuntimeException();
             } catch (\Exception $e) {
                 $attempts++;

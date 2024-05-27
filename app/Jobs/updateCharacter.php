@@ -3,9 +3,11 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use Illuminate\Support\Collection;
 
 class updateCharacter extends Jobs
 {
+    protected string $defaultQueue = 'character';
     public function __construct(
         protected \EK\Models\Characters $characters,
         protected \EK\Models\Alliances $alliances,
@@ -13,6 +15,7 @@ class updateCharacter extends Jobs
         protected \EK\Models\Factions $factions,
         protected \EK\ESI\Alliances $esiAlliances,
         protected \EK\ESI\Corporations $esiCorporations,
+        protected \EK\ESI\Characters $esiCharacters,
         protected \EK\Redis\Redis $redis
     ) {
         parent::__construct($redis);
@@ -22,10 +25,12 @@ class updateCharacter extends Jobs
     {
         $characterId = $data['character_id'];
 
-        $characterData = $this->characters->findOne(['character_id' => $characterId])->toArray();
+        $characterData = $this->characters->findOneOrNull(['character_id' => $characterId]) ??
+            $this->esiCharacters->getCharacterInfo($characterId);
+        $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
 
         $allianceId = $characterData['alliance_id'] ?? 0;
-        $corporationId = $characterData['corporation_id'];
+        $corporationId = $characterData['corporation_id'] ?? 0;
         $factionId = $characterData['faction_id'] ?? 0;
 
         $allianceData = [];
@@ -36,15 +41,17 @@ class updateCharacter extends Jobs
                 $this->esiAlliances->getAllianceInfo($allianceId);
         }
 
+        if ($corporationId > 0) {
+            $corporationData = $this->corporations->findOneOrNull(['corporation_id' => $corporationId]) ??
+                $this->esiCorporations->getCorporationInfo($corporationId);
+        }
+
         if ($factionId > 0) {
             $factionData = $this->factions->findOne(['faction_id' => $factionId]);
         }
 
-        $corporationData = $this->corporations->findOneOrNull(['corporation_id' => $corporationId]) ??
-            $this->esiCorporations->getCorporationInfo($corporationId);
-
         $characterData['alliance_name'] = $allianceData['name'] ?? '';
-        $characterData['corporation_name'] = $corporationData['name'];
+        $characterData['corporation_name'] = $corporationData['name'] ?? '';
         $characterData['faction_name'] = $factionData['name'] ?? '';
 
         ksort($characterData);
