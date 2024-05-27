@@ -8,10 +8,12 @@ data:
     <?php
 
     return [
-      'development' => true,
+      'development' => true, // Tells Whoops to show errors or not
       'mongodb' => [
         'hosts' => [
-            'evekill-mongodb-headless.svc.cluster.local:27017'
+            'evekill-mongodb-0.evekill-mongodb-headless.evekill.svc.cluster.local:27017',
+            'evekill-mongodb-1.evekill-mongodb-headless.evekill.svc.cluster.local:27017',
+            'evekill-mongodb-2.evekill-mongodb-headless.evekill.svc.cluster.local:27017',
         ]
       ],
       'redis' => [
