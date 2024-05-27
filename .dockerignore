@@ -1,0 +1,9 @@
+!config/.keep
+config/config.php
+!cache/.keep
+cache/*
+!logs/.keep
+logs/*
+.github/
+.helm/
+vendor/

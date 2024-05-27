@@ -6,3 +6,4 @@ vendor/
 cache/*
 logs/*
 logs/exceptions/*
+config/config.php
