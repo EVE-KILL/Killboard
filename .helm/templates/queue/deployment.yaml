@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: queue
+spec:
+  selector:
+    matchLabels:
+      app: queue
+  template:
+    metadata:
+      labels:
+        app: queue
+    spec:
+      serviceAccountName: evekill
+      restartPolicy: Always
+      containers:
+        - name: queue
+          command:
+            - php
+            - bin/console
+            - queue
+            - --workers 4
+          image: {{ .Values.queue.image }}:{{ .Values.queue.version }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          # If either limits or requests are enabled, create a resources block
+          {{- if or (eq .Values.queue.resources.limits.enabled true) (eq .Values.queue.resources.requests.enabled true) }}
+          resources:
+            {{- if eq .Values.queue.resources.limits.enabled true }}
+            limits:
+              {{- if .Values.queue.resources.limits.cpu }}
+              cpu: {{ .Values.queue.resources.limits.cpu }}
+              {{- end }}
+              memory: {{ .Values.queue.resources.limits.memory }}
+            {{- end }}
+            {{- if eq .Values.queue.resources.requests.enabled true }}
+            requests:
+              {{- if .Values.queue.resources.requests.cpu }}
+              cpu: {{ .Values.queue.resources.requests.cpu }}
+              {{- end }}
+              memory: {{ .Values.queue.resources.requests.memory }}
+            {{- end }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /app/cache
+              name: cache
+            - mountPath: /app/logs
+              name: logs
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: cache
+        - name: logs
+          persistentVolumeClaim:
+            claimName: logs

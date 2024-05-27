@@ -10,7 +10,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class MarketHistory extends Cronjob
 {
-    protected string $cronTime = '* * * * *';
+    protected string $cronTime = '0 */12 * * *';
 
     public function __construct(
         protected Prices $prices,
@@ -24,7 +24,7 @@ class MarketHistory extends Cronjob
     {
         $oldestDate = $this->prices->findOne(['date' => ['$exists' => true]], ['sort' => ['date' => -1]])->get('date')->toDateTime();
         $daysSinceOldestDate = (new \DateTime())->diff($oldestDate)->days;
-        $minDays = 14;
+        $minDays = 7;
 
         $daysToFetch = $daysSinceOldestDate < $minDays ? $minDays : $daysSinceOldestDate;
 
@@ -33,8 +33,12 @@ class MarketHistory extends Cronjob
             $year = date('Y', strtotime($date));
 
             $records = $this->marketHistory->getMarketHistory($date);
+            if (!$records) {
+                continue;
+            }
             $generator = $this->marketHistory->generateData($records);
             $this->marketHistory->insertData($generator);
+            $this->logger->info("Inserted market history data for $date");
         }
     }
 }

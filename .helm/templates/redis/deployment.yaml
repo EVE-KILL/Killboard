@@ -1,9 +1,7 @@
-{{ if eq .Values.redis.enabled true }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   strategy:
@@ -27,6 +25,9 @@ spec:
         - name: redis
           image: library/redis:latest
           imagePullPolicy: {{ .Values.imagePullPolicy }}
+          command:
+            - redis-server
+            - /etc/redis/redis.conf
           ports:
             - containerPort: 6379
               protocol: TCP
@@ -47,4 +48,3 @@ spec:
             items:
               - key: redis.conf
                 path: redis.conf
-{{ end }}

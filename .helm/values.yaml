@@ -1,6 +1,81 @@
 namespace: evekill
 imagePullPolicy: IfNotPresent
 
+ingress:
+  clusterIssuer: letsencrypt
+  ingressClass: nginx
+  hostname: eve-kill.com
+  tls:
+    secretName: evekill-tls
+
+server:
+  image: ghcr.io/eve-kill/eve-kill
+  version: latest
+  replicas: 1
+  hpa:
+    minReplicas: 1
+    maxReplicas: 1
+    cpuUtilization: 80 # The amount of CPU that the deployment should be using, before it is scaled up.
+  resources:
+    limits:
+      enabled: false
+      cpu: 2000m
+      memory: 2048Mi
+    requests:
+      enabled: false
+      cpu: 1000m
+      memory: 1024Mi
+
+queue:
+  image: ghcr.io/eve-kill/eve-kill
+  version: latest
+  replicas: 1
+  hpa:
+    minReplicas: 1
+    maxReplicas: 1
+    cpuUtilization: 80 # The amount of CPU that the deployment should be using, before it is scaled up.
+  resources:
+    limits:
+      enabled: false
+      cpu: 2000m
+      memory: 2048Mi
+    requests:
+      enabled: false
+      cpu: 1000m
+      memory: 1024Mi
+
+cronjob:
+  image: ghcr.io/eve-kill/eve-kill
+  version: latest
+  schedule: "* * * * *"
+  restartPolicy: Never
+  startingDeadlineSeconds: 100
+  concurrencyPolicy: Replace
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  resources:
+    limits:
+      enabled: false
+      cpu: 2000m
+      memory: 1024Mi
+    requests:
+      enabled: false
+      cpu: 500m
+      memory: 512Mi
+
+redisq:
+  image: ghcr.io/eve-kill/eve-kill
+  version: latest
+  resources:
+    limits:
+      enabled: false
+      cpu: 2000m
+      memory: 1024Mi
+    requests:
+      enabled: false
+      cpu: 500m
+      memory: 512Mi
+
 redis:
   enabled: true
   maxmemory: 16384mb
