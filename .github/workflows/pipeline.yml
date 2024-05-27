@@ -12,7 +12,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-container:
+  build-push-container:
     runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.ref }}
