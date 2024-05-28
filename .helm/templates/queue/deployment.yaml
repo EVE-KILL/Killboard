@@ -25,7 +25,7 @@ spec:
             - php
             - bin/console
             - queue
-            - --workers 4
+            - --workers=4
           image: {{ .Values.queue.image }}:{{ .Values.queue.version }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           # If either limits or requests are enabled, create a resources block

@@ -14,7 +14,6 @@ class validateProxy extends Jobs
     protected string $defaultQueue = 'high';
     protected array $knownData = [
         '/latest/characters/268946627' => [
-            "birthday" => "2005-04-12T18:22:00Z",
             "bloodline_id" => 1,
             "corporation_id" => 1000167,
             "gender" => "male",
@@ -32,10 +31,10 @@ class validateProxy extends Jobs
 
     public function handle(array $data): void
     {
-        $proxyID = $data['proxyID'];
+        $proxyId = $data['proxy_id'];
 
         // Get the proxy data
-        $proxyData = $this->proxies->findOne(['proxyID' => $proxyID]);
+        $proxyData = $this->proxies->findOne(['proxy_id' => $proxyId]);
 
         // Get the last time it was validated
         $lastValidated = isset($proxyData['lastValidated']) ?
@@ -50,11 +49,12 @@ class validateProxy extends Jobs
         // And then compare the data gotten from the proxy, against the known data
         // If it all checks out, we can validate the proxy and set it into rotation
         foreach($this->knownData as $testPath => $knownData) {
-            $response = $this->esiFetcher->fetch($testPath, proxyId: $proxyID);
+            $response = $this->esiFetcher->fetch($testPath, proxy_id: $proxyId);
+            $body = json_decode($response['body'], true);
             $status = 'inactive';
 
             foreach($knownData as $key => $value) {
-                if ($response[$key] === $value) {
+                if ($body[$key] === $value) {
                     $status = 'active';
                 } else {
                     $status = 'inactive';
@@ -65,11 +65,11 @@ class validateProxy extends Jobs
             $data = array_merge($proxyData->toArray(), [
                 'last_modified' => new UTCDateTime(),
                 'last_validated' => new UTCDateTime(),
-                'status' => 'active'
+                'status' => $status
             ]);
 
             $this->proxies->collection->updateOne(
-                ['proxyID' => $proxyID],
+                ['proxy_id' => $proxyId],
                 [
                     '$set' => $data
                 ]

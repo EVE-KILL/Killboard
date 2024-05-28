@@ -92,7 +92,7 @@ class EsiFetcher
 
         // Use the proxy_id to get the specific proxy to use, or get a random active proxy
         if ($proxy_id !== null) {
-            $proxy = $this->proxies->findOne(['proxy_id' => $proxy_id]);
+            $proxy = $this->proxies->findOne(['proxy_id' => $proxy_id])->toArray();
         } else {
             $proxy = $this->proxies->getRandomProxy();
             if (empty($proxy)) {
