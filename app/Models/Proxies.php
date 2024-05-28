@@ -30,11 +30,8 @@ class Proxies extends Collection
     public function getRandomProxy(): array
     {
         // Select a random proxy from the collection where status is 'active'
-        $proxy = $this->aggregate([
-            ['$match' => ['status' => 'active']],
-            ['$sample' => ['size' => 1]]
-        ]);
+        $proxy = $this->find(['status' => 'active'])->toArray();
 
-        return $proxy->first() ?? [];
+        return $proxy[array_rand($proxy)];
     }
 }

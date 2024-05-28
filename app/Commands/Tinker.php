@@ -3,6 +3,7 @@
 namespace EK\Commands;
 
 use EK\Api\Abstracts\ConsoleCommand;
+use League\Container\Container;
 use Psy\Configuration;
 use Psy\Shell;
 
@@ -13,6 +14,13 @@ class Tinker extends ConsoleCommand
 {
     protected string $signature = 'tinker { --manualPath=/usr/local/share/psysh : The path to store the PHP Manual }';
     protected string $description = 'Tinker with the PHP runtime itself using psysh';
+
+    public function __construct(
+        protected Container $container,
+        ?string $name = null
+    ) {
+        parent::__construct($name);
+    }
 
     final public function handle(): void
     {
