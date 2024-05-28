@@ -103,6 +103,9 @@ class EsiFetcher
         // Consume a token from the global rate limit bucket
         $this->throttleBucket->consume(1);
 
+        // Start time for the request
+        $startTime = microtime(true);
+
         // Get the client with the proxy we just selected
         $client = $this->getClient($proxy);
 
@@ -137,7 +140,9 @@ class EsiFetcher
             $statusCode,
             round(strlen($content) / 1024, 2) . 'KB',
         ), [
-            'proxy_id' => $proxy['proxy_id']
+            'proxy_id' => $proxy['proxy_id'],
+            'status' => $statusCode,
+            'response_time' => microtime(true) - $startTime,
         ]);
 
         // Handle the various status codes
