@@ -38,7 +38,7 @@ class FetchKillmails extends ConsoleCommand
 
             do {
                 $data = $this->fetcher->fetch("https://zkillboard.com/api/history/{$date}.json");
-            } while (!in_array($data->getStatusCode(), [200, 304]) && usleep(250000));
+            } while (!in_array($data->getStatusCode(), [200, 304]));
 
             $kills = $data->getBody()->getContents();
 

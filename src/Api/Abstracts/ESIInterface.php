@@ -42,7 +42,7 @@ abstract class ESIInterface
                 $attempts++;
 
                 // Wait 500ms before trying again
-                usleep(500000);
+                //usleep(500000);
             }
         }
 

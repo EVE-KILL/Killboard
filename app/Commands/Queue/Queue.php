@@ -30,7 +30,10 @@ class Queue extends ConsoleCommand
     {
         $this->out('Queue worker started');
 
+        \OpenSwoole\Runtime::enableCoroutine(true, \OpenSwoole\Runtime::HOOK_ALL);
+
         $pool = new Pool($this->workers);
+        $pool->set(['enable_coroutine' => true]);
         $queuesToListenOn = explode(',', $this->queues);
         $suspend = false;
 

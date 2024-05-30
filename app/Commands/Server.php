@@ -83,6 +83,10 @@ class Server extends ConsoleCommand
             $app->add($middleware);
         }
 
+        // Turn on all hooks
+        \OpenSwoole\Runtime::enableCoroutine(true, \OpenSwoole\Runtime::HOOK_ALL);
+
+        // Instantiate the server
         $server = new \OpenSwoole\Http\Server($this->host, $this->port, \OpenSwoole\Server::POOL_MODE, Constant::SOCK_TCP);
 
         $server->on('start', function ($server) {
