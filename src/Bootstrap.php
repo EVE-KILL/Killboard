@@ -22,7 +22,7 @@ class Bootstrap
         $this->container = $this->container ?? new Container();
 
         // Default to elements being shared
-        $this->container->defaultToShared(true);
+        //$this->container->defaultToShared(true);
 
         // Register the reflection container
         $this->container->delegate(

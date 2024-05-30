@@ -45,16 +45,20 @@ class Queue extends ConsoleCommand
             do {
                 // Listen on multiple queues
                 foreach ($queuesToListenOn as $queue) {
-                    list($queueName, $job) = $client->blpop($queue, 0.25);
+                    list($queueName, $job) = $client->blpop($queue, 0.1);
 
                     if ($job !== null) {
                         $startTime = microtime(true);
                         $jobData = json_decode($job, true);
 
                         try {
-                            $className = $jobData['job'];
-                            $data = $jobData['data'];
-                            $processAfter = $jobData['process_after'];
+                            $className = $jobData['job'] ?? null;
+                            $data = $jobData['data'] ?? [];
+                            $processAfter = $jobData['process_after'] ?? 0;
+
+                            if ($className === null) {
+                                throw new \Exception('Job class not found');
+                            }
 
                             $this->out("Processing job {$className} from {$queueName} ({$workerId})");
 
@@ -71,6 +75,7 @@ class Queue extends ConsoleCommand
 
                             $endTime = microtime(true);
                             $this->out("Job completed in " . ($endTime - $startTime) . " seconds");
+                            unset($instance);
                             continue 2;
                         } catch (\Exception $e) {
                             // If it fails, push it back to the queue it came from
