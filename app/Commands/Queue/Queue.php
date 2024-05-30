@@ -35,17 +35,11 @@ class Queue extends ConsoleCommand
         $pool = new Pool($this->workers);
         $pool->set(['enable_coroutine' => true]);
         $queuesToListenOn = explode(',', $this->queues);
-        $suspend = false;
 
-        pcntl_signal(SIGINT, function () use (&$suspend) {
-            $this->out('SIGINT signal received, stopping workers');
-            $suspend = true;
-        });
-
-        $pool->on('WorkerStart', function ($pool, $workerId) use ($queuesToListenOn, &$suspend) {
+        $pool->on('WorkerStart', function ($pool, $workerId) use ($queuesToListenOn) {
             $this->out("Worker {$workerId} started");
             $client = $this->redis->getClient();
-            do {
+            while(true) {
                 // Listen on multiple queues
                 foreach ($queuesToListenOn as $queue) {
                     list($queueName, $job) = $client->blpop($queue, 0.1);
@@ -88,12 +82,7 @@ class Queue extends ConsoleCommand
                         }
                     }
                 }
-
-                // Check if the signal was received after each job
-                \Safe\pcntl_signal_dispatch();
-            } while($suspend === false);
-
-            $pool->shutdown();
+            }
         });
 
         $pool->on('WorkerStop', function ($pool, $workerId) {
@@ -102,7 +91,8 @@ class Queue extends ConsoleCommand
 
         $pool->set([
             'daemonize' => false,
-            'enable_coroutine' => true
+            'enable_coroutine' => true,
+            'max_request' => 1000,
         ]);
 
         $pool->start();
