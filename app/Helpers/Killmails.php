@@ -288,10 +288,10 @@ class Killmails
                 $this->characters->update(['character_id' => $characterId], ['$inc' => ['kills' => 1]]);
             }
             if ($corporationId > 0) {
-                $this->corporations->update(['corporationID' => $corporationId], ['$inc' => ['kills' => 1]]);
+                $this->corporations->update(['corporation_id' => $corporationId], ['$inc' => ['kills' => 1]]);
             }
             if ($allianceId > 0) {
-                $this->alliances->update(['allianceID' => $allianceId], ['$inc' => ['kills' => 1]]);
+                $this->alliances->update(['alliance_id' => $allianceId], ['$inc' => ['kills' => 1]]);
             }
 
             $return[] = $inner;
