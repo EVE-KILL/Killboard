@@ -4,6 +4,7 @@ namespace EK\Commands\Killmails;
 
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
+use EK\Jobs\processKillmail;
 use EK\Models\Killmails;
 
 class ParseKillmails extends ConsoleCommand
@@ -18,7 +19,7 @@ class ParseKillmails extends ConsoleCommand
         protected ClassLoader $autoloader,
         protected killmails $killmails,
         protected \EK\Helpers\Killmails $killmailsHelper,
-        //protected ParseKillmail $parseKillmailJob
+        protected processKillmail $parseKillmailJob
     ) {
         parent::__construct();
     }
@@ -77,11 +78,14 @@ class ParseKillmails extends ConsoleCommand
 
             $unparsedKillmails = $this->killmails->aggregate([
                 ['$sort' => ['killmail_id' => -1]],
-                ['$project' => ['killmail_id' => 1]]
+                ['$project' => ['killmail_id' => 1, 'hash' => 1]]
             ]);
 
             foreach ($this->getKillmails($unparsedKillmails) as $killmail) {
-                $this->parseKillmailJob->enqueue(['killmail_id' => $killmail['killmail_id']]);
+                $this->parseKillmailJob->enqueue([
+                    'killmail_id' => $killmail['killmail_id'],
+                    'hash' => $killmail['hash']
+                ]);
                 $progressBar->advance();
             }
         }
