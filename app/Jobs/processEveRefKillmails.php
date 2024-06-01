@@ -26,7 +26,7 @@ class processEveRefKillmails extends Jobs
         // Get the filename from the url
         $fileName = basename($url);
         $filePath = BASE_DIR . "/cache/{$fileName}";
-        $extractPath = BASE_DIR . "/cache/" . str_replace('.tar.bz2', '', $fileName);
+        $extractPath = '/tmp/' . str_replace('.tar.bz2', '', $fileName);
 
         if (!file_exists($extractPath)) {
             mkdir($extractPath, 0777, true);
@@ -39,7 +39,7 @@ class processEveRefKillmails extends Jobs
         shell_exec("tar -xjf {$filePath} -C {$extractPath}");
 
         // For each .json in $cacheDir/killmails
-        $files = glob(BASE_DIR . "/cache/" . str_replace('.tar.bz2', '', $fileName) . '/killmails/*.json');
+        $files = glob('/tmp/' . str_replace('.tar.bz2', '', $fileName) . '/killmails/*.json');
         $killmails = [];
 
         foreach ($files as $file) {
