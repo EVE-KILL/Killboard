@@ -39,11 +39,15 @@ class EsiFetcher
 
     public function getClient(array $proxy = []): Client
     {
-        if (!isset($proxy['url'])) {
-            throw new \Exception('Proxy URL not set');
-        }
+        //if (!isset($proxy['url'])) {
+        //    throw new \Exception('Proxy URL not set');
+        //}
 
-        return new Client();
+        return new Client(
+            [
+                'base_uri' => 'https://esi.evetech.net/latest/'
+            ]
+        );
         //return new Client([
         //    'base_uri' => $proxy['url']
         //]);
@@ -142,7 +146,7 @@ class EsiFetcher
             $statusCode,
             round(strlen($content) / 1024, 2) . 'KB',
         ), [
-            'proxy_id' => $proxy['proxy_id'],
+            //'proxy_id' => $proxy['proxy_id'],
             'status' => $statusCode,
             'response_time' => microtime(true) - $startTime,
         ]);
