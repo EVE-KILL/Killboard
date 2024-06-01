@@ -37,15 +37,16 @@ class EsiFetcher
         return new BlockingConsumer($bucket);
     }
 
-    public function getClient(array $proxy): Client
+    public function getClient(array $proxy = []): Client
     {
         if (!isset($proxy['url'])) {
             throw new \Exception('Proxy URL not set');
         }
 
-        return new Client([
-            'base_uri' => $proxy['url']
-        ]);
+        return new Client();
+        //return new Client([
+        //    'base_uri' => $proxy['url']
+        //]);
     }
 
     public function fetch(
@@ -91,14 +92,14 @@ class EsiFetcher
         }
 
         // Use the proxy_id to get the specific proxy to use, or get a random active proxy
-        if ($proxy_id !== null) {
-            $proxy = $this->proxies->findOne(['proxy_id' => $proxy_id])->toArray();
-        } else {
-            $proxy = $this->proxies->getRandomProxy();
-            if (empty($proxy)) {
-                throw new \RuntimeException('No proxies available');
-            }
-        }
+        //if ($proxy_id !== null) {
+        //    $proxy = $this->proxies->findOne(['proxy_id' => $proxy_id])->toArray();
+        //} else {
+        //    $proxy = $this->proxies->getRandomProxy();
+        //    if (empty($proxy)) {
+        //        throw new \RuntimeException('No proxies available');
+        //    }
+        //}
 
         // Consume a token from the global rate limit bucket
         $this->throttleBucket->consume(1);
@@ -107,7 +108,8 @@ class EsiFetcher
         $startTime = microtime(true);
 
         // Get the client with the proxy we just selected
-        $client = $this->getClient($proxy);
+        //$client = $this->getClient($proxy);
+        $client = $this->getClient([]);
 
         // Execute call to ESI via proxy
         $response = $client->request($requestMethod, $path, [
@@ -146,20 +148,20 @@ class EsiFetcher
         ]);
 
         // Handle the various status codes
-        if ($statusCode === 401 && str_contains($content, 'You have been banned')) {
-            // Ban the proxy
-            $this->proxies->collection->updateOne(
-                [
-                    'proxy_id' => $proxy['proxy_id']
-                ], [
-                    'status' => 'banned',
-                    'last_modified' => new \DateTime(),
-                    'last_validated' => new \DateTime()
-                ]
-            );
-
-            // @TODO add a notification system to alert discord a proxy got banned
-        }
+        //if ($statusCode === 401 && str_contains($content, 'You have been banned')) {
+        //    // Ban the proxy
+        //    $this->proxies->collection->updateOne(
+        //        [
+        //            'proxy_id' => $proxy['proxy_id']
+        //        ], [
+        //            'status' => 'banned',
+        //            'last_modified' => new \DateTime(),
+        //            'last_validated' => new \DateTime()
+        //        ]
+        //    );
+        //
+        //    // @TODO add a notification system to alert discord a proxy got banned
+        //}
 
         if (!in_array($statusCode, [200, 304])) {
             $this->throttleBucket->consume($this->config->get('esi/global-rate-limit', 500) / 4);

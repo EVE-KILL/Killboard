@@ -76,9 +76,10 @@ class ParseKillmails extends ConsoleCommand
             $progressBar->setMessage('Enqueueing killmails');
             $progressBar->start();
 
-            $unparsedKillmails = $this->killmails->aggregate([
+            $unparsedKillmails = $this->killmails->collection->aggregate([
+                ['$match' => ['killtime' => ['$exists' => false]]],
                 ['$sort' => ['killmail_id' => -1]],
-                ['$project' => ['killmail_id' => 1, 'hash' => 1]]
+                ['$project' => ['killmail_id' => 1, 'hash' => 1]],
             ]);
 
             foreach ($this->getKillmails($unparsedKillmails) as $killmail) {
