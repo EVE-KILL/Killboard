@@ -20,6 +20,7 @@ class processEveRefKillmails extends Jobs
 
     public function handle(array $data): void
     {
+        ini_set('memory_limit', '-1');
         $url = $data['url'];
 
         // Get the filename from the url
