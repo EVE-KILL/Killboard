@@ -31,7 +31,7 @@ class Killmails extends Collection
             'victim.alliance_id', 'victim.faction_id', 'victim.ship_id', 'victim.ship_group_id', 'victim.damage_taken',
             'attackers.character_id', 'attackers.corporation_id', 'attackers.alliance_id', 'attackers.faction_id',
             'attackers.ship_id', 'attackers.ship_group_id', 'attackers.final_blow', 'attackers.weapon_id',
-            'attackers.damageDone', 'items.type_id', 'items.group_id',
+            'attackers.damageDone', 'items.type_id', 'items.group_id', 'war_id',
             [ 'attackers.character_id', 'kill_time' ],
             [ 'attackers.corporation_id', 'kill_time' ],
             [ 'attackers.alliance_id', 'kill_time' ],

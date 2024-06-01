@@ -1,0 +1,41 @@
+<?php
+
+namespace EK\Commands\Updates;
+
+use EK\Api\Abstracts\ConsoleCommand;
+use EK\ESI\Wars;
+use EK\Jobs\processWar;
+use EK\Jobs\updateAlliance;
+use EK\Models\Alliances;
+
+class UpdateWars extends ConsoleCommand
+{
+    protected string $signature = 'update:wars';
+    protected string $description = 'Updates all the wars available';
+
+    public function __construct(
+        protected Wars $esiWars,
+        protected processWar $warJob
+    ) {
+        parent::__construct();
+    }
+
+    final public function handle(): void
+    {
+        $wars = [];
+        $minWarId = 999999999;
+        $resultCount = 0;
+
+        do {
+            $warData = $this->esiWars->getWars($minWarId);
+            $data = json_decode($warData['body'], true);
+            $resultCount = count($data);
+            $wars = array_unique(array_merge($wars, $data));
+            $minWarId = !empty($data) ? min($data) : $minWarId;
+        } while ($resultCount >= 2000);
+
+        foreach ($wars as $warId) {
+            $this->warJob->enqueue(['war_id' => $warId]);
+        }
+    }
+}

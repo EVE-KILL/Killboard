@@ -20,7 +20,7 @@ class Console
 
     public function run()
     {
-        //ini_set('memory_limit', '-1');
+        ini_set('memory_limit', '-1');
 
         // Load the console if no console is given
         $this->console = $this->console ?? new Application($this->consoleName, $this->version);
