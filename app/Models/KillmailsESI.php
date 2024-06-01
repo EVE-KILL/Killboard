@@ -47,4 +47,9 @@ class KillmailsESI extends Collection
         ksort($data);
         parent::setData($data);
     }
+
+    public function setDataMany(array $data = []): void
+    {
+        parent::setData($data);
+    }
 }

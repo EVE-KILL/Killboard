@@ -23,13 +23,10 @@ class BackfillESI extends ConsoleCommand
     final public function handle(): void
     {
         // Get the total count of killmails to insert
-        $totals = json_decode(file_get_contents('https://data.everef.net/killmails/totals.json'));
+        $totals = collect(json_decode(file_get_contents('https://data.everef.net/killmails/totals.json')));
 
-        $totalCount = collect($totals)->sum();
-        $totalDays = collect($totals)->count();
-        $earliestDate = \DateTime::createFromFormat('Ymd', collect($totals)->keys()->first());
-        $latestDate = \DateTime::createFromFormat('Ymd', collect($totals)->keys()->last());
-
+        $totalCount = $totals->sum();
+        $totalDays = $totals->count();
         $direction = $this->direction === 'forward' ? 'forward' : 'reverse';
 
         $this->out('Total killmails to import: ' . $totalCount);
@@ -38,33 +35,22 @@ class BackfillESI extends ConsoleCommand
         $this->out('Importing killmails from EVERef..');
         $progressBar = $this->progressBar($totalCount);
 
-        if ($direction === 'forward') {
-            $date = $earliestDate;
-            do {
-                $year = date('Y', $date->getTimestamp());
-                $month = date('m', $date->getTimestamp());
-                $day = date('d', $date->getTimestamp());
+        $dates = $direction === 'forward' ? $totals->keys() : $totals->keys()->reverse();
 
-                $url = "https://data.everef.net/killmails/{$year}/killmails-{$year}-{$month}-{$day}.tar.bz2";
-                $this->processEveRefKillmails->enqueue(['url' => $url]);
-                $progressBar->advance();
+        foreach($dates as $date) {
+            $formattedDate = \DateTime::createFromFormat('Ymd', $date);
+            $year = $formattedDate->format('Y');
+            $month = $formattedDate->format('m');
+            $day = $formattedDate->format('d');
 
-                $date->modify('+1 day');
-            } while($date->format('Ymd') <= $latestDate->format('Ymd'));
-        } else {
-            $date = $latestDate;
-            do {
-                $year = date('Y', $date->getTimestamp());
-                $month = date('m', $date->getTimestamp());
-                $day = date('d', $date->getTimestamp());
+            $url = "https://data.everef.net/killmails/{$year}/killmails-{$year}-{$month}-{$day}.tar.bz2";
+            $this->processEveRefKillmails->enqueue(['url' => $url]);
 
-                $url = "https://data.everef.net/killmails/{$year}/killmails-{$year}-{$month}-{$day}.tar.bz2";
-                $this->processEveRefKillmails->enqueue(['url' => $url]);
-                $progressBar->advance();
-
-                $date->modify('-1 day');
-            } while($date->format('Ymd') >= $earliestDate->format('Ymd'));
+            $progressBar->advance($totals[$date]);
         }
+
+        $progressBar->finish();
+
 
     }
 }

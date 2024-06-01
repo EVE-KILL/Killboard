@@ -56,7 +56,7 @@ class processEveRefKillmails extends Jobs
         }
 
         // Insert the killmails into the db
-        $this->killmailsESI->setData($killmails);
+        $this->killmailsESI->setDataMany($killmails);
         $this->killmailsESI->saveMany();
 
         // Clean up the bz2
