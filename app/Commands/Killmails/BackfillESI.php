@@ -8,7 +8,9 @@ use EK\Jobs\processEveRefKillmails;
 
 class BackfillESI extends ConsoleCommand
 {
-    public string $signature = 'import:killmails-everef';
+    public string $signature = 'import:killmails-everef
+    { --direction=forward : The direction to import killmails from (forward or reverse) }
+    ';
     public string $description = 'Import all ESI killmails known by EVERef';
 
     public function __construct(
@@ -22,37 +24,47 @@ class BackfillESI extends ConsoleCommand
     {
         // Get the total count of killmails to insert
         $totals = json_decode(file_get_contents('https://data.everef.net/killmails/totals.json'));
+
         $totalCount = collect($totals)->sum();
         $totalDays = collect($totals)->count();
+        $earliestDate = \DateTime::createFromFormat('Ymd', collect($totals)->keys()->first());
+        $latestDate = \DateTime::createFromFormat('Ymd', collect($totals)->keys()->last());
 
-        // Get the first date in the totals list
-        $earliestTime = collect($totals)->keys()->first();
+        $direction = $this->direction === 'forward' ? 'forward' : 'reverse';
 
-        // Create a DateTime object from the earliest time
-        $date = \DateTime::createFromFormat('Ymd', $earliestTime);
+        $this->out('Total killmails to import: ' . $totalCount);
+        $this->out('Total days to import: ' . $totalDays);
 
-        $this->out("Total killmails: {$totalCount}");
-        $this->out("Earliest time: {$earliestTime}");
+        $this->out('Importing killmails from EVERef..');
+        $progressBar = $this->progressBar($totalCount);
 
-        // Create a progress bar
-        $progress = $this->progressBar($totalDays);
+        if ($direction === 'forward') {
+            $date = $earliestDate;
+            do {
+                $year = date('Y', $date->getTimestamp());
+                $month = date('m', $date->getTimestamp());
+                $day = date('d', $date->getTimestamp());
 
-        do {
-            $year = $date->format('Y');
-            $month = $date->format('m');
-            $day = $date->format('d');
+                $url = "https://data.everef.net/killmails/{$year}/killmails-{$year}-{$month}-{$day}.tar.bz2";
+                $this->processEveRefKillmails->enqueue(['url' => $url]);
+                $progressBar->advance();
 
-            $url = "https://data.everef.net/killmails/{$year}/killmails-{$year}-{$month}-{$day}.tar.bz2";
+                $date->modify('+1 day');
+            } while($date->format('Ymd') <= $latestDate->format('Ymd'));
+        } else {
+            $date = $latestDate;
+            do {
+                $year = date('Y', $date->getTimestamp());
+                $month = date('m', $date->getTimestamp());
+                $day = date('d', $date->getTimestamp());
 
-            // Send the job to the queue
-            $this->processEveRefKillmails->enqueue(['url' => $url]);
-            $progress->advance();
+                $url = "https://data.everef.net/killmails/{$year}/killmails-{$year}-{$month}-{$day}.tar.bz2";
+                $this->processEveRefKillmails->enqueue(['url' => $url]);
+                $progressBar->advance();
 
-            // Increment the date
-            $date->modify('+1 day');
+                $date->modify('-1 day');
+            } while($date->format('Ymd') >= $earliestDate->format('Ymd'));
+        }
 
-        } while ($date->format('Y') <= date('Y')); // Modify this condition as needed
-
-        $progress->finish();
     }
 }
