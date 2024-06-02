@@ -4,6 +4,7 @@ namespace EK\Meilisearch;
 
 use EK\Config\Config;
 use Meilisearch\Client;
+use Meilisearch\Search\SearchResult;
 
 class Meilisearch
 {
@@ -21,7 +22,7 @@ class Meilisearch
         $index->addDocuments($documents);
     }
 
-    public function search(string $query, string $indexName = 'search'): array
+    public function search(string $query, string $indexName = 'search'): SearchResult
     {
         $index = $this->client->index($indexName);
         return $index->search($query);

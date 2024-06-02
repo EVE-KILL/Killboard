@@ -3,6 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 
 class updateCharacter extends Jobs
@@ -16,6 +17,7 @@ class updateCharacter extends Jobs
         protected \EK\ESI\Alliances $esiAlliances,
         protected \EK\ESI\Corporations $esiCorporations,
         protected \EK\ESI\Characters $esiCharacters,
+        protected Meilisearch $meilisearch,
         protected \EK\Redis\Redis $redis
     ) {
         parent::__construct($redis);
@@ -58,5 +60,12 @@ class updateCharacter extends Jobs
 
         $this->characters->setData($characterData);
         $this->characters->save();
+
+        // Push the alliance to the search index
+        $this->meilisearch->addDocuments([
+            'id' => $characterData['character_id'],
+            'name' => $characterData['name'],
+            'type' => 'character'
+        ]);
     }
 }

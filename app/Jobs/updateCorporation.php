@@ -3,6 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 
 class updateCorporation extends Jobs
@@ -18,6 +19,7 @@ class updateCorporation extends Jobs
         protected \EK\ESI\Corporations $esiCorporations,
         protected \EK\ESI\Characters $esiCharacters,
         protected \EK\ESI\Stations $esiStations,
+        protected Meilisearch $meilisearch,
         protected \EK\Redis\Redis $redis
     ) {
         parent::__construct($redis);
@@ -77,5 +79,12 @@ class updateCorporation extends Jobs
 
         $this->corporations->setData($corporationData);
         $this->corporations->save();
+
+        // Push the corporation to the search index
+        $this->meilisearch->addDocuments([
+            'id' => $corporationData['corporation_id'],
+            'name' => $corporationData['name'],
+            'type' => 'corporation'
+        ]);
     }
 }

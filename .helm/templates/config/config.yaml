@@ -22,6 +22,9 @@ data:
         'password' => '',
         'database' => 0,
       ],
+      'meilisearch' => [
+        'host' => 'meilisearch.evekill.svc.cluster.local:7700'
+      ],
       'twig' => [
         'debug' => false,
         'autoReload' => true,

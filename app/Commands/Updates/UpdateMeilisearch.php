@@ -37,7 +37,7 @@ class UpdateMeilisearch extends ConsoleCommand
         $documents = [];
         foreach($alliances as $alliance) {
             $documents[] = [
-                'id' => $alliance['_id'],
+                'id' => $alliance['alliance_id'],
                 'name' => $alliance['name'],
                 'type' => 'alliance'
             ];
@@ -45,7 +45,7 @@ class UpdateMeilisearch extends ConsoleCommand
 
         foreach($corporations as $corporation) {
             $documents[] = [
-                'id' => $corporation['_id'],
+                'id' => $corporation['corporation_id'],
                 'name' => $corporation['name'],
                 'type' => 'corporation'
             ];
@@ -53,13 +53,23 @@ class UpdateMeilisearch extends ConsoleCommand
 
         foreach($characters as $character) {
             $documents[] = [
-                'id' => $character['_id'],
+                'id' => $character['character_id'],
                 'name' => $character['name'],
                 'type' => 'character'
             ];
         }
 
         $this->out('Adding ' . count($documents) . ' documents to Meilisearch');
-        $this->meilisearch->addDocuments($documents);
+
+        // Insert in chunks of 1000
+        $progressBar = $this->progressBar(count($documents));
+        $chunkedDocuments = array_chunk($documents, 1000);
+
+        foreach($chunkedDocuments as $chunk) {
+            $this->meilisearch->addDocuments($chunk);
+            $progressBar->advance(count($chunk));
+        }
+
+        $progressBar->finish();
     }
 }
