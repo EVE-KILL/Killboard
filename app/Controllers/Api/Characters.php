@@ -23,7 +23,7 @@ class Characters extends Controller
     {
         $cacheKey = 'characters.all';
         if ($this->cache->exists($cacheKey)) {
-            return $this->json($this->cache->get($cacheKey), 3600);
+            return $this->json($this->cache->get($cacheKey), $this->cache->getTTL($cacheKey));
         }
 
         $characters = $this->characters->find([], ['projection' => ['character_id' => 1]], 300)->map(function ($character) {
