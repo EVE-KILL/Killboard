@@ -102,7 +102,7 @@ mongodb:
     enabled: true
     storageClass: longhorn
     accessMode: ReadWriteOnce
-    size: 250Gi
+    size: 400Gi
   resources:
     limits:
       memory: 32Gi
