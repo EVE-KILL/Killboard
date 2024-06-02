@@ -11,6 +11,7 @@ class Alliances extends Controller
 {
     public function __construct(
         protected \EK\Models\Alliances $alliances,
+        protected \EK\Models\Corporations $corporations,
         protected \EK\Models\Characters $characters,
         protected \EK\Helpers\TopLists $topLists,
         protected Twig $twig
@@ -54,6 +55,27 @@ class Alliances extends Controller
         }
 
         $members = $this->characters->find(['alliance_id' => $alliance_id], ['projection' => ['_id' => 0]], 300)->map(function ($member) {
+            return $this->cleanupTimestamps($member);
+        });
+
+        return $this->json($members->toArray(), 300);
+    }
+
+    #[RouteAttribute('/alliances/{alliance_id}/members/characters[/]', ['GET'])]
+    public function characters(int $alliance_id): ResponseInterface
+    {
+        return $this->members($alliance_id);
+    }
+
+    #[RouteAttribute('/alliances/{alliance_id}/members/corporations[/]', ['GET'])]
+    public function corporations(int $alliance_id): ResponseInterface
+    {
+        $alliance = $this->alliances->findOne(['alliance_id' => $alliance_id]);
+        if ($alliance->isEmpty()) {
+            return $this->json(['error' => 'Alliance not found'], 300);
+        }
+
+        $members = $this->corporations->find(['alliance_id' => $alliance_id], ['projection' => ['_id' => 0]], 300)->map(function ($member) {
             return $this->cleanupTimestamps($member);
         });
 
