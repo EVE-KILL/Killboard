@@ -40,12 +40,25 @@
         "poliander/cron": "*",
         "siriusphp/validation": "^4.0",
         "league/csv": "*",
-        "marcj/topsort": "*"
+        "marcj/topsort": "*",
+        "cweagans/composer-patches": "^1.7"
     },
     "require-dev": {
         "zeuxisoo/slim-whoops": "*",
         "openswoole/ide-helper": "*",
         "symfony/var-dumper": "*",
         "roave/security-advisories": "dev-latest"
+    },
+    "config": {
+        "allow-plugins": {
+            "cweagans/composer-patches": true
+        }
+    },
+    "extra": {
+        "patches": {
+            "openswoole/core": {
+                "Fixes the 100kB chunking from 100MB to actually 100kB": "patches/swoole_chunk_size.patch"
+            }
+        }
     }
 }

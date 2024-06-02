@@ -1,0 +1,11 @@
+--- a/vendor/openswoole/core/src/Psr/Response.php
++++ b/vendor/openswoole/core/src/Psr/Response.php
+@@ -14,7 +14,7 @@
+ 
+ class Response extends Message implements ResponseInterface
+ {
+-    public const CHUNK_SIZE = 100 * 1024 * 1024; // 100K
++    public const CHUNK_SIZE = 100 * 1024; // 100K
+ 
+     private $statusCode;
+ 
