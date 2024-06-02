@@ -86,7 +86,7 @@ COPY . /app
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Install packages
-RUN composer install
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction --no-suggest --optimize-autoloader --apcu-autoloader
 
 # Copy in the module configurations
 COPY .docker/config/modules/* /etc/php/${PHP_VERSION}/mods-available/
