@@ -12,6 +12,7 @@ class Characters extends Controller
     public function __construct(
         protected \EK\Models\Characters $characters,
         protected \EK\Helpers\TopLists $topLists,
+        protected \EK\Cache\Cache $cache,
         protected Twig $twig
     ) {
         parent::__construct($twig);
@@ -20,11 +21,18 @@ class Characters extends Controller
     #[RouteAttribute('/characters[/]', ['GET'])]
     public function all(): ResponseInterface
     {
+        $cacheKey = 'characters.all';
+        if ($this->cache->exists($cacheKey)) {
+            return $this->json($this->cache->get($cacheKey), 3600);
+        }
+
         $characters = $this->characters->find([], ['projection' => ['character_id' => 1]], 300)->map(function ($character) {
             return $character['character_id'];
         });
 
-        return $this->json($characters->toArray(), 300);
+        $this->cache->set($cacheKey, $characters->toArray(), 3600);
+
+        return $this->json($characters->toArray(), 3600);
     }
 
     #[RouteAttribute('/characters/count[/]', ['GET'])]

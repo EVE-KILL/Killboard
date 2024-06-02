@@ -123,7 +123,7 @@ class Server extends ConsoleCommand
             'enable_coroutine' => true,
             'http_compression' => true,
             'http_compression_level' => 1,
-            'buffer_output_size' => 4 * 1024 * 1024
+            'buffer_output_size' => 16 * 1024 * 1024, // 16MB
         ];
 
         $this->tableOneRow($serverSettings);
