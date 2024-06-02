@@ -362,4 +362,22 @@ abstract class Controller
     {
         return $this->response->withAddedHeader('Location', $url);
     }
+
+    protected function cleanupTimestamps(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            if ($value instanceof UTCDateTime) {
+                $data[$key] = $value->toDateTime()->format('Y-m-d H:i:s');
+            }
+
+            // Sometimes we don't get an array with proper instances, sometimes we get an array with $date and $numberLong nested under each other
+            if (is_array($value)) {
+                if (is_array($value['$date']) && isset($value['$date']['$numberLong'])) {
+                    $data[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->format('Y-m-d H:i:s');
+                }
+            }
+        }
+
+        return $data;
+    }
 }

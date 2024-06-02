@@ -50,7 +50,7 @@ class TopLists
         foreach($data as $key => $character) {
             $data[$key] = array_merge(
                 ['count' => $character['count']],
-                $this->characters->findOne(['character_id' => $character['id']])->toArray()
+                $this->characters->findOne(['character_id' => $character['id']], ['projection' => ['_id' => 0, 'last_modified' => 0]])->toArray()
             );
         }
 
@@ -88,7 +88,7 @@ class TopLists
         foreach($data as $key => $corporation) {
             $data[$key] = array_merge(
                 ['count' => $corporation['count']],
-                $this->corporations->findOne(['corporation_id' => $corporation['id']])->toArray()
+                $this->corporations->findOne(['corporation_id' => $corporation['id']], ['projection' => ['_id' => 0, 'last_modified' => 0]])->toArray()
             );
         }
 
@@ -126,7 +126,7 @@ class TopLists
         foreach($data as $key => $alliance) {
             $data[$key] = array_merge(
                 ['count' => $alliance['count']],
-                $this->alliances->findOne(['alliance_id' => $alliance['id']])->toArray()
+                $this->alliances->findOne(['alliance_id' => $alliance['id']], ['projection' => ['_id' => 0, 'last_modified' => 0]])->toArray()
             );
         }
 
@@ -163,7 +163,7 @@ class TopLists
         foreach($data as $key => $ship) {
             $data[$key] = array_merge(
                 ['count' => $ship['count']],
-                $this->typeIDs->findOne(['type_id' => $ship['id']])->toArray()
+                $this->typeIDs->findOne(['type_id' => $ship['id']], ['projection' => ['_id' => 0, 'last_modified' => 0, 'dogma_effects' => 0, 'dogma_attributes' => 0]])->toArray()
             );
         }
 
@@ -200,7 +200,7 @@ class TopLists
         foreach($data as $key => $system) {
             $data[$key] = array_merge(
                 ['count' => $system['count']],
-                $this->solarSystems->findOne(['system_id' => $system['id']])->toArray()
+                $this->solarSystems->findOne(['system_id' => $system['id']], ['projection' => ['_id' => 0, 'last_modified' => 0, 'planets' => 0]])->toArray()
             );
         }
 
@@ -237,7 +237,7 @@ class TopLists
         foreach($data as $key => $region) {
             $data[$key] = array_merge(
                 ['count' => $region['count']],
-                $this->regions->findOne(['region_id' => $region['id']])->toArray()
+                $this->regions->findOne(['region_id' => $region['id']], ['projection' => ['_id' => 0, 'last_modified' => 0]])->toArray()
             );
         }
 
