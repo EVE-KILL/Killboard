@@ -41,7 +41,8 @@
         "siriusphp/validation": "^4.0",
         "league/csv": "*",
         "marcj/topsort": "*",
-        "cweagans/composer-patches": "^1.7"
+        "cweagans/composer-patches": "^1.7",
+        "meilisearch/meilisearch-php": "^1.8"
     },
     "require-dev": {
         "zeuxisoo/slim-whoops": "*",
@@ -51,7 +52,8 @@
     },
     "config": {
         "allow-plugins": {
-            "cweagans/composer-patches": true
+            "cweagans/composer-patches": true,
+            "php-http/discovery": true
         }
     },
     "extra": {

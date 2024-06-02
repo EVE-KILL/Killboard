@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meilisearch
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: meilisearch
+  template:
+    metadata:
+      labels:
+        app: meilisearch
+        app.kubernetes.io/name: meilisearch
+        app.kubernetes.io/component: meilisearch
+    spec:
+      serviceAccountName: evekill
+      restartPolicy: Always
+      containers:
+        - name: meilisearch
+          image: getmeili/meilisearch:latest
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          env:
+            - name: MEILI_ENV
+              value: development
+          ports:
+            - containerPort: 7700
+              protocol: TCP
+          volumeMounts:
+            - name: meilisearch
+              mountPath: /meili_data
+      volumes:
+        - name: meilisearch
+          persistentVolumeClaim:
+            claimName: meilisearch
