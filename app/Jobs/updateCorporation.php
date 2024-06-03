@@ -3,7 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Http\Fetcher;
+use EK\Http\EveWhoFetcher;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 
@@ -21,7 +21,7 @@ class updateCorporation extends Jobs
         protected \EK\ESI\Characters $esiCharacters,
         protected \EK\ESI\Stations $esiStations,
         protected Meilisearch $meilisearch,
-        protected Fetcher $fetcher,
+        protected EveWhoFetcher $fetcher,
         protected updateCharacter $updateCharacter,
         protected \EK\Redis\Redis $redis
     ) {

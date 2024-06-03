@@ -35,13 +35,11 @@ class Fetcher
         array $options = []
     ): ResponseInterface
     {
-        $response = $this->client->request($requestMethod, $path, [
+        return $this->client->request($requestMethod, $path, [
             'query' => $query,
             'body' => $body,
             'headers' => $headers,
             'options' => $options
         ]);
-
-        return $response;
     }
 }
