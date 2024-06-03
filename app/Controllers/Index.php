@@ -17,25 +17,9 @@ class Index extends Controller
         parent::__construct($twig);
     }
 
-    #[RouteAttribute('/test.json', ['GET'])]
-    public function testjson(): ResponseInterface
+    #[RouteAttribute('/', ['GET'])]
+    public function index(): ResponseInterface
     {
-        throw new \Exception('test');
-        return $this->json(['message' => 'Hello World!']);
-    }
-
-    #[RouteAttribute('/test', ['GET'])]
-    public function test(): ResponseInterface
-    {
-        //$killmail = $this->killmails->findOne();
-        // Get a random killmail
-        $killmail = $this->killmails->getRandom();
-        return $this->json($killmail->toArray() ?? []);
-    }
-
-    #[RouteAttribute('/[{name}]', ['GET'])]
-    public function index(?string $name = 'Moo'): ResponseInterface
-    {
-        return $this->render('index.twig', ['name' => $name]);
+        return $this->render('pages/frontpage.twig');
     }
 }

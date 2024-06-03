@@ -1,0 +1,40 @@
+{% extends "base.twig" %}
+{% set pageTitle = "Battles" %}
+{% set title = "Battles" %}
+{% set fullWidth = false %}
+{% set showDate = false %}
+
+{% block meta %}
+{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sco.js/1.1.0/css/scojs.min.css" integrity="sha256-X/S6bj3zqdJs4v8yl2OWoacgvpGRmjUJtjdreo3aEi8=" crossorigin="anonymous" />
+{% endblock %}
+
+{% block js %}
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-dateFormat/1.0/jquery.dateFormat.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/sco.js/1.1.0/js/sco.tooltip.js" integrity="sha256-D1cXcX/XEN8qmiAakjJ3d54Qq93MF4+WtdsTkSFZuLo=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="/js/battles.js"></script>
+    <script>
+        var newURL = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        var splitsies = newURL.split("/");
+        var page = 1;
+        cnt = 0;
+        splitsies.forEach(function(part){
+            if(part == "page") {
+                page = splitsies[cnt + 1];
+            }
+            cnt++;
+        });
+
+        generateBattles(page);
+    </script>
+{% endblock %}
+
+{% block rightContent %}
+    <div id="battles"></div>
+{% endblock %}
+
+{% block leftContent %}
+    {% include "/global/navigationMenu.twig" %}
+{% endblock %}

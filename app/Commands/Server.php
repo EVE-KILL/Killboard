@@ -124,6 +124,10 @@ class Server extends ConsoleCommand
             'http_compression' => true,
             'http_compression_level' => 1,
             'buffer_output_size' => 4 * 1024 * 1024, // 4MB
+
+            // Handle static files
+            'enable_static_handler' => true,
+            'document_root' => BASE_DIR . '/public',
         ];
 
         $this->tableOneRow($serverSettings);

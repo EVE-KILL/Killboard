@@ -1,0 +1,18 @@
+<div class="kltable">
+    {% if showDate %}
+        <div class="kb-date-header">{{ "now"|date("l, F jS") }}</div><br />
+    {% endif %}
+
+    <table id="killlist" class="kb-table kb-kl-table kb-table-rows">
+        <thead>
+        <tr class="kb-table-header">
+            <td class="kl-shiptype" colspan="2">Ship type</td>
+            <td class="kl-victim" colspan="2">Victim</td>
+            <td class="kl-finalblow" colspan="2">Final blow</td>
+            <td class="kl-location">Location</td>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>

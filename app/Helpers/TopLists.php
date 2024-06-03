@@ -21,19 +21,20 @@ class TopLists
 
     }
 
-    public function topCharacters(string $attackerType, int $typeId, int $limit = 10): array
+    public function topCharacters(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
-        $cacheKey = $this->cache->generateKey('top_characters', $attackerType, $typeId, $limit);
+        $cacheKey = $this->cache->generateKey('top_characters', $attackerType, $typeId, $limit, $days);
         if ($this->cache->exists($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
 
-        $data = $this->killmails->aggregate([
+        $timeCoverage = time() - ($days * 86400);
+        $aggregateQuery = $attackerType && $typeId ? [
             [
                 '$match' => [
                     "attackers.{$attackerType}" => $typeId,
                     'attackers.character_id' => ['$ne' => 0],
-                    'kill_time' => ['$gte' => new UTCDateTime((time() - 2592000) * 1000)]
+                    'kill_time' => ['$gte' => new UTCDateTime($timeCoverage * 1000)]
                 ]
             ],
             ['$unwind' => '$attackers'],
@@ -42,7 +43,20 @@ class TopLists
             ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
             ['$sort' => ['count' => -1]],
             ['$limit' => $limit],
-        ], [
+        ] : [
+            [
+                '$match' => [
+                    'attackers.character_id' => ['$ne' => 0],
+                    'kill_time' => ['$gte' => new UTCDateTime($timeCoverage * 1000)]
+                ]
+            ],
+            ['$unwind' => '$attackers'],
+            ['$group' => ['_id' => '$attackers.character_id', 'count' => ['$sum' => 1]]],
+            ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
+            ['$sort' => ['count' => -1]],
+            ['$limit' => $limit],
+        ];
+        $data = $this->killmails->aggregate($aggregateQuery, [
             'allowDiskUse' => true,
             'maxTimeMS' => 30000
         ]);
@@ -54,24 +68,24 @@ class TopLists
             );
         }
 
-        $this->cache->set($cacheKey, $data, 300);
+        $this->cache->set($cacheKey, $data, $cacheTime);
 
         return $data->toArray();
     }
 
-    public function topCorporations(string $attackerType, int $typeId, int $limit = 10): array
+    public function topCorporations(?string $attackerType = null, int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
-        $cacheKey = $this->cache->generateKey('top_corporations', $attackerType, $typeId, $limit);
+        $cacheKey = $this->cache->generateKey('top_corporations', $attackerType, $typeId, $limit, $days);
         if ($this->cache->exists($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
 
-        $data = $this->killmails->aggregate([
+        $aggregateQuery = $attackerType && $typeId ? [
             [
                 '$match' => [
                     "attackers.{$attackerType}" => $typeId,
                     'attackers.corporation_id' => ['$ne' => 0],
-                    'kill_time' => ['$gte' => new UTCDateTime((time() - 2592000) * 1000)]
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
                 ]
             ],
             ['$unwind' => '$attackers'],
@@ -80,7 +94,21 @@ class TopLists
             ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
             ['$sort' => ['count' => -1]],
             ['$limit' => $limit],
-        ], [
+        ] : [
+            [
+                '$match' => [
+                    'attackers.corporation_id' => ['$ne' => 0],
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
+                ]
+            ],
+            ['$unwind' => '$attackers'],
+            ['$group' => ['_id' => '$attackers.corporation_id', 'count' => ['$sum' => 1]]],
+            ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
+            ['$sort' => ['count' => -1]],
+            ['$limit' => $limit],
+        ];
+
+        $data = $this->killmails->aggregate($aggregateQuery, [
             'allowDiskUse' => true,
             'maxTimeMS' => 30000
         ]);
@@ -92,24 +120,24 @@ class TopLists
             );
         }
 
-        $this->cache->set($cacheKey, $data, 300);
+        $this->cache->set($cacheKey, $data, $cacheTime);
 
         return $data->toArray();
     }
 
-    public function topAlliances(string $attackerType, int $typeId, int $limit = 10): array
+    public function topAlliances(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
-        $cacheKey = $this->cache->generateKey('top_alliances', $attackerType, $typeId, $limit);
+        $cacheKey = $this->cache->generateKey('top_alliances', $attackerType, $typeId, $limit, $days);
         if ($this->cache->exists($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
 
-        $data = $this->killmails->aggregate([
+        $aggregateQuery = $attackerType && $typeId ? [
             [
                 '$match' => [
                     "attackers.{$attackerType}" => $typeId,
                     'attackers.alliance_id' => ['$ne' => 0],
-                    'kill_time' => ['$gte' => new UTCDateTime((time() - 2592000) * 1000)]
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
                 ]
             ],
             ['$unwind' => '$attackers'],
@@ -118,7 +146,21 @@ class TopLists
             ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
             ['$sort' => ['count' => -1]],
             ['$limit' => $limit],
-        ], [
+        ] : [
+            [
+                '$match' => [
+                    'attackers.alliance_id' => ['$ne' => 0],
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
+                ]
+            ],
+            ['$unwind' => '$attackers'],
+            ['$group' => ['_id' => '$attackers.alliance_id', 'count' => ['$sum' => 1]]],
+            ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
+            ['$sort' => ['count' => -1]],
+            ['$limit' => $limit],
+        ];
+
+        $data = $this->killmails->aggregate($aggregateQuery, [
             'allowDiskUse' => true,
             'maxTimeMS' => 30000
         ]);
@@ -130,23 +172,23 @@ class TopLists
             );
         }
 
-        $this->cache->set($cacheKey, $data, 300);
+        $this->cache->set($cacheKey, $data, $cacheTime);
 
         return $data->toArray();
     }
 
-    public function topShips(string $attackerType, int $typeId, int $limit = 10): array
+    public function topShips(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
-        $cacheKey = $this->cache->generateKey('top_ships', $attackerType, $typeId, $limit);
+        $cacheKey = $this->cache->generateKey('top_ships', $attackerType, $typeId, $limit, $days);
         if ($this->cache->exists($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
 
-        $data = $this->killmails->aggregate([
+        $aggregateQuery = $attackerType && $typeId ? [
             [
                 '$match' => [
                     "attackers.{$attackerType}" => $typeId,
-                    'kill_time' => ['$gte' => new UTCDateTime((time() - 2592000) * 1000)]
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
                 ]
             ],
             ['$unwind' => '$attackers'],
@@ -155,7 +197,20 @@ class TopLists
             ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
             ['$sort' => ['count' => -1]],
             ['$limit' => $limit],
-        ], [
+        ] : [
+            [
+                '$match' => [
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
+                ]
+            ],
+            ['$unwind' => '$attackers'],
+            ['$group' => ['_id' => '$attackers.ship_id', 'count' => ['$sum' => 1]]],
+            ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
+            ['$sort' => ['count' => -1]],
+            ['$limit' => $limit],
+        ];
+
+        $data = $this->killmails->aggregate($aggregateQuery, [
             'allowDiskUse' => true,
             'maxTimeMS' => 30000
         ]);
@@ -167,23 +222,23 @@ class TopLists
             );
         }
 
-        $this->cache->set($cacheKey, $data, 300);
+        $this->cache->set($cacheKey, $data, $cacheTime);
 
         return $data->toArray();
     }
 
-    public function topSystems(string $attackerType, int $typeId, int $limit = 10): array
+    public function topSystems(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
-        $cacheKey = $this->cache->generateKey('top_systems', $attackerType, $typeId, $limit);
+        $cacheKey = $this->cache->generateKey('top_systems', $attackerType, $typeId, $limit, $days);
         if ($this->cache->exists($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
 
-        $data = $this->killmails->aggregate([
+        $aggregateQuery = $attackerType && $typeId ? [
             [
                 '$match' => [
                     "attackers.{$attackerType}" => $typeId,
-                    'kill_time' => ['$gte' => new UTCDateTime((time() - 2592000) * 1000)]
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
                 ]
             ],
             ['$unwind' => '$attackers'],
@@ -192,7 +247,20 @@ class TopLists
             ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
             ['$sort' => ['count' => -1]],
             ['$limit' => $limit],
-        ], [
+        ] : [
+            [
+                '$match' => [
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
+                ]
+            ],
+            ['$unwind' => '$attackers'],
+            ['$group' => ['_id' => '$system_id', 'count' => ['$sum' => 1]]],
+            ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
+            ['$sort' => ['count' => -1]],
+            ['$limit' => $limit],
+        ];
+
+        $data = $this->killmails->aggregate($aggregateQuery, [
             'allowDiskUse' => true,
             'maxTimeMS' => 30000
         ]);
@@ -204,23 +272,23 @@ class TopLists
             );
         }
 
-        $this->cache->set($cacheKey, $data, 300);
+        $this->cache->set($cacheKey, $data, $cacheTime);
 
         return $data->toArray();
     }
 
-    public function topRegions(string $attackerType, int $typeId, int $limit = 10): array
+    public function topRegions(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
-        $cacheKey = $this->cache->generateKey('top_regions', $attackerType, $typeId, $limit);
+        $cacheKey = $this->cache->generateKey('top_regions', $attackerType, $typeId, $limit, $days);
         if ($this->cache->exists($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
 
-        $data = $this->killmails->aggregate([
+        $aggregateQuery = $attackerType && $typeId ? [
             [
                 '$match' => [
                     "attackers.{$attackerType}" => $typeId,
-                    'kill_time' => ['$gte' => new UTCDateTime((time() - 2592000) * 1000)]
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
                 ]
             ],
             ['$unwind' => '$attackers'],
@@ -229,7 +297,20 @@ class TopLists
             ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
             ['$sort' => ['count' => -1]],
             ['$limit' => $limit],
-        ], [
+        ] : [
+            [
+                '$match' => [
+                    'kill_time' => ['$gte' => new UTCDateTime((time() - $days * 86400) * 1000)]
+                ]
+            ],
+            ['$unwind' => '$attackers'],
+            ['$group' => ['_id' => '$region_id', 'count' => ['$sum' => 1]]],
+            ['$project' => ['_id' => 0, 'count' => '$count', 'id' => '$_id']],
+            ['$sort' => ['count' => -1]],
+            ['$limit' => $limit],
+        ];
+
+        $data = $this->killmails->aggregate($aggregateQuery, [
             'allowDiskUse' => true,
             'maxTimeMS' => 30000
         ]);
@@ -241,7 +322,7 @@ class TopLists
             );
         }
 
-        $this->cache->set($cacheKey, $data, 300);
+        $this->cache->set($cacheKey, $data, $cacheTime);
 
         return $data->toArray();
     }
