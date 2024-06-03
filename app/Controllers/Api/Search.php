@@ -36,6 +36,11 @@ class Search extends Controller
             return $this->json(['error' => 'No data provided'], 300);
         }
 
+        // Error if there are more than 1000 IDs
+        if (count($postData) > 1000) {
+            return $this->json(['error' => 'Too many search params provided'], 300);
+        }
+
         $results = [];
         foreach ($postData as $searchParam) {
             $result = $this->meilisearch->search($searchParam);
