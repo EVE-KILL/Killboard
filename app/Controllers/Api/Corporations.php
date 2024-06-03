@@ -45,6 +45,26 @@ class Corporations extends Controller
         return $this->json($this->cleanupTimestamps($corporation->toArray()), 300);
     }
 
+    #[RouteAttribute('/corporations[/]', ['POST'])]
+    public function corporations(): ResponseInterface
+    {
+        $postData = json_validate($this->getBody()) ? json_decode($this->getBody(), true) : [];
+        if (empty($postData)) {
+            return $this->json(['error' => 'No data provided'], 300);
+        }
+
+        // Error if there are more than 1000 IDs
+        if (count($postData) > 1000) {
+            return $this->json(['error' => 'Too many IDs provided'], 300);
+        }
+
+        $corporations = $this->corporations->find(['corporation_id' => ['$in' => $postData]], ['projection' => ['_id' => 0], 'limit' => 1000])->map(function ($corporation) {
+            return $this->cleanupTimestamps($corporation);
+        });
+
+        return $this->json($corporations->toArray(), 300);
+    }
+
     #[RouteAttribute('/corporations/{corporation_id}/members[/]', ['GET'])]
     public function members(int $corporation_id): ResponseInterface
     {

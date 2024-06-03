@@ -46,6 +46,27 @@ class Alliances extends Controller
         return $this->json($this->cleanupTimestamps($alliance->toArray()), 300);
     }
 
+    #[RouteAttribute('/alliances[/]', ['POST'])]
+    public function alliances(): ResponseInterface
+    {
+        $postData = json_validate($this->getBody()) ? json_decode($this->getBody(), true) : [];
+        if (empty($postData)) {
+            return $this->json(['error' => 'No data provided'], 300);
+        }
+
+        // Error if there are more than 1000 IDs
+        if (count($postData) > 1000) {
+            return $this->json(['error' => 'Too many IDs provided'], 300);
+        }
+
+        // Find all the alliances in the post data
+        $alliances = $this->alliances->find(['alliance_id' => ['$in' => $postData]], ['projection' => ['_id' => 0]], 300)->map(function ($alliance) {
+            return $this->cleanupTimestamps($alliance);
+        });
+
+        return $this->json($this->cleanupTimestamps($alliances->toArray()), 300);
+    }
+
     #[RouteAttribute('/alliances/{alliance_id}/members[/]', ['GET'])]
     public function members(int $alliance_id): ResponseInterface
     {

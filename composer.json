@@ -42,7 +42,8 @@
         "league/csv": "*",
         "marcj/topsort": "*",
         "cweagans/composer-patches": "^1.7",
-        "meilisearch/meilisearch-php": "^1.8"
+        "meilisearch/meilisearch-php": "^1.8",
+        "adbario/php-dot-notation": "^3.3"
     },
     "require-dev": {
         "zeuxisoo/slim-whoops": "*",

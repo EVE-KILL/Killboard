@@ -27,4 +27,24 @@ class Search extends Controller
             'hits' => $results->getHits(),
         ]);
     }
+
+    #[RouteAttribute('/search[/]', ['POST'])]
+    public function searchPost(): ResponseInterface
+    {
+        $postData = json_validate($this->getBody()) ? json_decode($this->getBody(), true) : [];
+        if (empty($postData)) {
+            return $this->json(['error' => 'No data provided'], 300);
+        }
+
+        $results = [];
+        foreach ($postData as $searchParam) {
+            $result = $this->meilisearch->search($searchParam);
+            $results[] = [
+                'query' => $result->getQuery(),
+                'hits' => $result->getHits(),
+            ];
+        }
+
+        return $this->json($results);
+    }
 }

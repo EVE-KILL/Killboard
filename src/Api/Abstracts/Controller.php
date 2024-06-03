@@ -372,7 +372,7 @@ abstract class Controller
 
             // Sometimes we don't get an array with proper instances, sometimes we get an array with $date and $numberLong nested under each other
             if (is_array($value)) {
-                if (is_array($value['$date']) && isset($value['$date']['$numberLong'])) {
+                if (isset($value['$date']['$numberLong']) && is_array($value['$date'])) {
                     $data[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->format('Y-m-d H:i:s');
                 }
             }
