@@ -40,5 +40,14 @@ data:
       'esi' => [
         'user-agent' => 'EK/1.0',
         'global-rate-limit' => 500,
+      ],
+      'evewho' => [
+        'user-agent' => 'EK/1.0',
+        'rate-limit' => 10,
+      ],
+      'webhooks' => [
+        'comments' => '{{ .Values.config.webhooks.comments }}',
+        'esi-errors' => '{{ .Values.config.webhooks.esi_errors }}',
+        'errors' => '{{ .Values.config.webhooks.errors }}',
       ]
     ];
