@@ -3,6 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Http\Fetcher;
 use EK\Meilisearch\Meilisearch;
 use EK\Redis\Redis;
 use Illuminate\Support\Collection;
@@ -19,6 +20,8 @@ class updateAlliance extends Jobs
         protected \EK\ESI\Corporations $esiCorporations,
         protected \EK\ESI\Characters $esiCharacters,
         protected Meilisearch $meilisearch,
+        protected Fetcher $fetcher,
+        protected updateCharacter $updateCharacter,
         protected Redis $redis
     ) {
         parent::__construct($redis);
@@ -67,5 +70,18 @@ class updateAlliance extends Jobs
             'name' => $allianceData['name'],
             'type' => 'alliance'
         ]);
+
+        // Get the list of characters in the alliance from evewho
+        $url = "https://evewho.com/api/allilist/{$allianceId}";
+        $request = $this->fetcher->fetch($url);
+        $data = $request->getBody()->getContents();
+
+        $decoded = json_validate($data) ? json_decode($data, true) : [];
+        $characters = $decoded['characters'] ?? [];
+
+        foreach($characters as $character) {
+                $this->characters->findOneOrNull(['character_id' => $character['character_id']]) ??
+                $this->updateCharacter->enqueue(['character_id' => $character['character_id']]);
+        }
     }
 }
