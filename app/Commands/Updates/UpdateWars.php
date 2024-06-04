@@ -14,6 +14,7 @@ class UpdateWars extends ConsoleCommand
     protected string $description = 'Updates all the wars available';
 
     public function __construct(
+        protected \EK\Models\Wars $wars,
         protected Wars $esiWars,
         protected processWar $warJob
     ) {
@@ -35,7 +36,10 @@ class UpdateWars extends ConsoleCommand
         } while ($resultCount >= 2000);
 
         foreach ($wars as $warId) {
-            $this->warJob->enqueue(['war_id' => $warId]);
+            if ($this->wars->findOneOrNull(['war_id' => $warId]) === null) {
+                $this->out("War $warId not found, enqueuing for processing");
+                $this->warJob->enqueue(['war_id' => $warId]);
+            }
         }
     }
 }

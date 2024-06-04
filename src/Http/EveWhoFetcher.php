@@ -21,7 +21,7 @@ class EveWhoFetcher
         protected Config $config
     ) {
         // Rate Limit
-        $rateLimit = $this->config->get('evewho/rate-limit', 50);
+        $rateLimit = $this->config->get('evewho/rate-limit', 10);
 
         // Throttle Bucket
         $this->throttleBucket = $this->generateBucket($rateLimit, 'evewho');
