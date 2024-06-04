@@ -26,35 +26,35 @@ class Stats extends Controller
     #[RouteAttribute('/stats/top10characters[/{allTime:[0-1]}]', ['GET'])]
     public function top10Characters(int $allTime = 0): ResponseInterface
     {
-        $data = $this->topLists->topCharacters(days: $allTime ? $this->daysSinceEarlyDays : 30, cacheTime: 3600);
+        $data = $this->topLists->topCharacters(days: $allTime ? $this->daysSinceEarlyDays : 7, cacheTime: 3600);
         return $this->json($data, 3600);
     }
 
     #[RouteAttribute('/stats/top10corporations[/{allTime:[0-1]}]', ['GET'])]
     public function top10Corporations(int $allTime = 0): ResponseInterface
     {
-        $data = $this->topLists->topCorporations(days: $allTime ? $this->daysSinceEarlyDays : 30, cacheTime: 3600);
+        $data = $this->topLists->topCorporations(days: $allTime ? $this->daysSinceEarlyDays : 7, cacheTime: 3600);
         return $this->json($data, 3600);
     }
 
     #[RouteAttribute('/stats/top10alliances[/{allTime:[0-1]}]', ['GET'])]
     public function top10Alliances(int $allTime = 0): ResponseInterface
     {
-        $data = $this->topLists->topAlliances(days: $allTime ? $this->daysSinceEarlyDays : 30, cacheTime: 3600);
+        $data = $this->topLists->topAlliances(days: $allTime ? $this->daysSinceEarlyDays : 7, cacheTime: 3600);
         return $this->json($data, 3600);
     }
 
     #[RouteAttribute('/stats/top10solarsystems[/{allTime:[0-1]}]', ['GET'])]
     public function top10Systems(int $allTime = 0): ResponseInterface
     {
-        $data = $this->topLists->topSystems(days: $allTime ? $this->daysSinceEarlyDays : 30, cacheTime: 3600);
+        $data = $this->topLists->topSystems(days: $allTime ? $this->daysSinceEarlyDays : 7, cacheTime: 3600);
         return $this->json($data, 3600);
     }
 
     #[RouteAttribute('/stats/top10regions[/{allTime:[0-1]}]', ['GET'])]
     public function top10Regions(int $allTime = 0): ResponseInterface
     {
-        $data = $this->topLists->topRegions(days: $allTime ? $this->daysSinceEarlyDays : 30, cacheTime: 3600);
+        $data = $this->topLists->topRegions(days: $allTime ? $this->daysSinceEarlyDays : 7, cacheTime: 3600);
         return $this->json($data, 3600);
     }
 
