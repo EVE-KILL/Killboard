@@ -2,9 +2,7 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-
-class TypeIDs extends ESIInterface
+class TypeIDs
 {
     public function __construct(
         protected \EK\Models\TypeIDs $typeIDs,
@@ -15,7 +13,7 @@ class TypeIDs extends ESIInterface
 
     public function getTypeInfo(int $type_id): ?array
     {
-        $result = $this->fetch('/latest/universe/types/' . $type_id);
+        $result = $this->esiFetcher->fetch('/latest/universe/types/' . $type_id);
         ksort($result);
         $this->typeIDs->setData($result);
         $this->typeIDs->save();

@@ -2,9 +2,7 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-
-class Regions extends ESIInterface
+class Regions
 {
     public function __construct(
         protected \EK\Models\Regions $regions,
@@ -15,7 +13,7 @@ class Regions extends ESIInterface
 
     public function getRegion(int $region_id): array
     {
-        $result = $this->fetch('/latest/universe/regions/' . $region_id);
+        $result = $this->esiFetcher->fetch('/latest/universe/regions/' . $region_id);
         ksort($result);
         $this->regions->setData($result);
         $this->regions->save();

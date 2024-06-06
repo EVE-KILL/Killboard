@@ -2,9 +2,7 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-
-class Constellations extends ESIInterface
+class Constellations
 {
     public function __construct(
         protected \EK\Models\Constellations $constellations,
@@ -17,7 +15,7 @@ class Constellations extends ESIInterface
 
     public function getConstellation(int $constellation_id): array
     {
-        $constellationData = $this->fetch('/latest/universe/constellations/' . $constellation_id);
+        $constellationData = $this->esiFetcher->fetch('/latest/universe/constellations/' . $constellation_id);
         $regionData = $this->regions->findOneOrNull(['region_id' => $constellationData['region_id']]) ??
             $this->esiRegions->getRegion($constellationData['region_id']);
 

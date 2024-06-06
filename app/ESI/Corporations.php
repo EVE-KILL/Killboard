@@ -2,10 +2,9 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
 use League\Container\Container;
 
-class Corporations extends ESIInterface
+class Corporations
 {
     public function __construct(
         protected Container $container,
@@ -21,7 +20,7 @@ class Corporations extends ESIInterface
             return [];
         }
 
-        $corporationData = $this->fetch('/latest/corporations/' . $corporationId);
+        $corporationData = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId);
         $corporationData['corporation_id'] = $corporationId;
 
         ksort($corporationData);

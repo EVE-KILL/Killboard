@@ -2,9 +2,7 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-
-class Wars extends ESIInterface
+class Wars
 {
     public function __construct(
 

@@ -2,9 +2,7 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-
-class GroupIDs extends ESIInterface
+class GroupIDs
 {
     public function __construct(
         protected \EK\Models\GroupIDs $groupIDs,
@@ -15,7 +13,7 @@ class GroupIDs extends ESIInterface
 
     public function getGroupInfo(int $group_id): ?array
     {
-        $result = $this->fetch('/latest/universe/groups/' . $group_id);
+        $result = $this->esiFetcher->fetch('/latest/universe/groups/' . $group_id);
         ksort($result);
         $this->groupIDs->setData($result);
         $this->groupIDs->save();

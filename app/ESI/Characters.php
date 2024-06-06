@@ -2,10 +2,9 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
 use League\Container\Container;
 
-class Characters extends ESIInterface
+class Characters
 {
     // received response code 404 and error [GET:404] https://esi.evetech.net/v5/characters/1623529470/
     // {"error":"Character has been deleted!"}
@@ -29,7 +28,7 @@ class Characters extends ESIInterface
         }
 
         try {
-            $characterData = $this->fetch('/latest/characters/' . $characterID);
+            $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterID);
         } catch (\Exception $e) {
             $characterData = [
                 'name' => 'Unknown',

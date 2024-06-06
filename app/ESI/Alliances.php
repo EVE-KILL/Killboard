@@ -2,10 +2,9 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
 use League\Container\Container;
 
-class Alliances extends ESIInterface
+class Alliances
 {
     public function __construct(
         protected Container $container,
@@ -21,7 +20,7 @@ class Alliances extends ESIInterface
             return [];
         }
 
-        $allianceData = $this->fetch('/latest/alliances/' . $allianceID);
+        $allianceData = $this->esiFetcher->fetch('/latest/alliances/' . $allianceID);
         $allianceData['alliance_id'] = $allianceID;
 
         ksort($allianceData);

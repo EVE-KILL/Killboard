@@ -2,9 +2,7 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-
-class Stations extends ESIInterface
+class Stations
 {
     public function __construct(
         protected \EK\Models\Stations $stations,
@@ -15,7 +13,7 @@ class Stations extends ESIInterface
 
     public function getStationInfo(int $stationID): array
     {
-        $stationData = $this->fetch('/latest/universe/stations/' . $stationID);
+        $stationData = $this->esiFetcher->fetch('/latest/universe/stations/' . $stationID);
 
         ksort($stationData);
 

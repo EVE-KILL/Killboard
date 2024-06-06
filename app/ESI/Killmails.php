@@ -2,13 +2,15 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-use Illuminate\Support\Collection;
-
-class Killmails extends ESIInterface
+class Killmails
 {
+    public function __construct(
+        protected EsiFetcher $esiFetcher
+    ) {
+    }
+
     public function getKillmail(int $killmail_id, string $hash): array
     {
-        return $this->fetch('/latest/killmails/' . $killmail_id . '/' . $hash);
+        return $this->esiFetcher->fetch('/latest/killmails/' . $killmail_id . '/' . $hash);
     }
 }

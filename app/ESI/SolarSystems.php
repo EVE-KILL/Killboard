@@ -2,9 +2,7 @@
 
 namespace EK\ESI;
 
-use EK\Api\Abstracts\ESIInterface;
-
-class SolarSystems extends ESIInterface
+class SolarSystems
 {
     public function __construct(
         protected \EK\Models\SolarSystems $solarSystems,
@@ -19,7 +17,7 @@ class SolarSystems extends ESIInterface
 
     public function getSolarSystem(int $system_id): array
     {
-        $systemData = $this->fetch('/latest/universe/systems/' . $system_id);
+        $systemData = $this->esiFetcher->fetch('/latest/universe/systems/' . $system_id);
         $constellationData = $this->constellations->findOneOrNull(['constellation_id' => $systemData['constellation_id']]) ??
             $this->esiConstellations->getConstellation($systemData['constellation_id']);
         $regionData = $this->regions->findOneOrNull(['region_id' => $constellationData['region_id']]) ??
