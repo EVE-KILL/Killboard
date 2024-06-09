@@ -11,7 +11,6 @@ class Corporations
         protected \EK\Models\Corporations $corporations,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getCorporationInfo(int $corporationId): array

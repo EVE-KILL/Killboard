@@ -8,7 +8,6 @@ class Regions
         protected \EK\Models\Regions $regions,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getRegion(int $region_id): array

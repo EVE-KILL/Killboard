@@ -8,7 +8,6 @@ class Wars
 
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getWars(int $maxWarId): array

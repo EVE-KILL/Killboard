@@ -8,7 +8,6 @@ class GroupIDs
         protected \EK\Models\GroupIDs $groupIDs,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getGroupInfo(int $group_id): ?array

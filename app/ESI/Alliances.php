@@ -11,7 +11,6 @@ class Alliances
         protected \EK\Models\Alliances $alliances,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getAllianceInfo(int $allianceID): array

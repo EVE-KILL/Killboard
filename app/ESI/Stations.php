@@ -8,7 +8,6 @@ class Stations
         protected \EK\Models\Stations $stations,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getStationInfo(int $stationID): array

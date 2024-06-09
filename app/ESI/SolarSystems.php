@@ -12,7 +12,6 @@ class SolarSystems
         protected \EK\ESI\Regions $esiRegions,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getSolarSystem(int $system_id): array

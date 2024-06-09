@@ -10,7 +10,6 @@ class Constellations
         protected \EK\ESI\Regions $esiRegions,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getConstellation(int $constellation_id): array

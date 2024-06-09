@@ -8,7 +8,6 @@ class TypeIDs
         protected \EK\Models\TypeIDs $typeIDs,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getTypeInfo(int $type_id): ?array

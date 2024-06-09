@@ -18,7 +18,6 @@ class Characters
         protected \EK\Models\Characters $characters,
         protected EsiFetcher $esiFetcher
     ) {
-        parent::__construct($esiFetcher);
     }
 
     public function getCharacterInfo(int $characterID): array
