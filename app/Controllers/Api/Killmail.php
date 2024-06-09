@@ -27,12 +27,12 @@ class Killmail extends Controller
     #[RouteAttribute('/killmail/{killmail_id:[0-9]+}[/]', ['GET'])]
     public function killmail(int $killmail_id): ResponseInterface
     {
-        $killmail = $this->killmails->get($killmail_id);
+        $killmail = $this->killmails->findOneOrNull(['killmail_id' => $killmail_id]);
 
         if ($killmail === null) {
             return $this->json([
                 'error' => 'Killmail not found',
-            ], 404);
+            ], 300);
         }
 
         return $this->json($killmail);
