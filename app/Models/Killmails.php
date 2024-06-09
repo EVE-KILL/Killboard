@@ -27,17 +27,40 @@ class Killmails extends Collection
             ['killmail_id', 'hash']
         ],
         'desc' => [
-            'kill_time', 'solar_system_id', 'solar_system_security', 'region_id', 'victim.character_id', 'victim.corporation_id',
-            'victim.alliance_id', 'victim.faction_id', 'victim.ship_id', 'victim.ship_group_id', 'victim.damage_taken',
-            'attackers.character_id', 'attackers.corporation_id', 'attackers.alliance_id', 'attackers.faction_id',
-            'attackers.ship_id', 'attackers.ship_group_id', 'attackers.final_blow', 'attackers.weapon_id',
-            'attackers.damageDone', 'items.type_id', 'items.group_id', 'war_id',
+            // General fields
+            'kill_time',
+            'system_id',
+            'region_id',
+            'system_security',
+            'war_id',
+            'last_modified',
+            'near',
+            'is_npc',
+            'is_solo',
+            'total_value',
+
+            // Items
+            'items.type_id',
+            'items.group_id',
+
+            // Victim fields
+            'victim.ship_group_id',
+            [ 'victim.character_id', 'kill_time' ],
+            [ 'victim.corporation_id', 'kill_time' ],
+            [ 'victim.alliance_id', 'kill_time' ],
+            [ 'victim.faction_id', 'kill_time' ],
+            [ 'victim.ship_id', 'kill_time' ],
+            [ 'victim.weapon_type_id', 'kill_time' ],
+
+            // Attacker fields
+            'attackers.final_blow',
+            'attackers.ship_group_id',
             [ 'attackers.character_id', 'kill_time' ],
             [ 'attackers.corporation_id', 'kill_time' ],
             [ 'attackers.alliance_id', 'kill_time' ],
+            [ 'attackers.faction_id', 'kill_time' ],
             [ 'attackers.ship_id', 'kill_time' ],
             [ 'attackers.weapon_type_id', 'kill_time' ],
-            [ 'total_value', 'kill_time' ]
         ]
     ];
 

@@ -124,10 +124,15 @@ class Alliances extends Controller
         $killmails = $this->killmails->aggregate([
             ['$match' => [
                 '$or' => [
-                    ['victim.alliance_id' => $alliance_id],
-                    ['attackers.alliance_id' => $alliance_id],
+                    [
+                        'victim.alliance_id' => $alliance_id
+                    ],
+                    [
+                        'attackers.alliance_id' => $alliance_id
+                    ],
                 ],
             ]],
+            ['$sort' => ['kill_time' => -1]],
             ['$limit' => $limit],
             ['$project' => ['_id' => 0, 'killmail_id' => 1]],
         ], [], 3600)->map(function ($killmail) {
