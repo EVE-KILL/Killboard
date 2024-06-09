@@ -103,9 +103,9 @@ abstract class Controller
      *
      * @return string|bool|null
      */
-    protected function getParam(string $key): mixed
+    protected function getParam(string $key, mixed $default): mixed
     {
-        return $this->getParams()->get($key);
+        return $this->getParams()->get($key, $default);
     }
 
     /**

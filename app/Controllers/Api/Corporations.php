@@ -13,6 +13,7 @@ class Corporations extends Controller
         protected \EK\Models\Corporations $corporations,
         protected \EK\Models\Characters $characters,
         protected \EK\Helpers\TopLists $topLists,
+        protected \EK\Models\Killmails $killmails,
         protected Twig $twig
     ) {
         parent::__construct($twig);
@@ -63,6 +64,75 @@ class Corporations extends Controller
         });
 
         return $this->json($corporations->toArray(), 300);
+    }
+
+    #[RouteAttribute('/corporations/{corporation_id}/killmails[/]', ['GET'])]
+    public function killmails(int $corporation_id): ResponseInterface
+    {
+        $corporation = $this->corporations->findOne(['corporation_id' => $corporation_id]);
+        if ($corporation->isEmpty()) {
+            return $this->json(['error' => 'Corporation not found'], 300);
+        }
+
+        $killmails = $this->killmails->aggregate([
+            ['$match' => [
+                '$or' => [
+                    ['victim.corporation_id' => $corporation_id],
+                    ['attackers.corporation_id' => $corporation_id],
+                ],
+            ]],
+            ['$project' => ['_id' => 0, 'killmail_id' => 1]],
+        ], [
+            'allowDiskUse' => true,
+            'maxTimeMS' => 30000
+        ], 3600)->map(function ($killmail) {
+            return $killmail['killmail_id'];
+        });
+
+        return $this->json($killmails, 3600);
+    }
+
+    #[RouteAttribute('/corporations/{corporation_id}/killmails/count[/]', ['GET'])]
+    public function killmailsCount(int $corporation_id): ResponseInterface
+    {
+        $corporation = $this->corporations->findOne(['corporation_id' => $corporation_id]);
+        if ($corporation->isEmpty()) {
+            return $this->json(['error' => 'Corporation not found'], 300);
+        }
+
+        $killCount = $this->killmails->count(['attackers.corporation_id' => $corporation_id], [], 300);
+        $lossCount = $this->killmails->count(['victim.corporation_id' => $corporation_id], [], 300);
+
+        return $this->json(['kills' => $killCount, 'losses' => $lossCount], 300);
+    }
+
+    #[RouteAttribute('/corporations/{corporation_id}/killmails/latest[/]', ['GET'])]
+    public function latestKillmails(int $corporation_id): ResponseInterface
+    {
+        $limit = (int) $this->getParam('limit', 1000);
+        if ($limit > 1000 || $limit < 1) {
+            return $this->json(['error' => 'Wrong limit', 'range' => '1-1000'], 300);
+        }
+
+        $corporation = $this->corporations->findOne(['corporation_id' => $corporation_id]);
+        if ($corporation->isEmpty()) {
+            return $this->json(['error' => 'Corporation not found'], 300);
+        }
+
+        $killmails = $this->killmails->aggregate([
+            ['$match' => [
+                '$or' => [
+                    ['victim.corporation_id' => $corporation_id],
+                    ['attackers.corporation_id' => $corporation_id],
+                ],
+            ]],
+            ['$limit' => $limit],
+            ['$project' => ['_id' => 0, 'killmail_id' => 1]],
+        ], [], 3600)->map(function ($killmail) {
+            return $killmail['killmail_id'];
+        });
+
+        return $this->json($killmails, 3600);
     }
 
     #[RouteAttribute('/corporations/{corporation_id}/members[/]', ['GET'])]

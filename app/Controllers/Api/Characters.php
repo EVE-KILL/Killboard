@@ -13,6 +13,7 @@ class Characters extends Controller
         protected \EK\Models\Characters $characters,
         protected \EK\Helpers\TopLists $topLists,
         protected \EK\Cache\Cache $cache,
+        protected \EK\Models\Killmails $killmails,
         protected Twig $twig
     ) {
         parent::__construct($twig);
@@ -70,6 +71,75 @@ class Characters extends Controller
         });
 
         return $this->json($characters->toArray(), 300);
+    }
+
+    #[RouteAttribute('/characters/{character_id}/killmails[/]', ['GET'])]
+    public function killmails(int $character_id): ResponseInterface
+    {
+        $character = $this->characters->findOne(['character_id' => $character_id]);
+        if ($character->isEmpty()) {
+            return $this->json(['error' => 'Character not found'], 300);
+        }
+
+        $killmails = $this->killmails->aggregate([
+            ['$match' => [
+                '$or' => [
+                    ['victim.character_id' => $character_id],
+                    ['attackers.character_id' => $character_id],
+                ],
+            ]],
+            ['$project' => ['_id' => 0, 'killmail_id' => 1]],
+        ], [
+            'allowDiskUse' => true,
+            'maxTimeMS' => 30000
+        ], 3600)->map(function ($killmail) {
+            return $killmail['killmail_id'];
+        });
+
+        return $this->json($killmails, 3600);
+    }
+
+    #[RouteAttribute('/characters/{character_id}/killmails/count[/]', ['GET'])]
+    public function killmailsCount(int $character_id): ResponseInterface
+    {
+        $character = $this->characters->findOne(['character_id' => $character_id]);
+        if ($character->isEmpty()) {
+            return $this->json(['error' => 'Character not found'], 300);
+        }
+
+        $killCount = $this->killmails->count(['attackers.character_id' => $character_id], [], 300);
+        $lossCount = $this->killmails->count(['victim.character_id' => $character_id], [], 300);
+
+        return $this->json(['kills' => $killCount, 'losses' => $lossCount], 300);
+    }
+
+    #[RouteAttribute('/characters/{character_id}/killmails/latest[/]', ['GET'])]
+    public function latestKillmails(int $character_id): ResponseInterface
+    {
+        $limit = (int) $this->getParam('limit', 1000);
+        if ($limit > 1000 || $limit < 1) {
+            return $this->json(['error' => 'Wrong limit', 'range' => '1-1000'], 300);
+        }
+
+        $character = $this->characters->findOne(['character_id' => $character_id]);
+        if ($character->isEmpty()) {
+            return $this->json(['error' => 'Character not found'], 300);
+        }
+
+        $killmails = $this->killmails->aggregate([
+            ['$match' => [
+                '$or' => [
+                    ['victim.character_id' => $character_id],
+                    ['attackers.character_id' => $character_id],
+                ],
+            ]],
+            ['$limit' => $limit],
+            ['$project' => ['_id' => 0, 'killmail_id' => 1]],
+        ], [], 3600)->map(function ($killmail) {
+            return $killmail['killmail_id'];
+        });
+
+        return $this->json($killmails, 3600);
     }
 
     #[RouteAttribute('/characters/{character_id}/top/ships[/]', ['GET'])]
