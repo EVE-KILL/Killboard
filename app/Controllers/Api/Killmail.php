@@ -35,6 +35,6 @@ class Killmail extends Controller
             ], 300);
         }
 
-        return $this->json($this->cleanupTimestamps($killmail));
+        return $this->json($this->cleanupTimestamps($killmail->toArray()));
     }
 }
