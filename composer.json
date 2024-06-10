@@ -28,7 +28,7 @@
         "league/container": "*",
         "mongodb/mongodb": "*",
         "slim/slim": "*",
-        "slim/psr7": "*",
+        "slim/psr7": "1.6.1",
         "symfony/console": "*",
         "guzzlehttp/guzzle": "*",
         "bandwidth-throttle/token-bucket": "*",
@@ -38,12 +38,12 @@
         "psy/psysh": "*",
         "twig/twig": "*",
         "poliander/cron": "*",
-        "siriusphp/validation": "^4.0",
+        "siriusphp/validation": "*",
         "league/csv": "*",
         "marcj/topsort": "*",
-        "cweagans/composer-patches": "^1.7",
-        "meilisearch/meilisearch-php": "^1.8",
-        "adbario/php-dot-notation": "^3.3"
+        "cweagans/composer-patches": "*",
+        "meilisearch/meilisearch-php": "*",
+        "adbario/php-dot-notation": "*"
     },
     "require-dev": {
         "zeuxisoo/slim-whoops": "*",
