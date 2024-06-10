@@ -84,7 +84,7 @@ class Corporations extends Controller
             ['$project' => ['_id' => 0, 'killmail_id' => 1]],
         ], [
             'allowDiskUse' => true,
-            'maxTimeMS' => 30000
+            'maxTimeMS' => 60000
         ], 3600)->map(function ($killmail) {
             return $killmail['killmail_id'];
         });
