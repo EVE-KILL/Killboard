@@ -1,0 +1,49 @@
+<?php
+
+namespace EK\Websockets;
+
+use EK\Http\Websocket;
+
+class Kills extends Websocket
+{
+    public string $endpoint = '/kills';
+
+    public function handle(array $data): void
+    {
+        $sendToTypes = ['alliance_id', 'corporation_id', 'faction_id', 'character_id', 'ship_id', 'group_id', 'weapon_type_id'];
+
+        $emit = [
+            'system_id' => [$data['system_id']],
+            'region_id' => [$data['region_id']],
+        ];
+
+        foreach(array_merge($data['attackers'], [$data['victim']]) as $participant) {
+            foreach($sendToTypes as $type) {
+                if(!empty($participant[$type]) && !in_array($participant[$type], [0, null])) {
+                    $emit[$type][] = $participant[$type];
+                }
+            }
+        }
+
+        $emitToClients = [];
+        foreach($this->clients as $client) {
+            $clientSubscriptions = json_decode($client['data'], true) ?? [];
+            $intersect = array_intersect_key($emit, $clientSubscriptions);
+            foreach($intersect as $type => $ids) {
+                if (in_array($clientSubscriptions[$type], $ids)) {
+                    $emitToClients[$client['fd']] = $client['fd'];
+                    break;
+                }
+            }
+        }
+
+
+        foreach($emitToClients as $fd) {
+            try {
+                $this->server->push($fd, json_encode($data));
+            } catch (\Exception $e) {
+                $this->unsubscribe($fd);
+            }
+        }
+    }
+}
