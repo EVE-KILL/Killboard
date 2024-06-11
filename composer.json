@@ -43,7 +43,8 @@
         "marcj/topsort": "*",
         "cweagans/composer-patches": "*",
         "meilisearch/meilisearch-php": "*",
-        "ratchet/pawl": "*"
+        "psr/log": "^2",
+        "phrity/websocket": "*"
     },
     "require-dev": {
         "zeuxisoo/slim-whoops": "*",
