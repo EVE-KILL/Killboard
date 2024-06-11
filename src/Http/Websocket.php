@@ -44,10 +44,19 @@ abstract class Websocket
     {
         foreach($this->clients as $fd => $client) {
             if($this->server->exists($fd)) {
-                $this->server->push($fd, $jsonData);
+                $this->server->push($fd, $jsonData, \OpenSwoole\WebSocket\Server::WEBSOCKET_OPCODE_TEXT, \OpenSwoole\WebSocket\Server::WEBSOCKET_FLAG_FIN | \OpenSwoole\WebSocket\Server::WEBSOCKET_FLAG_COMPRESS);
             } else {
                 $this->unsubscribe($fd);
             }
+        }
+    }
+
+    public function send($fd, $jsonData): void
+    {
+        if($this->server->exists($fd)) {
+            $this->server->push($fd, $jsonData, \OpenSwoole\WebSocket\Server::WEBSOCKET_OPCODE_TEXT, \OpenSwoole\WebSocket\Server::WEBSOCKET_FLAG_FIN | \OpenSwoole\WebSocket\Server::WEBSOCKET_FLAG_COMPRESS);
+        } else {
+            $this->unsubscribe($fd);
         }
     }
 }
