@@ -5,7 +5,6 @@ namespace EK\Jobs;
 use EK\Api\Abstracts\Jobs;
 use EK\Models\Killmails;
 use EK\Redis\Redis;
-use WebSocket\Client;
 
 class emitKillmailWS extends Jobs
 {
@@ -20,14 +19,15 @@ class emitKillmailWS extends Jobs
 
     public function handle(array $data): void
     {
-        // Emit to eve-kill.com
-        // Token is: my-secret (Will change later..)
-        $client = new Client("wss://eve-kill.com/kills");
-        $client->text(json_encode([
-            'type' => 'broadcast',
-            'token' => 'my-secret',
-            'data' => $data
-        ]));
-        $client->close();
+        \Ratchet\Client\connect('wss://eve-kill.com/kills')->then(function ($conn) use ($data) {
+            $conn->send(json_encode([
+                'type' => 'broadcast',
+                'token' => 'my-secret',
+                'data' => $data
+            ]));
+            $conn->close();
+        }, function ($e) {
+            echo "Could not connect: {$e->getMessage()}\n";
+        });
     }
 }

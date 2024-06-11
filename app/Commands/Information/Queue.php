@@ -33,6 +33,7 @@ class Queue extends ConsoleCommand
             'corporation',
             'alliance',
             'universe',
+            'websocket',
             'killmail',
             'low',
             'default'

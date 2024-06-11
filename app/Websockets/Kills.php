@@ -35,6 +35,11 @@ class Kills extends Websocket
                     break;
                 }
             }
+
+            // If the client is subscribing to the `all` type, then we need to emit to them
+            if (in_array('all', $clientSubscriptions)) {
+                $emitToClients[$client['fd']] = $client['fd'];
+            }
         }
 
 
