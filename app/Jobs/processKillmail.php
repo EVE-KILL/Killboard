@@ -12,6 +12,7 @@ class processKillmail extends Jobs
     public function __construct(
         protected Killmails $killmails,
         protected \EK\Helpers\Killmails $killmailHelper,
+        protected emitKillmailWS $emitKillmailWS,
         protected Redis $redis
     ) {
         parent::__construct($redis);
@@ -29,5 +30,8 @@ class processKillmail extends Jobs
         // Insert the parsed killmail into the killmails collection
         $this->killmails->setData($parsedKillmail);
         $this->killmails->save();
+
+        // Emit the killmail to the websocket server
+        $this->emitKillmailWS->enqueue($parsedKillmail);
     }
 }

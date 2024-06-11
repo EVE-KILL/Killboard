@@ -43,7 +43,7 @@
         "marcj/topsort": "*",
         "cweagans/composer-patches": "*",
         "meilisearch/meilisearch-php": "*",
-        "adbario/php-dot-notation": "*"
+        "phrity/websocket": "*"
     },
     "require-dev": {
         "zeuxisoo/slim-whoops": "*",
