@@ -45,7 +45,11 @@ class Kills extends Websocket
 
         foreach($emitToClients as $fd) {
             try {
-                $this->server->push($fd, json_encode($data));
+                if ($this->server->exists($fd)) {
+                    $this->server->push($fd, json_encode($data));
+                } else {
+                    $this->unsubscribe($fd);
+                }
             } catch (\Exception $e) {
                 $this->unsubscribe($fd);
             }
