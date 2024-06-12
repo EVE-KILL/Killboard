@@ -8,6 +8,11 @@ ingress:
   tls:
     secretName: evekill-tls
 
+frontend:
+  image: ghcr.io/eve-kill/frontend
+  version: latest
+  replicas: 1
+
 server:
   image: ghcr.io/eve-kill/killboard
   version: latest
