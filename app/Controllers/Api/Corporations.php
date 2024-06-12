@@ -14,9 +14,8 @@ class Corporations extends Controller
         protected \EK\Models\Characters $characters,
         protected \EK\Helpers\TopLists $topLists,
         protected \EK\Models\Killmails $killmails,
-        protected Twig $twig
     ) {
-        parent::__construct($twig);
+        parent::__construct();
     }
 
     #[RouteAttribute('/corporations[/]', ['GET'])]

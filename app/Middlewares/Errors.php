@@ -15,7 +15,6 @@ use Slim\Psr7\Factory\ResponseFactory;
 class Errors implements MiddlewareInterface
 {
     public function __construct(
-        protected Twig $twig,
         protected ResponseFactory $responseFactory,
     ) {
     }
@@ -46,11 +45,8 @@ class Errors implements MiddlewareInterface
                 'application/xml', 'text/xml' => function () use ($errorType, $errorMessage) {
                     return '<?xml version="1.0" encoding="UTF-8"?><error>' . $errorType . '</error><message>' . $errorMessage . '</message>';
                 },
-                'text/plain', 'text/css', 'text/javascript' => function () use ($errorType, $errorMessage) {
-                    return $errorType . ': ' . $errorMessage;
-                },
                 default => function () use ($errorType, $errorMessage) {
-                    return $this->twig->render('errors/' . $errorType . '.twig', ['error' => $errorType, 'message' => $errorMessage]);
+                    return $errorType . ': ' . $errorMessage;
                 }
             };
         }

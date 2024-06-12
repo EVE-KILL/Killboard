@@ -24,7 +24,6 @@ class Whoops implements MiddlewareInterface
         protected ResponseFactory $responseFactory,
         protected Config $config,
         protected ExceptionLogger $exceptionLogger,
-        protected Twig $twig
     ) {
     }
 
@@ -53,8 +52,7 @@ class Whoops implements MiddlewareInterface
                     // Return XML
                     'application/xml', 'text/xml' => (new \SimpleXMLElement('<error>There has been an exception, you can tell the developers to look at the following id</error><exceptionId>' . $exceptionId . '</exceptionId>'))->asXML(),
                     // Reply with plaintext
-                    'text/plain', 'text/css', 'text/javascript' => 'There has been an exception, you can tell the developers to look at the following id: ' . $exceptionId,
-                    default => $this->twig->render('errors/exception.twig', ['exceptionId' => $exceptionId])
+                    default => 'There has been an exception, you can tell the developers to look at the following id: ' . $exceptionId,
                 };
 
                 $response->getBody()->write($render);

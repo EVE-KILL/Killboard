@@ -11,9 +11,8 @@ class Killmail extends Controller
 {
     public function __construct(
         protected \EK\Models\Killmails $killmails,
-        protected Twig $twig
     ) {
-        parent::__construct($twig);
+        parent::__construct();
     }
 
     #[RouteAttribute('/killmail/count[/]', ['GET'])]

@@ -12,9 +12,8 @@ class Search extends Controller
 {
     public function __construct(
         protected Meilisearch $meilisearch,
-        protected Twig $twig
     ) {
-        parent::__construct($twig);
+        parent::__construct();
     }
 
     #[RouteAttribute('/search/{searchParam}[/]', ['GET'])]

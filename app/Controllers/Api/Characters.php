@@ -14,9 +14,8 @@ class Characters extends Controller
         protected \EK\Helpers\TopLists $topLists,
         protected \EK\Cache\Cache $cache,
         protected \EK\Models\Killmails $killmails,
-        protected Twig $twig
     ) {
-        parent::__construct($twig);
+        parent::__construct();
     }
 
     #[RouteAttribute('/characters[/]', ['GET'])]

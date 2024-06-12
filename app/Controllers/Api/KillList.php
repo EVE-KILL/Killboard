@@ -13,10 +13,8 @@ class KillList extends Controller
 {
     public function __construct(
         protected \EK\Helpers\KillList $killlistHelper,
-        protected Twig $twig
     ) {
-        parent::__construct($twig);
-
+        parent::__construct();
     }
 
     #[RouteAttribute('/killlist/latest[/{page:[0-9]+}]', ['GET'])]

@@ -1,7 +1,0 @@
-<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
-    <ShortName>EVEKill</ShortName>
-    <Description>
-        EVEKill - Killboard for EVE-Online
-    </Description>
-    <Url type="text/html" method="get" template="https://evedata.xyz/search/{searchTerms}/"/>
-</OpenSearchDescription>

@@ -12,9 +12,8 @@ class Wars extends Controller
     public function __construct(
         protected \EK\Models\Wars $wars,
         protected \EK\Models\Killmails $killmails,
-        protected Twig $twig
     ) {
-        parent::__construct($twig);
+        parent::__construct();
     }
 
     #[RouteAttribute('/wars[/]', ['GET'])]

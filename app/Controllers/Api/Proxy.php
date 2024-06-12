@@ -12,11 +12,10 @@ use Psr\Http\Message\ResponseInterface;
 class Proxy extends Controller
 {
     public function __construct(
-        protected Twig $twig,
         protected Proxies $proxiesModel,
         protected validateProxy $validateProxy
     ) {
-        parent::__construct($twig);
+        parent::__construct();
     }
     #[RouteAttribute('/proxy/list[/]', ['GET'])]
     public function listAll(): ResponseInterface

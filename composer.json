@@ -36,7 +36,6 @@
         "illuminate/collections": "*",
         "predis/predis": "*",
         "psy/psysh": "*",
-        "twig/twig": "*",
         "poliander/cron": "*",
         "siriusphp/validation": "*",
         "league/csv": "*",

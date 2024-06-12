@@ -15,9 +15,8 @@ class Stats extends Controller
     public function __construct(
         protected TopLists $topLists,
         protected Killmails $killmails,
-        protected Twig $twig
     ) {
-        parent::__construct($twig);
+        parent::__construct();
 
         // This is the amount of days since 2007-12-05, the first killmail in the database
         $this->daysSinceEarlyDays = ceil(abs(strtotime('2007-12-05') - time()) / 86400);

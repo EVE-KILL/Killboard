@@ -2,7 +2,6 @@
 
 namespace EK\Api\Abstracts;
 
-use EK\Http\Twig\Twig;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use Psr\Http\Message\ResponseInterface;
@@ -20,7 +19,6 @@ abstract class Controller
     protected Collection $arguments;
 
     public function __construct(
-        protected Twig $twig
     ) {
         $this->validator = new Validator();
     }
