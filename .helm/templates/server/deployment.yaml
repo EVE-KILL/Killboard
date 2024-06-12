@@ -24,7 +24,7 @@ spec:
           command:
             - php
             - bin/console
-            - server
+            - server:http
             - --host=0.0.0.0
           image: {{ .Values.server.image }}:{{ .Values.server.version }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
