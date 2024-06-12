@@ -24,14 +24,14 @@ class Wars extends Controller
         return $this->json($wars);
     }
 
-    #[RouteAttribute('/wars/{warId}[/]', ['GET'])]
-    public function war(int $warId): ResponseInterface
+    #[RouteAttribute('/wars/{war_id}[/]', ['GET'])]
+    public function war(int $war_id): ResponseInterface
     {
-        if ($warId === 0) {
+        if ($war_id === 0) {
             return $this->json([]);
         }
 
-        $war = $this->wars->findOne(['id' => $warId], ['projection' => ['_id' => 0]]);
+        $war = $this->wars->findOne(['id' => $war_id], ['projection' => ['_id' => 0]]);
         // Fix all the timestamps into a readable format
         $timestampFields = ['declared', 'finished', 'last_modified', 'retracted', 'started'];
         foreach($timestampFields as $field) {
@@ -41,14 +41,14 @@ class Wars extends Controller
         }
         return $this->json($war);
     }
-    #[RouteAttribute('/wars/{warId}/killmails[/]', ['GET'])]
-    public function killmails(int $warId): ResponseInterface
+    #[RouteAttribute('/wars/{war_id}/killmails[/]', ['GET'])]
+    public function killmails(int $war_id): ResponseInterface
     {
-        if ($warId === 0) {
+        if ($war_id === 0) {
             return $this->json([]);
         }
 
-        $kills = $this->killmails->find(['war_id' => $warId], ['projection' => ['_id' => 0, 'kill_time_str' => 0]]);
+        $kills = $this->killmails->find(['war_id' => $war_id], ['projection' => ['_id' => 0, 'kill_time_str' => 0]]);
         // Fix all the timestamps into a readable format
         $timestampFields = ['last_modified', 'kill_time'];
         foreach($timestampFields as $field) {

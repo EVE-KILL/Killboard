@@ -11,7 +11,7 @@ use RuntimeException;
 
 class Routes extends ConsoleCommand
 {
-    public string $signature = 'info:routes { --json : Output as JSON }';
+    public string $signature = 'info:routes { --format= : Output the routes as JSON / Table }';
     public string $description = 'List all the routes available for the server';
 
     public function __construct(
@@ -43,22 +43,36 @@ class Routes extends ConsoleCommand
                     $attributes = $method->getAttributes(RouteAttribute::class);
                     foreach ($attributes as $attribute) {
                         $apiUrl = $attribute->newInstance();
+                        $route = $prepend . $apiUrl->getRoute();
+
+                        // Extract route parameters
+                        preg_match_all('/\{(\w+)(:[^\}]+)?\}/', $route, $matches);
+                        $parameters = $matches[1];
+
                         $endpoints[] = [
-                            $prepend . $apiUrl->getRoute(),
-                            implode(',', $apiUrl->getType()),
-                            $className,
-                            $method->getName()
+                            'route' => $route,
+                            'method' => implode(',', $apiUrl->getType()),
+                            'controller' => $className,
+                            'action' => $method->getName(),
+                            'parameters' => $parameters
                         ];
                     }
 
                     // Get the protected array $routes from the controller if it exists
                     $routes = $reflection->getDefaultProperties()['routes'] ?? [];
                     foreach ($routes as $route => $methods) {
+                        $route = $prepend . $route;
+
+                        // Extract route parameters
+                        preg_match_all('/\{(\w+)(:[^\}]+)?\}/', $route, $matches);
+                        $parameters = $matches[1];
+
                         $endpoints[] = [
-                            $prepend . $route,
-                            implode(',', $methods),
-                            $className,
-                            'handle'
+                            'route' => $route,
+                            'method' => implode(',', $methods),
+                            'controller' => $className,
+                            'action' => 'handle',
+                            'parameters' => $parameters
                         ];
                     }
                 }
@@ -67,18 +81,27 @@ class Routes extends ConsoleCommand
             }
         }
 
-        if ($this->json === true) {
-            $this->output->write(json_encode(array_map(function ($params) {
-                return [
-                    'route' => $params[0],
-                    'method' => $params[1],
-                    'controller' => $params[2],
-                    'action' => $params[3]
-                ];
-            }, $endpoints)));
-            exit(0);
-        } else {
-            $this->table(['URL', 'Request Type', 'Class', 'Method'], $endpoints);
+        switch ($this->format) {
+            case 'json':
+                $this->output->write(json_encode(array_map(function ($params) {
+                    return [
+                        'route' => $params['route'],
+                        'method' => $params['method'],
+                        'controller' => $params['controller'],
+                        'action' => $params['action'],
+                        'parameters' => $params['parameters']
+                    ];
+                }, $endpoints)));
+                break;
+
+            default:
+                // Change all parameters into a json_encoded string
+                foreach ($endpoints as $key => $endpoint) {
+                    $endpoints[$key]['parameters'] = json_encode($endpoint['parameters']);
+                }
+
+                $this->table(['URL', 'Request Type', 'Class', 'Method', 'Parameters'], $endpoints);
+                break;
         }
     }
 }
