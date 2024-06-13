@@ -2,15 +2,21 @@
 
 namespace EK\ESI;
 
+use EK\Fetchers\ESI;
+
 class Killmails
 {
     public function __construct(
-        protected EsiFetcher $esiFetcher
+        protected ESI $esiFetcher
     ) {
     }
 
     public function getKillmail(int $killmail_id, string $hash): array
     {
-        return $this->esiFetcher->fetch('/latest/killmails/' . $killmail_id . '/' . $hash);
+        $result = $this->esiFetcher->fetch('/latest/killmails/' . $killmail_id . '/' . $hash);
+        $result = json_validate($result['body']) ? json_decode($result['body'], true) : [];
+        ksort($result);
+
+        return $result;
     }
 }

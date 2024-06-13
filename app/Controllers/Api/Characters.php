@@ -4,6 +4,7 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Fetchers\CorporationHistory;
 use EK\Http\Twig\Twig;
 use Psr\Http\Message\ResponseInterface;
 
@@ -11,9 +12,13 @@ class Characters extends Controller
 {
     public function __construct(
         protected \EK\Models\Characters $characters,
+        protected \EK\Models\Corporations $corporations,
+        protected \EK\Jobs\updateCorporation $updateCorporation,
+        protected \EK\ESI\Corporations $corporationESI,
         protected \EK\Helpers\TopLists $topLists,
         protected \EK\Cache\Cache $cache,
         protected \EK\Models\Killmails $killmails,
+        protected CorporationHistory $corporationHistoryFetcher,
     ) {
         parent::__construct();
     }
@@ -41,7 +46,7 @@ class Characters extends Controller
         return $this->json(['count' => $this->characters->count()], 300);
     }
 
-    #[RouteAttribute('/characters/{character_id}[/]', ['GET'])]
+    #[RouteAttribute('/characters/{character_id:[0-9]+}[/]', ['GET'])]
     public function character(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne(['character_id' => $character_id], ['projection' => ['_id' => 0]]);
@@ -72,7 +77,64 @@ class Characters extends Controller
         return $this->json($characters->toArray(), 300);
     }
 
-    #[RouteAttribute('/characters/{character_id}/killmails[/]', ['GET'])]
+    #[RouteAttribute('/characters/{character_id:[0-9]+}/corporationhistory[/]', ['GET'])]
+    public function corporationHistory(int $character_id): ResponseInterface
+    {
+        $character = $this->characters->findOne(['character_id' => $character_id]);
+        if ($character->isEmpty()) {
+            return $this->json(['error' => 'Character not found'], 300);
+        }
+
+        $response = $this->corporationHistoryFetcher->fetch('/latest/characters/' . $character_id . '/corporationhistory');
+        $corpHistoryData = json_validate($response['body']) ? json_decode($response['body'], true) : [];
+        $corpHistoryData = array_reverse($corpHistoryData);
+
+        // Extract all corporation ids
+        $corporationIds = array_column($corpHistoryData, 'corporation_id');
+
+        // Fetch all corporation data at once
+        $corporationsData = $this->corporations->find(['corporation_id' => ['$in' => $corporationIds]], ['projection' => ['_id' => 0]], 300)->toArray();
+
+        // Convert to associative array
+        $corporationsDataAssoc = [];
+        foreach ($corporationsData as $corporationData) {
+            $corporationsDataAssoc[$corporationData['corporation_id']] = $corporationData;
+        }
+
+        $corporationHistory = [];
+        for ($i = 0; $i < count($corpHistoryData); $i++) {
+            $history = $corpHistoryData[$i];
+            $corpData = $corporationsDataAssoc[$history['corporation_id']] ?? null;
+            if ($corpData === null) {
+                $corpData = $this->corporationESI->getCorporationInfo($history['corporation_id']);
+            }
+            $joinDate = new \DateTime($history['start_date']);
+
+            $data = [
+                'corporation_id' => $history['corporation_id'],
+                'join_date' => $joinDate->format('Y-m-d H:i:s')
+            ];
+
+            // If there is a next element, set the leave_date to the join_date of the next element
+            if (isset($corpHistoryData[$i + 1])) {
+                $nextHistory = $corpHistoryData[$i + 1];
+                $nextJoinDate = new \DateTime($nextHistory['start_date']);
+                $data['leave_date'] = $nextJoinDate->format('Y-m-d H:i:s');
+            }
+
+            $corporationHistory[] = $this->cleanupTimestamps(array_merge($data, $corpData));
+        }
+
+        return $this->json($corporationHistory);
+
+        // Lets update the character with the latest corporation history
+        $this->characters->collection->updateOne(
+            ['character_id' => $character_id],
+            ['$set' => ['corporation_history' => $corporationHistory]],
+        );
+    }
+
+    #[RouteAttribute('/characters/{character_id:[0-9]+}/killmails[/]', ['GET'])]
     public function killmails(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne(['character_id' => $character_id]);
@@ -98,7 +160,7 @@ class Characters extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[RouteAttribute('/characters/{character_id}/killmails/count[/]', ['GET'])]
+    #[RouteAttribute('/characters/{character_id:[0-9]+}/killmails/count[/]', ['GET'])]
     public function killmailsCount(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne(['character_id' => $character_id]);
@@ -112,7 +174,7 @@ class Characters extends Controller
         return $this->json(['kills' => $killCount, 'losses' => $lossCount], 300);
     }
 
-    #[RouteAttribute('/characters/{character_id}/killmails/latest[/]', ['GET'])]
+    #[RouteAttribute('/characters/{character_id:[0-9]+}/killmails/latest[/]', ['GET'])]
     public function latestKillmails(int $character_id): ResponseInterface
     {
         $limit = (int) $this->getParam('limit', 1000);
@@ -142,7 +204,7 @@ class Characters extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[RouteAttribute('/characters/{character_id}/top/ships[/]', ['GET'])]
+    #[RouteAttribute('/characters/{character_id:[0-9]+}/top/ships[/]', ['GET'])]
     public function topShips(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne(['character_id' => $character_id]);
@@ -155,7 +217,7 @@ class Characters extends Controller
         return $this->json($topShips, 300);
     }
 
-    #[RouteAttribute('/characters/{character_id}/top/systems[/]', ['GET'])]
+    #[RouteAttribute('/characters/{character_id:[0-9]+}/top/systems[/]', ['GET'])]
     public function topSystems(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne(['character_id' => $character_id]);
@@ -168,7 +230,7 @@ class Characters extends Controller
         return $this->json($topSystems, 300);
     }
 
-    #[RouteAttribute('/characters/{character_id}/top/regions[/]', ['GET'])]
+    #[RouteAttribute('/characters/{character_id:[0-9]+}/top/regions[/]', ['GET'])]
     public function topRegions(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne(['character_id' => $character_id]);

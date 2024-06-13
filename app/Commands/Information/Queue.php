@@ -50,7 +50,7 @@ class Queue extends ConsoleCommand
             return;
         }
 
-        $this->table(['Queue', 'Items'], $queueInformation);
+        $this->tableOneRow($queueInformation);
 
     }
 }

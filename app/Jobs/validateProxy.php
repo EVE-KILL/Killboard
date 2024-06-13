@@ -3,8 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\ESI\EsiFetcher;
-use EK\Models\KillmailsESI;
+use EK\Fetchers\ESI;
 use EK\Models\Proxies;
 use EK\Redis\Redis;
 use MongoDB\BSON\UTCDateTime;
@@ -24,7 +23,7 @@ class validateProxy extends Jobs
     public function __construct(
         protected Proxies $proxies,
         protected Redis $redis,
-        protected EsiFetcher $esiFetcher
+        protected ESI $esiFetcher
     ) {
         parent::__construct($redis);
     }

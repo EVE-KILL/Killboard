@@ -3,7 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Http\EveWhoFetcher;
+use EK\Fetchers\EveWho;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 
@@ -21,7 +21,7 @@ class updateCorporation extends Jobs
         protected \EK\ESI\Characters $esiCharacters,
         protected \EK\ESI\Stations $esiStations,
         protected Meilisearch $meilisearch,
-        protected EveWhoFetcher $fetcher,
+        protected EveWho $eveWhoFetcher,
         protected updateCharacter $updateCharacter,
         protected \EK\Redis\Redis $redis
     ) {
@@ -92,8 +92,8 @@ class updateCorporation extends Jobs
 
         // Get the list of characters in the corporation from evewho
         $url = "https://evewho.com/api/corplist/{$corporationId}";
-        $request = $this->fetcher->fetch($url);
-        $data = $request->getBody()->getContents();
+        $request = $this->eveWhoFetcher->fetch($url);
+        $data = $request['body'] ?? '';
 
         $decoded = json_validate($data) ? json_decode($data, true) : [];
         $characters = $decoded['characters'] ?? [];

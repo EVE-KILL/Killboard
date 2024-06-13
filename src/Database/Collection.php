@@ -71,7 +71,7 @@ class Collection
     public function find(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
-        $cacheKeyExists = $this->cache->exists($cacheKey);
+        $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
         $result = $cacheTime > 0 && $cacheKeyExists ?
             $this->cache->get($cacheKey) :
@@ -93,11 +93,15 @@ class Collection
     public function findOne(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
-        $cacheKeyExists = $this->cache->exists($cacheKey);
+        $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
-        $result = $cacheTime > 0 && $cacheKeyExists ?
-            $this->cache->get($cacheKey) :
-            $this->collection->findOne($filter, $options) ?? [];
+        if ($cacheKeyExists) {
+            $result = $this->cache->get($cacheKey);
+        }
+
+        if (!$cacheKeyExists || $result === null) {
+            $result = $this->collection->findOne($filter, $options) ?? [];
+        }
 
         $result = $this->fixTimestamps($result);
 
@@ -115,11 +119,15 @@ class Collection
     public function findOneOrNull(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): ?IlluminateCollection
     {
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
-        $cacheKeyExists = $this->cache->exists($cacheKey);
+        $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
-        $result = $cacheTime > 0 && $cacheKeyExists ?
-            $this->cache->get($cacheKey) :
-            $this->collection->findOne($filter, $options) ?? [];
+        if ($cacheKeyExists) {
+            $result = $this->cache->get($cacheKey);
+        }
+
+        if (!$cacheKeyExists || $result === null) {
+            $result = $this->collection->findOne($filter, $options) ?? [];
+        }
 
         $result = $this->fixTimestamps($result);
 
@@ -141,11 +149,15 @@ class Collection
     public function aggregate(array $pipeline = [], array $options = [], int $cacheTime = 60): IlluminateCollection
     {
         $cacheKey = $this->generateCacheKey($pipeline, $options, get_class($this));
-        $cacheKeyExists = $this->cache->exists($cacheKey);
+        $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
-        $result = $cacheKeyExists ?
-            $this->cache->get($cacheKey) :
-            $this->collection->aggregate($pipeline, $options)->toArray();
+        if ($cacheKeyExists) {
+            $result = $this->cache->get($cacheKey);
+        }
+
+        if (!$cacheKeyExists || $result === null) {
+            $result = $this->collection->findOne($filter, $options) ?? [];
+        }
 
         $result = $this->fixTimestamps($result);
 

@@ -2,6 +2,7 @@
 
 namespace EK\ESI;
 
+use EK\Fetchers\ESI;
 use League\Container\Container;
 
 class Alliances
@@ -9,7 +10,7 @@ class Alliances
     public function __construct(
         protected Container $container,
         protected \EK\Models\Alliances $alliances,
-        protected EsiFetcher $esiFetcher
+        protected ESI $esiFetcher
     ) {
     }
 
@@ -20,6 +21,7 @@ class Alliances
         }
 
         $allianceData = $this->esiFetcher->fetch('/latest/alliances/' . $allianceID);
+        $allianceData = json_validate($allianceData['body']) ? json_decode($allianceData['body'], true) : [];
         $allianceData['alliance_id'] = $allianceID;
 
         ksort($allianceData);

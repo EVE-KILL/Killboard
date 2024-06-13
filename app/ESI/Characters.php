@@ -2,6 +2,7 @@
 
 namespace EK\ESI;
 
+use EK\Fetchers\ESI;
 use League\Container\Container;
 
 class Characters
@@ -16,7 +17,7 @@ class Characters
     public function __construct(
         protected Container $container,
         protected \EK\Models\Characters $characters,
-        protected EsiFetcher $esiFetcher
+        protected ESI $esiFetcher
     ) {
     }
 
@@ -28,6 +29,7 @@ class Characters
 
         try {
             $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterID);
+            $characterData = json_validate($characterData['body']) ? json_decode($characterData['body'], true) : [];
         } catch (\Exception $e) {
             $characterData = [
                 'name' => 'Unknown',

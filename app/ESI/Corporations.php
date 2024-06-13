@@ -2,6 +2,7 @@
 
 namespace EK\ESI;
 
+use EK\Fetchers\ESI;
 use League\Container\Container;
 
 class Corporations
@@ -9,7 +10,7 @@ class Corporations
     public function __construct(
         protected Container $container,
         protected \EK\Models\Corporations $corporations,
-        protected EsiFetcher $esiFetcher
+        protected ESI $esiFetcher
     ) {
     }
 
@@ -19,7 +20,8 @@ class Corporations
             return [];
         }
 
-        $corporationData = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId);
+        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId);
+        $corporationData = json_validate($data['body']) ? json_decode($data['body'], true) : [];
         $corporationData['corporation_id'] = $corporationId;
 
         ksort($corporationData);

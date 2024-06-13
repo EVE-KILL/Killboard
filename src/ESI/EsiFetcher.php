@@ -8,7 +8,7 @@ use bandwidthThrottle\tokenBucket\storage\FileStorage;
 use bandwidthThrottle\tokenBucket\TokenBucket;
 use EK\Cache\Cache;
 use EK\Config\Config;
-use EK\Logger\ESILogger;
+use EK\Logger\FileLogger;
 use EK\Models\Proxies;
 use EK\Webhooks\Webhooks;
 use GuzzleHttp\Client;
@@ -19,11 +19,11 @@ class EsiFetcher
     protected BlockingConsumer $throttleBucket;
 
     public function __construct(
-        protected Cache $cache,
-        protected ESILogger $logger,
-        protected Proxies $proxies,
-        protected Config $config,
-        protected Webhooks $webhooks
+        protected Cache      $cache,
+        protected FileLogger $logger,
+        protected Proxies    $proxies,
+        protected Config     $config,
+        protected Webhooks   $webhooks
     ) {
         $throttleRateLimit = $this->config->get('esi/global-rate-limit', 500);
         $this->throttleBucket = $this->generateBucket($throttleRateLimit, 'esi_global');

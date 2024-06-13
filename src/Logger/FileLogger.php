@@ -7,15 +7,18 @@ use Monolog\Level;
 use Monolog\Logger as MonologLogger;
 use Psr\Log\LoggerInterface;
 
-class ESILogger implements LoggerInterface
+class FileLogger implements LoggerInterface
 {
     protected MonologLogger $logger;
 
     public function __construct(
+        protected string $logFile = BASE_DIR . '/logs/request.log',
+        protected string $loggerName = 'request-logger',
+        protected Level $logLevel = Level::Debug
     )
     {
-        $this->logger = new MonologLogger('http-server');
-        $this->logger->pushHandler(new StreamHandler(BASE_DIR . '/logs/esi.log', Level::Debug));
+        $this->logger = new MonologLogger($this->loggerName);
+        $this->logger->pushHandler(new StreamHandler($this->logFile, $this->logLevel));
     }
 
     public function __call($name, $arguments)

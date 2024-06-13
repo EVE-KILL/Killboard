@@ -2,6 +2,8 @@
 
 namespace EK\ESI;
 
+use EK\Fetchers\ESI;
+
 class SolarSystems
 {
     public function __construct(
@@ -10,13 +12,14 @@ class SolarSystems
         protected \EK\Models\Regions $regions,
         protected \EK\ESI\Constellations $esiConstellations,
         protected \EK\ESI\Regions $esiRegions,
-        protected EsiFetcher $esiFetcher
+        protected ESI $esiFetcher
     ) {
     }
 
     public function getSolarSystem(int $system_id): array
     {
         $systemData = $this->esiFetcher->fetch('/latest/universe/systems/' . $system_id);
+        $systemData = json_validate($systemData['body']) ? json_decode($systemData['body'], true) : [];
         $constellationData = $this->constellations->findOneOrNull(['constellation_id' => $systemData['constellation_id']]) ??
             $this->esiConstellations->getConstellation($systemData['constellation_id']);
         $regionData = $this->regions->findOneOrNull(['region_id' => $constellationData['region_id']]) ??
