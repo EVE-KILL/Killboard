@@ -93,7 +93,7 @@ class Characters extends Controller
         $corporationIds = array_column($corpHistoryData, 'corporation_id');
 
         // Fetch all corporation data at once
-        $corporationsData = $this->corporations->find(['corporation_id' => ['$in' => $corporationIds]], ['projection' => ['_id' => 0]], 300)->toArray();
+        $corporationsData = $this->corporations->find(['corporation_id' => ['$in' => $corporationIds]], ['projection' => ['_id' => 0, 'corporation_id' => 1, 'name' => 1]], 300)->toArray();
 
         // Convert to associative array
         $corporationsDataAssoc = [];
@@ -125,13 +125,13 @@ class Characters extends Controller
             $corporationHistory[] = $this->cleanupTimestamps(array_merge($data, $corpData));
         }
 
-        return $this->json($corporationHistory);
-
         // Lets update the character with the latest corporation history
         $this->characters->collection->updateOne(
             ['character_id' => $character_id],
-            ['$set' => ['corporation_history' => $corporationHistory]],
+            ['$set' => ['history' => $corporationHistory]],
         );
+
+        return $this->json($corporationHistory);
     }
 
     #[RouteAttribute('/characters/{character_id:[0-9]+}/killmails[/]', ['GET'])]
