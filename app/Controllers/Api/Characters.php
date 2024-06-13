@@ -85,7 +85,7 @@ class Characters extends Controller
             return $this->json(['error' => 'Character not found'], 300);
         }
 
-        $response = $this->corporationHistoryFetcher->fetch('/latest/characters/' . $character_id . '/corporationhistory');
+        $response = $this->corporationHistoryFetcher->fetch('/latest/characters/' . $character_id . '/corporationhistory', cacheTime: 60 * 60 * 24 * 7);
         $corpHistoryData = json_validate($response['body']) ? json_decode($response['body'], true) : [];
         $corpHistoryData = array_reverse($corpHistoryData);
 

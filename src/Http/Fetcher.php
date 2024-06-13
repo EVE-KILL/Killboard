@@ -53,7 +53,8 @@ class Fetcher
         string $body = '',
         array $headers = [],
         array $options = [],
-        ?string $proxy_id = null
+        ?string $proxy_id = null,
+        ?int $cacheTime = null
     ): array {
         // Sort the query, headers and options
         ksort($query);
@@ -143,7 +144,7 @@ class Fetcher
             $this->cache->set($cacheKey, [
                 'headers' => $response->getHeaders(),
                 'body' => $content
-            ], $expiresInSeconds);
+            ], $cacheTime ?? $expiresInSeconds);
         }
 
         // Return the result
@@ -176,9 +177,8 @@ class Fetcher
         ]);
     }
 
-    protected function getResultFromCache(string $cacheKey): ?array
+    protected function getResultFromCache(string $cacheKey, ?int $cacheTime): ?array
     {
-        return null;
         $result = $this->cache->get($cacheKey);
         if ($result === null || $result === false) {
             return null;
@@ -186,7 +186,6 @@ class Fetcher
 
         $expireTTL = $this->cache->getTTL($cacheKey) ?? 0;
         $expirationTime = time() + $expireTTL > 0 ? time() + $expireTTL : time();
-        dump($expirationTime);
         $expireTimeGMT = new \DateTime(
             $expirationTime,
             new \DateTimeZone('GMT')
