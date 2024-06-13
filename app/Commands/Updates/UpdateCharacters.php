@@ -24,7 +24,7 @@ class UpdateCharacters extends ConsoleCommand
         $characterCount = $this->characters->count($this->all ? [] : $updated);
         $this->out('Characters to update: ' . $characterCount);
         $progress = $this->progressBar($characterCount);
-        foreach ($this->characters->find($this->all ? [] : $updated) as $character) {
+        foreach ($this->characters->find($this->all ? [] : $updated, ['project' => ['_id' => 0, 'character_id' => 1]]) as $character) {
             $this->updateCharacter->enqueue(['character_id' => $character['character_id']]);
             $progress->advance();
         }
