@@ -17,6 +17,7 @@ class updateCharacter extends Jobs
         protected \EK\ESI\Alliances $esiAlliances,
         protected \EK\ESI\Corporations $esiCorporations,
         protected \EK\ESI\Characters $esiCharacters,
+        protected \EK\ESI\EsiFetcher $esiFetcher,
         protected Meilisearch $meilisearch,
         protected \EK\Redis\Redis $redis
     ) {
@@ -55,6 +56,10 @@ class updateCharacter extends Jobs
         $characterData['alliance_name'] = $allianceData['name'] ?? '';
         $characterData['corporation_name'] = $corporationData['name'] ?? '';
         $characterData['faction_name'] = $factionData['name'] ?? '';
+
+        // Get character corporation history and attach it to the character data
+        $corporationHistoryRequest = $this->esiFetcher->fetch('/latest/characters/' . $characterId . '/corporationhistory');
+        $characterData['history'] = json_validate($corporationHistoryRequest['body']) ? json_decode($corporationHistoryRequest['body'], true) : [];
 
         ksort($characterData);
 
