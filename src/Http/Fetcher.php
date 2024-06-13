@@ -177,7 +177,7 @@ class Fetcher
         ]);
     }
 
-    protected function getResultFromCache(string $cacheKey, ?int $cacheTime): ?array
+    protected function getResultFromCache(string $cacheKey): ?array
     {
         $result = $this->cache->get($cacheKey);
         if ($result === null || $result === false) {
