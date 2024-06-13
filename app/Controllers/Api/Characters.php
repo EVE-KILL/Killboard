@@ -131,7 +131,7 @@ class Characters extends Controller
             ['$set' => ['history' => $corporationHistory]],
         );
 
-        return $this->json($corporationHistory);
+        return $this->json(array_reverse($corporationHistory));
     }
 
     #[RouteAttribute('/characters/{character_id:[0-9]+}/killmails[/]', ['GET'])]
