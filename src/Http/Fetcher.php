@@ -186,10 +186,8 @@ class Fetcher
 
         $expireTTL = $this->cache->getTTL($cacheKey) ?? 0;
         $expirationTime = time() + $expireTTL > 0 ? time() + $expireTTL : time();
-        $expireTimeGMT = new \DateTime(
-            $expirationTime,
-            new \DateTimeZone('GMT')
-        );
+        $expireTimeGMT = new \DateTime('now', new \DateTimeZone('GMT'));
+        $expireTimeGMT->setTimestamp($expirationTime);
         $currentTimeGMT = new \DateTime('now', new \DateTimeZone('GMT'));
 
         return [
