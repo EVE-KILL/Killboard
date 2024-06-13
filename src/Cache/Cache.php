@@ -7,26 +7,20 @@ use Predis\Client;
 
 class Cache
 {
-    protected Client $redis;
+    protected \Redis $redis;
 
     public function __construct(
         protected Config $config
     ) {
-        $this->redis = new Client([
-            'scheme' => 'tcp',
-            'host' => $config->get('redis/host'),
-            'port' => $config->get('redis/port'),
-            'password' => $config->get('redis/password'),
-            'database' => $config->get('redis/database'),
-        ], [
-            'prefix' => '',
-            'persistent' => true,
-            'timeout' => 10,
-            'read_write_timeout' => 5,
-            'tcp_keepalive' => 1,
-            'tcp_nodelay' => true,
-            'throw_errors' => false,
-        ]);
+        $redis = new \Redis();
+        $redis->pconnect(
+            $config->get('redis/host'),
+            $config->get('redis/port'),
+            10,
+            'cache'
+        );
+
+        $this->redis = $redis;
     }
 
     public function generateKey(...$args): string
