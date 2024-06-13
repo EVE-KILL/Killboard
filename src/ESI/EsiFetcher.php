@@ -10,6 +10,7 @@ use EK\Cache\Cache;
 use EK\Config\Config;
 use EK\Logger\ESILogger;
 use EK\Models\Proxies;
+use EK\Webhooks\Webhooks;
 use GuzzleHttp\Client;
 
 class EsiFetcher
@@ -21,7 +22,8 @@ class EsiFetcher
         protected Cache $cache,
         protected ESILogger $logger,
         protected Proxies $proxies,
-        protected Config $config
+        protected Config $config,
+        protected Webhooks $webhooks
     ) {
         $throttleRateLimit = $this->config->get('esi/global-rate-limit', 500);
         $this->throttleBucket = $this->generateBucket($throttleRateLimit, 'esi_global');
@@ -75,24 +77,26 @@ class EsiFetcher
         if ($this->cache->exists($cacheKey) && $proxy_id === null) {
             $result = $this->cache->get($cacheKey);
 
-            // Convert the times to GMT
-            $expiresTimeGMT = new \DateTime(
+            if ($result != null) {
+                // Convert the times to GMT
+                $expiresTimeGMT = new \DateTime(
                 // Get the time the cache expires
-                strtotime(time() + $this->cache->getTTL($cacheKey)),
-                new \DateTimeZone('GMT')
-            );
-            $currentTimeGMT = new \DateTime('now', new \DateTimeZone('GMT'));
+                    strtotime(time() + $this->cache->getTTL($cacheKey)),
+                    new \DateTimeZone('GMT')
+                );
+                $currentTimeGMT = new \DateTime('now', new \DateTimeZone('GMT'));
 
-            return [
-                'status' => 304,
-                'headers' => array_merge($result['headers'], [
-                    'Expires' => $expiresTimeGMT->format('D, d M Y H:i:s T'),
-                    'Date' => $currentTimeGMT->format('D, d M Y H:i:s T'),
-                    'X-Esi-Error-Limit-Remain' => '100',
-                    'X-Esi-Error-Limit-Reset' => '60',
-                ]),
-                'body' => $result['body'],
-            ];
+                return [
+                    'status' => 304,
+                    'headers' => array_merge($result['headers'], [
+                        'Expires' => $expiresTimeGMT->format('D, d M Y H:i:s T'),
+                        'Date' => $currentTimeGMT->format('D, d M Y H:i:s T'),
+                        'X-Esi-Error-Limit-Remain' => '100',
+                        'X-Esi-Error-Limit-Reset' => '60',
+                    ]),
+                    'body' => $result['body'],
+                ];
+            }
         }
 
         // Use the proxy_id to get the specific proxy to use, or get a random active proxy
@@ -138,6 +142,12 @@ class EsiFetcher
         $serverTime = $response->getHeader('Date')[0] ?? $now->format('D, d M Y H:i:s T');
         $expiresInSeconds = strtotime($expires) - strtotime($serverTime) ?? 60;
 
+        // If the status is a 420 we pause everything until $expiresInSeconds
+        if ($statusCode === 420) {
+            $this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $expiresInSeconds . ' seconds');
+            sleep($expiresInSeconds);
+        }
+
         // Emit a log message
         $this->logger->info(sprintf(
             '%s %s %s %s',
@@ -168,7 +178,7 @@ class EsiFetcher
         //}
 
         if (!in_array($statusCode, [200, 304])) {
-            $this->throttleBucket->consume($this->config->get('esi/global-rate-limit', 500) / 4);
+            $this->throttleBucket->consume($this->config->get('esi/global-rate-limit', 100) / 4);
         }
 
         if ($expiresInSeconds > 0 && in_array($statusCode, [200, 304])) {
