@@ -54,8 +54,7 @@ class Killmails
         }
 
         // Get killmail from ESI
-        $request = $this->esiKillmails->getKillmail($killmail_id, $hash);
-        $killmail = json_validate($request['body']) ? json_decode($request['body'], true) : [];
+        $killmail = $this->esiKillmails->getKillmail($killmail_id, $hash);
 
         // Save to the database
         $this->killmailsESI->setData($killmail);
