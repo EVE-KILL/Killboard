@@ -156,7 +156,7 @@ class Collection
         }
 
         if (!$cacheKeyExists || $result === null) {
-            $result = $this->collection->findOne($filter, $options) ?? [];
+            $result = $this->collection->aggregate($pipeline, $options)->toArray();
         }
 
         $result = $this->fixTimestamps($result);
