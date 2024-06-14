@@ -182,15 +182,17 @@ class BackfillBattles extends ConsoleCommand
                     }
                 }
             }
-            $redTeam['ship_type_count'] = count($redTeam['ship_types']);
-            $redTeam['total_ship_count'] = array_sum(array_column($redTeam['ship_types'], 'count'));
+            $redTeam['ship_type_count'] = count($redTeam['ship_types'] ?? []);
+            $redTeam['total_ship_count'] = array_sum(array_column($redTeam['ship_types'] ?? [], 'count'));
             ksort($redTeam);
         }
 
         // Sort the ship types by count
-        uasort($redTeam['ship_types'], function($a, $b) {
-            return $b['count'] <=> $a['count'];
-        });
+        if (!empty($redTeam['ship_types'])) {
+            uasort($redTeam['ship_types'], function ($a, $b) {
+                return $b['count'] <=> $a['count'];
+            });
+        }
 
         // Blue team
         foreach ($blueTeam['corporations'] as $teamMember) {
@@ -241,20 +243,27 @@ class BackfillBattles extends ConsoleCommand
             ksort($blueTeam);
         }
 
+        // Sort the ship types by count
+        if (!empty($blueTeam['ship_types'])) {
+            uasort($blueTeam['ship_types'], function ($a, $b) {
+                return $b['count'] <=> $a['count'];
+            });
+        }
+
         // Kills can sometime show up in both blue and red team, remove them from blue team if they do
-        $blueTeam['kills'] = array_diff($blueTeam['kills'], $redTeam['kills']);
+        $blueTeam['kills'] = array_diff($blueTeam['kills'] ?? [], $redTeam['kills'] ?? []);
 
         // Total stats
         $battle = [
-            'total_value' => $redTeam['value'] + $blueTeam['value'],
-            'total_alliances' => count($redTeam['alliances']) + count($blueTeam['alliances']),
-            'total_corporations' => count($redTeam['corporations']) + count($blueTeam['corporations']),
-            'total_characters' => count($redTeam['characters']) + count($blueTeam['characters']),
-            'ship_type_count' => $redTeam['ship_type_count'] + $blueTeam['ship_type_count'],
-            'ship_count' => $redTeam['total_ship_count'] + $blueTeam['total_ship_count'],
-            'points' => $redTeam['points'] + $blueTeam['points'],
-            'kills' => count(array_unique(array_column($kills->toArray(), 'killmail_id'))),
-            'kills_team_count' => count($redTeam['kills']) + count($blueTeam['kills']),
+            'total_value' => $redTeam['value'] ?? 0 + $blueTeam['value'] ?? 0,
+            'total_alliances' => count($redTeam['alliances'] ?? []) + count($blueTeam['alliances'] ?? []),
+            'total_corporations' => count($redTeam['corporations'] ?? []) + count($blueTeam['corporations'] ?? []),
+            'total_characters' => count($redTeam['characters'] ?? []) + count($blueTeam['characters'] ?? []),
+            'ship_type_count' => $redTeam['ship_type_count'] ?? + + $blueTeam['ship_type_count'] ?? 0,
+            'ship_count' => $redTeam['total_ship_count'] ?? 0 + $blueTeam['total_ship_count'] ?? 0,
+            'points' => $redTeam['points'] ?? 0 + $blueTeam['points'] ?? 0,
+            'kills' => count(array_unique(array_column($kills->toArray() ?? [], 'killmail_id'))),
+            'kills_team_count' => count($redTeam['kills'] ?? []) + count($blueTeam['kills'] ?? []),
             'red_team' => $redTeam,
             'blue_team' => $blueTeam
         ];
