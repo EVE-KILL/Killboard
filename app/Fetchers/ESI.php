@@ -39,11 +39,11 @@ class ESI extends Fetcher
         $now = new \DateTime('now', new \DateTimeZone('GMT'));
         $expires = $response->getHeader('Expires')[0] ?? $now->format('D, d M Y H:i:s T');
         $serverTime = $response->getHeader('Date')[0] ?? $now->format('D, d M Y H:i:s T');
-        $expiresInSeconds = strtotime($expires) - strtotime($serverTime) ?? 60;
+        $expiresInSeconds = (int) strtotime($expires) - strtotime($serverTime) ?? 60;
 
         switch ($statusCode) {
             case 420:
-                $sleepTime = $expiresInSeconds < 0 ? 60 : $expiresInSeconds;
+                $sleepTime = $expiresInSeconds === 0 ? 60 : $expiresInSeconds;
                 $this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
                 // Consume all tokens to halt all the workers
                 $this->throttleBucket->consume($this->bucketLimit);
