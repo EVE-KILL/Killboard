@@ -4,7 +4,8 @@ namespace EK\Commands\Killmails;
 
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Http\Fetcher;
+use EK\Fetchers\zKillboard;
+use EK\Jobs\processKillmail;
 use EK\Models\Killmails;
 use Illuminate\Support\Collection;
 
@@ -19,44 +20,15 @@ class FetchKillmails extends ConsoleCommand
     public function __construct(
         protected ClassLoader $autoloader,
         protected Killmails $killmails,
-        protected Fetcher $fetcher
+        protected zKillboard $zkbFetcher,
+        protected processKillmail $processKillmail,
     ) {
         parent::__construct();
-    }
-
-    protected function fetchAndCacheData($date): array
-    {
-        $file = BASE_DIR . "/cache/zkb/{$date}.json";
-        if(!is_dir(dirname($file))) {
-            mkdir(dirname($file), 0777, true);
-        }
-
-        if (file_exists($file)) {
-            return json_decode(file_get_contents($file), true);
-        } else {
-            $this->out("Fetching from: https://zkillboard.com/api/history/{$date}.json");
-
-            do {
-                $data = $this->fetcher->fetch("https://zkillboard.com/api/history/{$date}.json");
-            } while (!in_array($data->getStatusCode(), [200, 304]));
-
-            $kills = $data->getBody()->getContents();
-
-            if (!empty($kills)) {
-                file_put_contents($file, $kills);
-                return json_decode($kills, true);
-            } else {
-                throw new \RuntimeException("Result from https://zkillboard.com/api/history/{$date}.json was empty");
-            }
-        }
     }
 
     final public function handle(): void
     {
         ini_set('memory_limit', '-1');
-
-        // Enable garbage collection
-        gc_enable();
 
         $date = new \DateTime($this->fromDate ?? 'now');
         $direction = in_array($this->direction, ['latest', 'oldest']) ? $this->direction : 'latest';
@@ -64,15 +36,16 @@ class FetchKillmails extends ConsoleCommand
         $totalKillmails = 0;
         $killmailsProcessed = 0;
 
-        $totalData = $this->fetcher->fetch('https://zkillboard.com/api/history/totals.json') ?? [];
-        $totalAvailable = new Collection(json_decode($totalData->getBody()->getContents(), true, flags: \JSON_THROW_ON_ERROR));
-        $oldestDate = new \DateTime($totalAvailable->keys()->first());
-        $latestDate = new \DateTime($totalAvailable->keys()->last());
-        $totalAvailable->each(function ($row) use (&$totalKillmails) {
+        $totalData = $this->zkbFetcher->fetch('https://zkillboard.com/api/history/totals.json');
+        $totalData = json_validate($totalData['body']) ? collect(json_decode($totalData['body'], true)) : collect([]);
+
+        $oldestDate = new \DateTime($totalData->keys()->first());
+        $latestDate = new \DateTime($totalData->keys()->last());
+        $totalData->each(function ($row) use (&$totalKillmails) {
             $totalKillmails += $row;
         });
 
-        $this->out('Iterating over ' . count($totalAvailable) . ' individual days');
+        $this->out('Iterating over ' . $totalData->count() . ' individual days');
 
         // Iterate over all days from $date either going forward to the latest date from $totalData, or going backwards to the oldest date from $totalData
         while(true) {
@@ -98,20 +71,26 @@ class FetchKillmails extends ConsoleCommand
     private function processKillmails(\DateTime $date): void
     {
         $date = $date->format('Ymd');
-        $killmails = $this->fetchAndCacheData($date);
+        $killmails = $this->zkbFetcher->fetch("https://zkillboard.com/api/history/{$date}.json");
+        $killmails = json_validate($killmails['body']) ? collect(json_decode($killmails['body'], true)) : collect([]);
+
         $this->out("Processing {$date} with " . count($killmails) . " killmails");
 
-        $killmailBatch = [];
-        foreach ($killmails as $killmail_id => $hash) {
-            $killmailBatch[] = [
-                'killmail_id' => (int) $killmail_id,
-                'hash' => $hash
-            ];
+        if ($killmails->count() > 0) {
+            $killmailBatch = [];
+            foreach ($killmails as $killmail_id => $hash) {
+                // Emit the killmail to the processKillmail job as well
+                $killmailBatch[] = [
+                    'killmail_id' => (int)$killmail_id,
+                    'hash' => $hash
+                ];
+            }
+
+            $this->processKillmail->massEnqueue($killmailBatch);
+            $this->killmails->setData($killmailBatch);
+            $insertCount = $this->killmails->saveMany();
+
+            $this->out("Inserted {$insertCount} killmails");
         }
-
-        $this->killmails->setData($killmailBatch);
-        $insertCount = $this->killmails->saveMany();
-
-        $this->out("Inserted {$insertCount} killmails");
     }
 }

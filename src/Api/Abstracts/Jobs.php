@@ -43,5 +43,20 @@ abstract class Jobs
         $this->client->rpush($queue ?? $this->defaultQueue, [json_encode($jobData)]);
     }
 
+    public function massEnqueue(array $data = [], ?string $queue = null, int $processAfter = 0): void
+    {
+        $jobs = [];
+        $thisClass = get_class($this);
+        foreach ($data as $d) {
+            $jobs[] = json_encode([
+                'job' => $thisClass,
+                'data' => $d,
+                'process_after' => $processAfter,
+            ]);
+        }
+
+        $this->client->rpush($queue ?? $this->defaultQueue, $jobs);
+    }
+
     abstract public function handle(array $data): void;
 }
