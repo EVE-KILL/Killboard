@@ -168,7 +168,7 @@ class Collection
         return collect($result);
     }
 
-    public function count(array $filter = [], array $options = [], int $cacheTime = 60): int
+    public function count(array $filter = [], array $options = []): int
     {
         return $this->collection->countDocuments($filter, $options);
     }

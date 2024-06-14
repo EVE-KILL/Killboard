@@ -4,8 +4,10 @@ namespace EK\Commands\Battles;
 
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Models\Battles;
+use EK\Models\Corporations;
 use EK\Models\Killmails;
 use EK\Models\SolarSystems;
+use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 
 class BackfillBattles extends ConsoleCommand
@@ -17,6 +19,7 @@ class BackfillBattles extends ConsoleCommand
         protected Killmails $killmails,
         protected Battles $battles,
         protected SolarSystems $solarSystems,
+        protected Corporations $corporations,
         ?string $name = null
     ) {
         parent::__construct($name);
@@ -32,274 +35,365 @@ class BackfillBattles extends ConsoleCommand
 
         $this->out("Backfilling battles from {$formattedStartTime} to {$formattedEndTime}");
 
-        $searchTime = $startTime;
+        $fromTime = $startTime - 7200; // - 3600;
+        $toTime = $startTime; // + 3600;
         do {
-            $timeFrom = new UTCDateTime(($searchTime - 2700) * 1000);
-            $timeTo = new UTCDateTime(($searchTime + 2700) * 1000);
-
+            //$this->out('Looking for battles between ' . date('Y-m-d H:i:s', $fromTime) . ' and ' . date('Y-m-d H:i:s', $toTime));
             $pipeline = [
-                ['$match' => ['kill_time' => ['$gte' => $timeFrom, '$lte' => $timeTo]]],
-                ['$group' => ['_id' => '$system_id', 'count' => ['$sum' => 1]]],
-                ['$project' => ['_id' => 0, 'count' => '$count', 'system_id' => '$_id']],
-                ['$match' => ['count' => ['$gte' => 50]]],
+                ['$match' => [
+                    'kill_time' => ['$gte' => new UTCDateTime($fromTime * 1000), '$lte' => new UTCDateTime($toTime * 1000)]
+                ]],
+                ['$group' => [
+                    '_id' => '$system_id',
+                    'count' => ['$sum' => 1]
+                ]],
+                ['$match' => [
+                    'count' => ['$gt' => 25]
+                ]],
                 ['$sort' => ['count' => -1]]
             ];
 
-            $results = $this->killmails->aggregate($pipeline);
-            if ($results->count() >= 1) {
-                foreach($results as $result) {
-                    $run = true;
-                    $fails = 0;
-                    $minTime = $searchTime - 2700;
-                    $systemId = $result['system_id'];
-                    $battleStartTime = 0;
+            $potentialBattles = $this->killmails->aggregate($pipeline);
 
-                    // Look if there are any battles already in the database for this system
-                    //$battleCount = $this->battles->find(['system_id' => $systemId, 'start_time' => ['$gte' => new UTCDateTime(($minTime - 14400) * 1000), '$lte' => new UTCDateTime($searchTime * 1000)]]);
+            // This is where we start looking for the battle in 5 minute segments
+            if ($potentialBattles->count() > 0) {
+                foreach($potentialBattles as $potentialBattle) {
+                    $systemId = $potentialBattle['_id'];
+                    //$this->out("Potential battle in system {$systemId}");
+
+                    $extensibleToTime = $toTime;
+                    $segmentStart = $fromTime;
+                    $segmentEnd = $fromTime + 300;
+                    $foundStart = false;
+                    $foundEnd = false;
+                    $battleStartTime = 0;
+                    $battleEndTime = 0;
+                    $failCounter = 0;
+                    $killCountToConsider = 25;
 
                     do {
-                        $timeFrom = new UTCDateTime($minTime * 1000);
-                        $timeTo = new UTCDateTime(($minTime + 600) * 1000);
-                        $pipeline = [
-                            ['$match' => ['system_id' => $systemId, 'kill_time' => ['$gte' => $timeFrom, '$lte' => $timeTo]]],
-                            ['$group' => ['_id' => '$system_id', 'count' => ['$sum' => 1]]],
-                            ['$project' => ['_id' => 0, 'count' => '$count', 'system_id' => '$_id']],
-                            ['$match' => ['count' => ['$gte' => 3]]],
-                            ['$sort' => ['count' => -1]],
-                        ];
+                        $killCount = $this->killmails->count([
+                            'kill_time' => ['$gte' => new UTCDateTime($segmentStart * 1000), '$lte' => new UTCDateTime($segmentEnd * 1000)],
+                            'system_id' => $systemId
+                        ]);
 
-                        $result = $this->killmails->aggregate($pipeline);
+                        //$this->out("Segment between " . date('Y-m-d H:i:s', $segmentStart) . " and " . date('Y-m-d H:i:s', $segmentEnd) . " has {$killCount} kills");
 
-                        if ($battleStartTime === 0 && $result->count() >= 1) {
-                            $fails = 0;
-                            $battleStartTime = $minTime;
+                        if ($killCount >= $killCountToConsider) {
+                            if (!$foundStart) {
+                                $foundStart = true;
+                                $battleStartTime = $segmentStart;
+                            }
+                            $failCounter = 0;
+                        } else {
+                            if ($failCounter >= 5) {
+                                $foundEnd = true;
+                                $battleEndTime = $segmentStart;
+                            }
+                            $failCounter++;
                         }
 
-                        if ($fails < 20 && $battleStartTime !== 0) {
-                            $systemData = $this->solarSystems->findOne(['system_id' => $systemId]);
-                            $systemName = $systemData->get('name');
-                            $regionName = $systemData->get('region_name');
-                            $this->processBattle($minTime - 12000, $battleStartTime, $systemId);
-                            $run = false;
-                        } elseif ($fails >= 20) {
-                            $run = false;
+                        // We can _ONLY_ extend $toTime by 1h if we hit >5 kills in the last 5 minute segment
+                        if ($segmentEnd >= $extensibleToTime && $killCount >= $killCountToConsider) {
+                            $this->out("Extending toTime by 30m because we hit >5 kills in the last 5 minute segment");
+                            $extensibleToTime += 1600;
                         }
 
-                        $minTime += 600;
-                        if ($result->count() === 0) {
-                            $fails++;
+                        $segmentStart += 300;
+                        $segmentEnd += 300;
+                    } while ($segmentEnd < $extensibleToTime);
+
+                    if ($foundStart && $foundEnd) {
+                        $this->out('Found a battle in system ' . $systemId . ' between ' . date('Y-m-d H:i:s', $battleStartTime) . ' and ' . date('Y-m-d H:i:s', $battleEndTime));
+                        if ($battleEndTime < $battleStartTime) {
+                            $this->out('Battle end time is before start time, skipping');
                             continue;
                         }
-                    } while ($run === true);
+                        $this->processBattle($systemId, $battleStartTime, $battleEndTime);
+                    }
                 }
             }
 
-            $searchTime += 3600;
-        } while($searchTime < $endTime);
+            $fromTime += 7200;
+            $toTime += 7200;
+        } while($fromTime < $endTime);
     }
 
-    private function processBattle(int $startTime, int $endTime, int $systemId): void
+    private function processBattle(int $systemId, int $battleStartTime, int $battleEndTime): void
     {
-        $data = $this->killmails->aggregate([
-            ['$match' => ['system_id' => $systemId, 'kill_time' => ['$gte' => new UTCDateTime($startTime * 1000), '$lte' => new UTCDateTime($endTime * 1000)]]],
+        $kills = $this->killmails->aggregate([
+            ['$match' => [
+                'kill_time' => ['$gte' => new UTCDateTime($battleStartTime * 1000), '$lte' => new UTCDateTime($battleEndTime * 1000)],
+                'system_id' => $systemId
+            ]],
+            ['$project' => [
+                '_id' => 0,
+                'items' => 0,
+            ]],
             ['$unwind' => '$attackers']
         ]);
 
-        $teams = $this->findTeams($data);
-        $redTeam = $teams['redTeam'];
-        $blueTeam = $teams['blueTeam'];
+        // Find the teams
+        $teams = $this->findTeams($kills);
+        $redTeam = $teams['a'];
+        $blueTeam = $teams['b'];
 
-        $redTeamCharacters = [];
-        $redTeamShips = [];
-        $redTeamCorporations = [];
-        $redTeamKills = [];
-        $blueTeamCharacters = [];
-        $blueTeamShips = [];
-        $blueTeamCorporations = [];
-        $blueTeamKills = [];
+        // Populate the battle data
+        foreach ($redTeam['corporations'] as $teamMember) {
+            // teamMember has both corporation and alliance arrays
+            foreach($kills as $kill) {
+                if ($kill['attackers']['corporation_id'] === $teamMember['id']) {
+                    if (!isset($redTeam['kills'])) {
+                        $redTeam['kills'] = [];
+                    }
+                    if (!isset($redTeam['value'])) {
+                        $redTeam['value'] = 0;
+                    }
+                    if (!isset($redTeam['points'])) {
+                        $redTeam['points'] = 0;
+                    }
 
-        foreach ($data as $mail) {
-            foreach ($redTeam['alliances'] as $alliance) {
-                if ($mail['attackers']['alliance_name'] === $alliance) {
-                    $this->processTeamMember($mail, $redTeamCharacters, $redTeamCorporations, $redTeamShips, $redTeamKills);
+                    $redTeam['kills'][$kill['killmail_id']] = $kill['killmail_id'];
+                    $redTeam['value'] += $kill['total_value'];
+                    $redTeam['points'] += $kill['point_value'];
+
+                    // Add the ship type to the team, if it's already added then increment the count
+                    if (!isset($redTeam['ship_types'][$kill['attackers']['ship_id']])) {
+                        $redTeam['ship_types'][$kill['attackers']['ship_id']] = [
+                            'name' => $kill['attackers']['ship_name'],
+                            'count' => 1
+                        ];
+                    } else {
+                        $redTeam['ship_types'][$kill['attackers']['ship_id']]['count']++;
+                    }
+
+                    // Add the character to the team (if not already added)
+                    if (!isset($redTeam['characters'][$kill['attackers']['character_id']])) {
+                        $redTeam['characters'][$kill['attackers']['character_id']] = [
+                            'character_name' => $kill['attackers']['character_name'],
+                            'character_id' => $kill['attackers']['character_id'],
+                            'corporation_name' => $kill['attackers']['corporation_name'],
+                            'corporation_id' => $kill['attackers']['corporation_id'],
+                            'alliance_name' => $kill['attackers']['alliance_name'],
+                            'alliance_id' => $kill['attackers']['alliance_id'],
+                            'faction_name' => $kill['attackers']['faction_name'],
+                            'faction_id' => $kill['attackers']['faction_id']
+                        ];
+                    }
                 }
             }
-            foreach ($redTeam['corporations'] as $corporation) {
-                if ($mail['attackers']['corporation_name'] === $corporation) {
-                    $this->processTeamMember($mail, $redTeamCharacters, $redTeamCorporations, $redTeamShips, $redTeamKills);
-                }
-            }
-            foreach ($blueTeam['alliances'] as $alliance) {
-                if ($mail['attackers']['alliance_name'] === $alliance) {
-                    $this->processTeamMember($mail, $blueTeamCharacters, $blueTeamCorporations, $blueTeamShips, $blueTeamKills);
-                }
-            }
-            foreach ($blueTeam['corporations'] as $corporation) {
-                if ($mail['attackers']['corporation_name'] === $corporation) {
-                    $this->processTeamMember($mail, $blueTeamCharacters, $blueTeamCorporations, $blueTeamShips, $blueTeamKills);
-                }
-            }
+            $redTeam['ship_type_count'] = count($redTeam['ship_types']);
+            $redTeam['total_ship_count'] = array_sum(array_column($redTeam['ship_types'], 'count'));
+            ksort($redTeam);
         }
 
-        // Remove the overlap
-        $this->removeOverlap($redTeamKills, $blueTeamKills);
+        // Sort the ship types by count
+        uasort($redTeam['ship_types'], function($a, $b) {
+            return $b['count'] <=> $a['count'];
+        });
 
-        if (!empty($redTeam) && !empty($blueTeam) && !empty($redTeamCorporations) && !empty($blueTeamCorporations)) {
-            $systemData = $this->solarSystems->findOne(['system_id' => $systemId], ['projection' => ['_id' => 0, 'planets' => 0, 'stargates' => 0]]);
-            $dataArray = [
-                'start_time' => new UTCDateTime($startTime * 1000),
-                'end_time' => new UTCDateTime($endTime * 1000),
-                'system_id' => $systemId,
-                'system_name' => $systemData->get('name'),
-                'region_id' => $systemData->get('region_id'),
-                'region_name' => $systemData->get('region_name'),
-                'teamRed' => [
-                    'characters' => array_values($redTeamCharacters),
-                    'corporations' => array_values($redTeamCorporations),
-                    'alliances' => array_values($redTeam['alliances']),
-                    'ships' => array_values($redTeamShips),
-                    'kills' => array_values($redTeamKills),
-                ],
-                'teamBlue' => [
-                    'characters' => array_values($blueTeamCharacters),
-                    'corporations' => array_values($blueTeamCorporations),
-                    'alliances' => array_values($blueTeam['alliances']),
-                    'ships' => array_values($blueTeamShips),
-                    'kills' => array_values($blueTeamKills),
-                ],
-            ];
+        // Blue team
+        foreach ($blueTeam['corporations'] as $teamMember) {
+            // teamMember has both corporation and alliance arrays
+            foreach($kills as $kill) {
+                if ($kill['attackers']['corporation_id'] === $teamMember['id']) {
+                    if (!isset($blueTeam['kills'])) {
+                        $blueTeam['kills'] = [];
+                    }
+                    if (!isset($blueTeam['value'])) {
+                        $blueTeam['value'] = 0;
+                    }
+                    if (!isset($blueTeam['points'])) {
+                        $blueTeam['points'] = 0;
+                    }
 
-            $battleID = md5(json_encode($dataArray, JSON_THROW_ON_ERROR, 512));
-            $dataArray['battle_id'] = $battleID;
+                    $blueTeam['kills'][$kill['killmail_id']] = $kill['killmail_id'];
+                    $blueTeam['value'] += $kill['total_value'];
+                    $blueTeam['points'] += $kill['point_value'];
 
-            // Emit to terminal we found a battle
-            $this->out("Found a battle in {$systemData->get('name')} ({$systemData->get('region_name')}) at " . date('Y-m-d H:i:s', $startTime) . " with ID: {$battleID}");
-            // Insert the data to the battles table
-            $this->battles->setData($dataArray);
-            $this->battles->save();
+                    // Add the ship type to the team, if it's already added then increment the count
+                    if (!isset($blueTeam['ship_types'][$kill['attackers']['ship_id']])) {
+                        $blueTeam['ship_types'][$kill['attackers']['ship_id']] = [
+                            'name' => $kill['attackers']['ship_name'],
+                            'count' => 1
+                        ];
+                    } else {
+                        $blueTeam['ship_types'][$kill['attackers']['ship_id']]['count']++;
+                    }
+
+                    // Add the character to the team (if not already added)
+                    if (!isset($blueTeam['characters'][$kill['attackers']['character_id']])) {
+                        $blueTeam['characters'][$kill['attackers']['character_id']] = [
+                            'character_name' => $kill['attackers']['character_name'],
+                            'character_id' => $kill['attackers']['character_id'],
+                            'corporation_name' => $kill['attackers']['corporation_name'],
+                            'corporation_id' => $kill['attackers']['corporation_id'],
+                            'alliance_name' => $kill['attackers']['alliance_name'],
+                            'alliance_id' => $kill['attackers']['alliance_id'],
+                            'faction_name' => $kill['attackers']['faction_name'],
+                            'faction_id' => $kill['attackers']['faction_id']
+                        ];
+                    }
+                }
+            }
+            $blueTeam['ship_type_count'] = count($blueTeam['ship_types']);
+            $blueTeam['total_ship_count'] = array_sum(array_column($blueTeam['ship_types'], 'count'));
+            ksort($blueTeam);
         }
+
+        // Kills can sometime show up in both blue and red team, remove them from blue team if they do
+        $blueTeam['kills'] = array_diff($blueTeam['kills'], $redTeam['kills']);
+
+        // Total stats
+        $battle = [
+            'total_value' => $redTeam['value'] + $blueTeam['value'],
+            'ship_type_count' => $redTeam['ship_type_count'] + $blueTeam['ship_type_count'],
+            'ship_count' => $redTeam['total_ship_count'] + $blueTeam['total_ship_count'],
+            'points' => $redTeam['points'] + $blueTeam['points'],
+            'kills' => count(array_unique(array_column($kills->toArray(), 'killmail_id'))),
+            'kills_team_count' => count($redTeam['kills']) + count($blueTeam['kills']),
+            'red_team' => $redTeam,
+            'blue_team' => $blueTeam
+        ];
+
+        // Insert the battle into the database
+        $battleId = md5(json_encode($battle, JSON_THROW_ON_ERROR, 512));
+        $battle['battle_id'] = $battleId;
+
+        // Sort the battle array, but keep redTeam and blueTeam at the very bottom
+        uksort($battle, function($a, $b) {
+            if ($a === 'red_team' || $a === 'blue_team') {
+                return 1;
+            }
+            if ($b === 'red_team' || $b === 'blue_team') {
+                return -1;
+            }
+            return $a <=> $b;
+        });
+
+        // Save to the db
+        $this->battles->setData($battle);
+        $this->battles->save();
     }
 
-    private function processTeamMember($mail, &$teamCharacters, &$teamCorporations, &$teamShips, &$teamKills): void
+    private function findTeams(Collection $killmails): array
     {
-        if ($mail['attackers']['corporation_name'] !== '' && !in_array($mail['attackers']['corporation_name'], $teamCorporations, false)) {
-            $teamCorporations[] = $mail['attackers']['corporation_name'];
+        $attackMatrix = [];
+        $corporationNames = [];
+        $allianceNames = [];
+        $corporationAlliances = [];
+
+        // Build the attack matrix and store names and alliances
+        foreach ($killmails as $killmail) {
+            $victim = $killmail['victim'];
+            $attacker = $killmail['attackers'];
+
+            // Initialize the matrix if not already
+            if (!isset($attackMatrix[$victim['corporation_id']])) {
+                $attackMatrix[$victim['corporation_id']] = [];
+            }
+            if (!isset($attackMatrix[$victim['corporation_id']][$attacker['corporation_id']])) {
+                $attackMatrix[$victim['corporation_id']][$attacker['corporation_id']] = 0;
+            }
+            $attackMatrix[$victim['corporation_id']][$attacker['corporation_id']]++;
+
+            // Store corporation and alliance names
+            if (!isset($corporationNames[$victim['corporation_id']])) {
+                $corporationNames[$victim['corporation_id']] = $victim['corporation_name'];
+            }
+            if ($victim['alliance_id'] != 0 && !isset($allianceNames[$victim['alliance_id']])) {
+                $allianceNames[$victim['alliance_id']] = $victim['alliance_name'];
+                $corporationAlliances[$victim['corporation_id']] = $victim['alliance_id'];
+            }
+
+            if (!isset($corporationNames[$attacker['corporation_id']])) {
+                $corporationNames[$attacker['corporation_id']] = $attacker['corporation_name'];
+            }
+            if ($attacker['alliance_id'] != 0 && !isset($allianceNames[$attacker['alliance_id']])) {
+                $allianceNames[$attacker['alliance_id']] = $attacker['alliance_name'];
+                $corporationAlliances[$attacker['corporation_id']] = $attacker['alliance_id'];
+            }
         }
 
-        if ($mail['attackers']['character_name'] !== '' && !in_array($mail['attackers']['character_name'], $teamCharacters, false)) {
-            if (!isset($teamShips[$mail['attackers']['ship_name']])) {
-                $teamShips[$mail['attackers']['ship_name']] = [
-                    'ship_name' => $mail['attackers']['ship_name'],
-                    'count' => 1,
+        // Determine the teams
+        $teams = $this->determineTeams($attackMatrix, $corporationAlliances, $corporationNames, $allianceNames);
+
+        // Add the names of corporations and alliances
+        foreach ($teams as &$team) {
+            foreach ($team['corporations'] as &$corporation) {
+                $corporation = [
+                    'id' => $corporation,
+                    'name' => $corporationNames[$corporation]
                 ];
-            } else {
-                $teamShips[$mail['attackers']['ship_name']]['count']++;
             }
-
-            $teamCharacters[] = $mail['attackers']['character_name'];
+            foreach ($team['alliances'] as &$alliance) {
+                $alliance = [
+                    'id' => $alliance,
+                    'name' => $allianceNames[$alliance]
+                ];
+            }
         }
 
-        if (!in_array($mail['killmail_id'], $teamKills, false)) {
-            $teamKills[] = $mail['killmail_id'];
-        }
+        return $teams;
     }
 
-    private function removeOverlap(&$redTeamKills, &$blueTeamKills): void
+    private function determineTeams(array $attackMatrix, array $corporationAlliances, $corporationNames, $allianceNames): array
     {
-        if (count($blueTeamKills) > count($redTeamKills)) {
-            foreach ($blueTeamKills as $key => $id) {
-                if (in_array($id, $redTeamKills, false)) {
-                    unset($blueTeamKills[$key]);
+        $teams = ['a' => ['corporations' => [], 'alliances' => []], 'b' => ['corporations' => [], 'alliances' => []]];
+        $assignedCorporations = [];
+        $assignedAlliances = [];
+        $interactionCounts = [];
+
+        foreach ($attackMatrix as $victimCorp => $attackers) {
+            foreach ($attackers as $attackerCorp => $count) {
+                if (!isset($interactionCounts[$victimCorp])) {
+                    $interactionCounts[$victimCorp] = [];
+                }
+                if (!isset($interactionCounts[$victimCorp][$attackerCorp])) {
+                    $interactionCounts[$victimCorp][$attackerCorp] = 0;
+                }
+                $interactionCounts[$victimCorp][$attackerCorp] += $count;
+
+                $victimAlliance = $corporationAlliances[$victimCorp] ?? null;
+                $attackerAlliance = $corporationAlliances[$attackerCorp] ?? null;
+
+                if (!isset($assignedCorporations[$victimCorp]) && !isset($assignedCorporations[$attackerCorp])) {
+                    $teams['a']['corporations'][] = $victimCorp;
+                    $teams['b']['corporations'][] = $attackerCorp;
+                    $assignedCorporations[$victimCorp] = 'a';
+                    $assignedCorporations[$attackerCorp] = 'b';
+
+                    if ($victimAlliance && !in_array($victimAlliance, $teams['a']['alliances'])) {
+                        $teams['a']['alliances'][] = $victimAlliance;
+                        $assignedAlliances[$victimAlliance] = 'a';
+                    }
+                    if ($attackerAlliance && !in_array($attackerAlliance, $teams['b']['alliances'])) {
+                        $teams['b']['alliances'][] = $attackerAlliance;
+                        $assignedAlliances[$attackerAlliance] = 'b';
+                    }
+                } elseif (isset($assignedCorporations[$victimCorp]) && !isset($assignedCorporations[$attackerCorp])) {
+                    $oppositeTeam = ($assignedCorporations[$victimCorp] == 'a') ? 'b' : 'a';
+                    $teams[$oppositeTeam]['corporations'][] = $attackerCorp;
+                    $assignedCorporations[$attackerCorp] = $oppositeTeam;
+
+                    if ($attackerAlliance && !isset($assignedAlliances[$attackerAlliance])) {
+                        $teams[$oppositeTeam]['alliances'][] = $attackerAlliance;
+                        $assignedAlliances[$attackerAlliance] = $oppositeTeam;
+                    }
+                } elseif (!isset($assignedCorporations[$victimCorp]) && isset($assignedCorporations[$attackerCorp])) {
+                    $oppositeTeam = ($assignedCorporations[$attackerCorp] == 'a') ? 'b' : 'a';
+                    $teams[$oppositeTeam]['corporations'][] = $victimCorp;
+                    $assignedCorporations[$victimCorp] = $oppositeTeam;
+
+                    if ($victimAlliance && !isset($assignedAlliances[$victimAlliance])) {
+                        $teams[$oppositeTeam]['alliances'][] = $victimAlliance;
+                        $assignedAlliances[$victimAlliance] = $oppositeTeam;
+                    }
                 }
             }
-        } else {
-            foreach ($redTeamKills as $key => $id) {
-                if (in_array($id, $blueTeamKills, false)) {
-                    unset($redTeamKills[$key]);
-                }
-            }
-        }
-    }
-
-    protected function findTeams($killData): array
-    {
-        // Find alliances and corporations
-        $alliances = $this->allianceSides($killData);
-        $corporations = $this->corporationSides($killData);
-
-        // If no alliances or corporations found, return empty teams
-        if (empty($alliances['red']) || empty($alliances['blue']) || empty($corporations['red']) || empty($corporations['blue'])) {
-            return ['redTeam' => ['corporations' => [], 'alliances' => []], 'blueTeam' => ['corporations' => [], 'alliances' => []]];
         }
 
-        // Determine the teams based on the size of alliances and corporations
-        $redTeam = count($alliances['red']) > count($corporations['red']) ? ['alliances' => $alliances['red'], 'corporations' => $corporations['red']] : ['alliances' => $alliances['red'], 'corporations' => $corporations['red']];
-        $blueTeam = count($alliances['blue']) > count($corporations['blue']) ? ['alliances' => $alliances['blue'], 'corporations' => $corporations['blue']] : ['alliances' => $alliances['blue'], 'corporations' => $corporations['blue']];
-
-        // Ensure a member only appears once and only on one team
-        $redTeam['corporations'] = array_values(array_unique($redTeam['corporations']));
-        $redTeam['alliances'] = array_values(array_unique($redTeam['alliances']));
-        $blueTeam['corporations'] = array_values(array_unique($blueTeam['corporations']));
-        $blueTeam['alliances'] = array_values(array_unique($blueTeam['alliances']));
-
-        $redTeam['corporations'] = array_values(array_diff($redTeam['corporations'], $blueTeam['corporations']));
-        $redTeam['alliances'] = array_values(array_diff($redTeam['alliances'], $blueTeam['alliances']));
-        $blueTeam['corporations'] = array_values(array_diff($blueTeam['corporations'], $redTeam['corporations']));
-        $blueTeam['alliances'] = array_values(array_diff($blueTeam['alliances'], $redTeam['alliances']));
-
-        return ['redTeam' => $redTeam, 'blueTeam' => $blueTeam];
-    }
-
-    protected function allianceSides($killData): array
-    {
-        $allianceTemp = [];
-
-        foreach ($killData as $data) {
-            $attacker = $data['attackers'];
-            $victim = $data['victim'];
-
-            if (isset($attacker['alliance_name'], $victim['alliance_name']) && $victim['alliance_name'] !== '') {
-                $allianceTemp[$victim['alliance_name']][] = $attacker['alliance_name'];
-            }
-        }
-
-        foreach ($allianceTemp as $key => $alliances) {
-            $allianceTemp[$key] = array_filter($alliances, function($alliance) {
-                return $alliance !== '';
-            });
-            $allianceTemp[$key] = array_unique($allianceTemp[$key]);
-        }
-
-        $red = !empty($allianceTemp) ? max($allianceTemp) : [];
-        $blue = !empty($allianceTemp) ? min($allianceTemp) : [];
-
-        return ['red' => $red, 'blue' => $blue];
-    }
-
-    protected function corporationSides($killData): array
-    {
-        $corporationTemp = [];
-
-        foreach ($killData as $data) {
-            $attacker = $data['attackers'];
-            $victim = $data['victim'];
-
-            if (isset($attacker['corporation_name'], $victim['corporation_name']) && $victim['corporation_name'] !== '') {
-                $corporationTemp[$victim['corporation_name']][] = $attacker['corporation_name'];
-            }
-        }
-
-        foreach ($corporationTemp as $key => $corporations) {
-            $corporationTemp[$key] = array_filter($corporations, function($corporation) {
-                return $corporation !== '';
-            });
-            $corporationTemp[$key] = array_unique($corporationTemp[$key]);
-        }
-
-        $red = !empty($corporationTemp) ? max($corporationTemp) : [];
-        $blue = !empty($corporationTemp) ? min($corporationTemp) : [];
-
-        return ['red' => $red, 'blue' => $blue];
+        return $teams;
     }
 
     private function getStartAndEndTime(): array

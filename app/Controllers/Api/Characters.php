@@ -168,8 +168,8 @@ class Characters extends Controller
             return $this->json(['error' => 'Character not found'], 300);
         }
 
-        $killCount = $this->killmails->count(['attackers.character_id' => $character_id], [], 300);
-        $lossCount = $this->killmails->count(['victim.character_id' => $character_id], [], 300);
+        $killCount = $this->killmails->count(['attackers.character_id' => $character_id], []);
+        $lossCount = $this->killmails->count(['victim.character_id' => $character_id], []);
 
         return $this->json(['kills' => $killCount, 'losses' => $lossCount], 300);
     }

@@ -99,8 +99,8 @@ class Corporations extends Controller
             return $this->json(['error' => 'Corporation not found'], 300);
         }
 
-        $killCount = $this->killmails->count(['attackers.corporation_id' => $corporation_id], [], 300);
-        $lossCount = $this->killmails->count(['victim.corporation_id' => $corporation_id], [], 300);
+        $killCount = $this->killmails->count(['attackers.corporation_id' => $corporation_id], []);
+        $lossCount = $this->killmails->count(['victim.corporation_id' => $corporation_id], []);
 
         return $this->json(['kills' => $killCount, 'losses' => $lossCount], 300);
     }

@@ -101,8 +101,8 @@ class Alliances extends Controller
             return $this->json(['error' => 'Alliance not found'], 300);
         }
 
-        $killCount = $this->killmails->count(['attackers.alliance_id' => $alliance_id], [], 300);
-        $lossCount = $this->killmails->count(['victim.alliance_id' => $alliance_id], [], 300);
+        $killCount = $this->killmails->count(['attackers.alliance_id' => $alliance_id], []);
+        $lossCount = $this->killmails->count(['victim.alliance_id' => $alliance_id], []);
 
         return $this->json(['kills' => $killCount, 'losses' => $lossCount], 300);
     }
