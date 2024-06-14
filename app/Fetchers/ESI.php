@@ -43,11 +43,12 @@ class ESI extends Fetcher
 
         switch ($statusCode) {
             case 420:
-                $this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $expiresInSeconds . ' seconds: ' . $content);
+                $sleepTime = $expiresInSeconds < 0 ? 60 : $expiresInSeconds;
+                $this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
                 // Consume all tokens to halt all the workers
                 $this->throttleBucket->consume($this->bucketLimit);
                 // Sleep for the time it takes for the error rate to expire
-                sleep($expiresInSeconds);
+                sleep($sleepTime);
                 break;
         }
 
