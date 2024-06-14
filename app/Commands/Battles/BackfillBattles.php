@@ -247,6 +247,9 @@ class BackfillBattles extends ConsoleCommand
         // Total stats
         $battle = [
             'total_value' => $redTeam['value'] + $blueTeam['value'],
+            'total_alliances' => count($redTeam['alliances']) + count($blueTeam['alliances']),
+            'total_corporations' => count($redTeam['corporations']) + count($blueTeam['corporations']),
+            'total_characters' => count($redTeam['characters']) + count($blueTeam['characters']),
             'ship_type_count' => $redTeam['ship_type_count'] + $blueTeam['ship_type_count'],
             'ship_count' => $redTeam['total_ship_count'] + $blueTeam['total_ship_count'],
             'points' => $redTeam['points'] + $blueTeam['points'],
