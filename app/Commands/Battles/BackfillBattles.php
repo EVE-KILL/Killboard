@@ -255,6 +255,8 @@ class BackfillBattles extends ConsoleCommand
 
         // Total stats
         $battle = [
+            'start_time' => new UTCDateTime($battleStartTime * 1000),
+            'end_time' => new UTCDateTime($battleEndTime * 1000),
             'total_value' => $redTeam['value'] ?? 0 + $blueTeam['value'] ?? 0,
             'total_alliances' => count($redTeam['alliances'] ?? []) + count($blueTeam['alliances'] ?? []),
             'total_corporations' => count($redTeam['corporations'] ?? []) + count($blueTeam['corporations'] ?? []),
