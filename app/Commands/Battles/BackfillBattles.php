@@ -53,7 +53,7 @@ class BackfillBattles extends ConsoleCommand
                 ['$sort' => ['count' => -1]]
             ];
 
-            $potentialBattles = $this->killmails->aggregate($pipeline, ['allowDiskUse' => true, 'hint' => 'kill_time']);
+            $potentialBattles = $this->killmails->aggregate($pipeline, ['hint' => 'kill_time']);
 
             // This is where we start looking for the battle in 5 minute segments
             if ($potentialBattles->count() > 0) {
@@ -131,7 +131,7 @@ class BackfillBattles extends ConsoleCommand
                 'items' => 0,
             ]],
             ['$unwind' => '$attackers']
-        ], ['allowDiskUse' => true, 'hint' => 'kill_time']);
+        ], ['hint' => 'kill_time_system_id']);
 
         // Find the teams
         $teams = $this->findTeams($kills);

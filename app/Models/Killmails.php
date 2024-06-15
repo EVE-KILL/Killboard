@@ -29,8 +29,8 @@ class Killmails extends Collection
         'desc' => [
             // General fields
             'kill_time',
-            'system_id',
-            'region_id',
+            ['kill_time', 'system_id'],
+            ['kill_time', 'region_id'],
             'system_security',
             'war_id',
             'last_modified',
