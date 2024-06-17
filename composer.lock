@@ -2026,16 +2026,16 @@
         },
         {
             "name": "phrity/websocket",
-            "version": "2.2.3",
+            "version": "3.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sirn-se/websocket-php.git",
-                "reference": "bf937c0cd80e4dd12523cb62842474acf63d7942"
+                "reference": "d114efbee1ca04a4ed5fe694afef75e83a18efa4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sirn-se/websocket-php/zipball/bf937c0cd80e4dd12523cb62842474acf63d7942",
-                "reference": "bf937c0cd80e4dd12523cb62842474acf63d7942",
+                "url": "https://api.github.com/repos/sirn-se/websocket-php/zipball/d114efbee1ca04a4ed5fe694afef75e83a18efa4",
+                "reference": "d114efbee1ca04a4ed5fe694afef75e83a18efa4",
                 "shasum": ""
             },
             "require": {
@@ -2043,8 +2043,8 @@
                 "phrity/net-stream": "^2.0",
                 "phrity/net-uri": "^2.0",
                 "phrity/util-errorhandler": "^1.1",
-                "psr/http-message": "^1.0 | ^2.0",
-                "psr/log": "^1.0 | ^2.0"
+                "psr/http-message": "^1.1 | ^2.0",
+                "psr/log": "^1.0 | ^2.0 | ^3.0"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.0",
@@ -2081,9 +2081,9 @@
             ],
             "support": {
                 "issues": "https://github.com/sirn-se/websocket-php/issues",
-                "source": "https://github.com/sirn-se/websocket-php/tree/2.2.3"
+                "source": "https://github.com/sirn-se/websocket-php/tree/3.0.0"
             },
-            "time": "2024-05-22T09:19:12+00:00"
+            "time": "2024-06-15T11:16:02+00:00"
         },
         {
             "name": "poliander/cron",
