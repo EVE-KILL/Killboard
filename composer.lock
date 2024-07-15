@@ -1796,29 +1796,29 @@
         },
         {
             "name": "phrity/net-stream",
-            "version": "2.0.0",
+            "version": "2.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sirn-se/phrity-net-stream.git",
-                "reference": "c4f449005d00487cde8a29eaa2cda3d4508a8d07"
+                "reference": "4a6704fae3ad2e7c1576f51f1b8425973ba77c63"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sirn-se/phrity-net-stream/zipball/c4f449005d00487cde8a29eaa2cda3d4508a8d07",
-                "reference": "c4f449005d00487cde8a29eaa2cda3d4508a8d07",
+                "url": "https://api.github.com/repos/sirn-se/phrity-net-stream/zipball/4a6704fae3ad2e7c1576f51f1b8425973ba77c63",
+                "reference": "4a6704fae3ad2e7c1576f51f1b8425973ba77c63",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.0",
                 "phrity/util-errorhandler": "^1.1",
                 "psr/http-factory": "^1.0",
-                "psr/http-message": "^1.0 | ^2.0"
+                "psr/http-message": "^1.1 | ^2.0"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.0",
                 "phpunit/phpunit": "^9.0 | ^10.0 | ^11.0",
                 "phrity/net-uri": "^2.0",
-                "squizlabs/php_codesniffer": "^3.0"
+                "squizlabs/php_codesniffer": "^3.5"
             },
             "type": "library",
             "autoload": {
@@ -1850,35 +1850,35 @@
             ],
             "support": {
                 "issues": "https://github.com/sirn-se/phrity-net-stream/issues",
-                "source": "https://github.com/sirn-se/phrity-net-stream/tree/2.0.0"
+                "source": "https://github.com/sirn-se/phrity-net-stream/tree/2.0.1"
             },
-            "time": "2024-03-05T19:48:45+00:00"
+            "time": "2024-06-30T10:44:58+00:00"
         },
         {
             "name": "phrity/net-uri",
-            "version": "2.0.0",
+            "version": "2.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sirn-se/phrity-net-uri.git",
-                "reference": "472617470a23933f853b0bf42229bf6d801717e1"
+                "reference": "841190135af4fab18135226aaaf99ec5791377ac"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sirn-se/phrity-net-uri/zipball/472617470a23933f853b0bf42229bf6d801717e1",
-                "reference": "472617470a23933f853b0bf42229bf6d801717e1",
+                "url": "https://api.github.com/repos/sirn-se/phrity-net-uri/zipball/841190135af4fab18135226aaaf99ec5791377ac",
+                "reference": "841190135af4fab18135226aaaf99ec5791377ac",
                 "shasum": ""
             },
             "require": {
                 "ext-mbstring": "*",
                 "php": "^8.0",
                 "psr/http-factory": "^1.0",
-                "psr/http-message": "^1.0 | ^2.0"
+                "psr/http-message": "^1.1 | ^2.0"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.0",
                 "phpunit/phpunit": "^9.0 | ^10.0 | ^11.0",
-                "phrity/util-errorhandler": "^1.0",
-                "squizlabs/php_codesniffer": "^3.0"
+                "phrity/util-errorhandler": "^1.1",
+                "squizlabs/php_codesniffer": "^3.5"
             },
             "suggest": {
                 "ext-intl": "Enables IDN conversion for non-ASCII domains"
@@ -1910,9 +1910,9 @@
             ],
             "support": {
                 "issues": "https://github.com/sirn-se/phrity-net-uri/issues",
-                "source": "https://github.com/sirn-se/phrity-net-uri/tree/2.0.0"
+                "source": "https://github.com/sirn-se/phrity-net-uri/tree/2.1.0"
             },
-            "time": "2024-03-03T12:30:15+00:00"
+            "time": "2024-07-08T06:14:09+00:00"
         },
         {
             "name": "phrity/util-errorhandler",
@@ -1967,25 +1967,25 @@
         },
         {
             "name": "phrity/websocket",
-            "version": "2.2.3",
+            "version": "3.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sirn-se/websocket-php.git",
-                "reference": "bf937c0cd80e4dd12523cb62842474acf63d7942"
+                "reference": "36a79edf2a00b93ff1fea3cbac1bd213f98d5ef9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sirn-se/websocket-php/zipball/bf937c0cd80e4dd12523cb62842474acf63d7942",
-                "reference": "bf937c0cd80e4dd12523cb62842474acf63d7942",
+                "url": "https://api.github.com/repos/sirn-se/websocket-php/zipball/36a79edf2a00b93ff1fea3cbac1bd213f98d5ef9",
+                "reference": "36a79edf2a00b93ff1fea3cbac1bd213f98d5ef9",
                 "shasum": ""
             },
             "require": {
                 "php": "^8.1",
                 "phrity/net-stream": "^2.0",
-                "phrity/net-uri": "^2.0",
+                "phrity/net-uri": "^2.1",
                 "phrity/util-errorhandler": "^1.1",
-                "psr/http-message": "^1.0 | ^2.0",
-                "psr/log": "^1.0 | ^2.0"
+                "psr/http-message": "^1.1 | ^2.0",
+                "psr/log": "^1.0 | ^2.0 | ^3.0"
             },
             "require-dev": {
                 "php-coveralls/php-coveralls": "^2.0",
@@ -2022,9 +2022,9 @@
             ],
             "support": {
                 "issues": "https://github.com/sirn-se/websocket-php/issues",
-                "source": "https://github.com/sirn-se/websocket-php/tree/2.2.3"
+                "source": "https://github.com/sirn-se/websocket-php/tree/3.1.0"
             },
-            "time": "2024-05-22T09:19:12+00:00"
+            "time": "2024-07-09T11:00:42+00:00"
         },
         {
             "name": "poliander/cron",
