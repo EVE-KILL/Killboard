@@ -1,67 +1,70 @@
 {
-    "name": "eve-kill/esi-proxy",
-    "description": "WebService that proxies calls to ESI",
-    "type": "project",
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Michael Karbowiak",
-            "email": "michael@karbowiak.dk"
-        }
-    ],
-    "autoload": {
-        "psr-4": {
-            "EK\\": ["src/", "app/"]
-        }
-    },
-    "require": {
-        "php": "^8.3",
-        "ext-apcu": "*",
-        "ext-openswoole": "*",
-        "ext-mongodb": "*",
-        "ext-redis": "*",
-        "ext-pcntl": "*",
-        "ext-simplexml": "*",
-        "ext-bz2": "*",
-        "openswoole/core": "*",
-        "monolog/monolog": "*",
-        "league/container": "*",
-        "mongodb/mongodb": "*",
-        "slim/slim": "*",
-        "slim/psr7": "1.7.0",
-        "symfony/console": "*",
-        "guzzlehttp/guzzle": "*",
-        "bandwidth-throttle/token-bucket": "*",
-        "kcs/class-finder": "*",
-        "illuminate/collections": "*",
-        "predis/predis": "*",
-        "psy/psysh": "*",
-        "poliander/cron": "*",
-        "siriusphp/validation": "*",
-        "league/csv": "*",
-        "marcj/topsort": "*",
-        "cweagans/composer-patches": "*",
-        "meilisearch/meilisearch-php": "*",
-        "psr/log": "^2",
-        "phrity/websocket": "*"
-    },
-    "require-dev": {
-        "zeuxisoo/slim-whoops": "*",
-        "openswoole/ide-helper": "*",
-        "symfony/var-dumper": "*",
-        "roave/security-advisories": "dev-latest"
-    },
-    "config": {
-        "allow-plugins": {
-            "cweagans/composer-patches": true,
-            "php-http/discovery": true
-        }
-    },
-    "extra": {
-        "patches": {
-            "openswoole/core": {
-                "Fixes the 100kB chunking from 100MB to actually 100kB": "patches/swoole_chunk_size.patch"
-            }
-        }
+  "name": "eve-kill/esi-proxy",
+  "description": "WebService that proxies calls to ESI",
+  "type": "project",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Michael Karbowiak",
+      "email": "michael@karbowiak.dk"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "EK\\": [
+        "src/",
+        "app/"
+      ]
+    }
+  },
+  "require": {
+    "php": "^8.3",
+    "ext-apcu": "*",
+    "ext-openswoole": "*",
+    "ext-mongodb": "*",
+    "ext-redis": "*",
+    "ext-pcntl": "*",
+    "ext-simplexml": "*",
+    "ext-bz2": "*",
+    "openswoole/core": "*",
+    "monolog/monolog": "*",
+    "league/container": "*",
+    "mongodb/mongodb": "*",
+    "slim/slim": "*",
+    "slim/psr7": "1.6.1",
+    "symfony/console": "*",
+    "guzzlehttp/guzzle": "*",
+    "bandwidth-throttle/token-bucket": "*",
+    "kcs/class-finder": "*",
+    "illuminate/collections": "*",
+    "predis/predis": "*",
+    "psy/psysh": "*",
+    "poliander/cron": "*",
+    "siriusphp/validation": "*",
+    "league/csv": "*",
+    "marcj/topsort": "*",
+    "cweagans/composer-patches": "*",
+    "meilisearch/meilisearch-php": "*",
+    "psr/log": "^2",
+    "phrity/websocket": "*"
+  },
+  "require-dev": {
+    "zeuxisoo/slim-whoops": "*",
+    "openswoole/ide-helper": "*",
+    "symfony/var-dumper": "*",
+    "roave/security-advisories": "dev-latest"
+  },
+  "config": {
+    "allow-plugins": {
+      "cweagans/composer-patches": true,
+      "php-http/discovery": true
+    }
+  },
+  "extra": {
+    "patches": {
+      "openswoole/core": {
+        "Fixes the 100kB chunking from 100MB to actually 100kB": "patches/swoole_chunk_size.patch"
+      }
+    }
+  }
 }
