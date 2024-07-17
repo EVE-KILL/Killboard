@@ -14,10 +14,11 @@ class Battle
     }
     public function isKillInBattle(int $killmail_id): bool
     {
-        // Using the killmail_id we get the system_id from the killmails table
-        // And then use the same algorithm as in BackfillBattles to figure out if the kill is in a battle
-        // If it is, we return true, otherwise false
-        $killmail = $this->killmails->findOneOrNull(['killmail_id' => $killmail_id], ['projection' => ['_id' => 0, 'system_id' => 1, 'kill_time' => 1]]);
+        $killmail = $this->killmails->findOneOrNull(
+            ['killmail_id' => $killmail_id],
+            ['projection' => ['_id' => 0, 'system_id' => 1, 'kill_time' => 1]]
+        );
+
         if ($killmail === null) {
             return false;
         }
