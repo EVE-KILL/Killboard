@@ -28,7 +28,7 @@
         "league/container": "*",
         "mongodb/mongodb": "*",
         "slim/slim": "*",
-        "slim/psr7": "1.6.1",
+        "slim/psr7": "1.7.0",
         "symfony/console": "*",
         "guzzlehttp/guzzle": "*",
         "bandwidth-throttle/token-bucket": "*",
