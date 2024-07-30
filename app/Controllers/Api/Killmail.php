@@ -11,48 +11,82 @@ class Killmail extends Controller
 {
     public function __construct(
         protected \EK\Models\Killmails $killmails,
+        protected \EK\Models\KillmailsESI $killmailsESI
     ) {
         parent::__construct();
     }
 
-    #[RouteAttribute('/killmail/count[/]', ['GET'])]
+    #[RouteAttribute("/killmail/count[/]", ["GET"])]
     public function count(): ResponseInterface
     {
         return $this->json([
-            'count' => $this->killmails->count(),
+            "count" => $this->killmails->count(),
         ]);
     }
 
-    #[RouteAttribute('/killmail/{killmail_id:[0-9]+}[/]', ['GET'])]
+    #[RouteAttribute("/killmail/{killmail_id:[0-9]+}[/]", ["GET"])]
     public function killmail(int $killmail_id): ResponseInterface
     {
-        $killmail = $this->killmails->findOneOrNull(['killmail_id' => $killmail_id], ['projection' => ['_id' => 0]]);
+        $killmail = $this->killmails->findOneOrNull(
+            ["killmail_id" => $killmail_id],
+            ["projection" => ["_id" => 0]]
+        );
 
         if ($killmail === null) {
-            return $this->json([
-                'error' => 'Killmail not found',
-            ], 300);
+            return $this->json(
+                [
+                    "error" => "Killmail not found",
+                ],
+                300
+            );
         }
 
         return $this->json($this->cleanupTimestamps($killmail->toArray()));
     }
 
-    #[RouteAttribute('/killmail[/]', ['POST'])]
+    #[RouteAttribute("/killmail/esi/{killmail_id:[0-9]+}[/]", ["GET"])]
+    public function esi(int $killmail_id): ResponseInterface
+    {
+        $killmail = $this->killmailsESI->findOneOrNull(
+            ["killmail_id" => $killmail_id],
+            ["projection" => ["_id" => 0, "killmail_time_str" => 0]]
+        );
+        if ($killmail === null) {
+            return $this->json(
+                [
+                    "error" => "Killmail not found",
+                ],
+                300
+            );
+        }
+
+        return $this->json($this->cleanupTimestamps($killmail->toArray()));
+    }
+
+    #[RouteAttribute("/killmail[/]", ["POST"])]
     public function killmails(): ResponseInterface
     {
-        $postData = json_validate($this->getBody()) ? json_decode($this->getBody(), true) : [];
+        $postData = json_validate($this->getBody())
+            ? json_decode($this->getBody(), true)
+            : [];
         if (empty($postData)) {
-            return $this->json(['error' => 'No data provided'], 300);
+            return $this->json(["error" => "No data provided"], 300);
         }
 
         // Error if there are more than 1000 IDs
         if (count($postData) > 1000) {
-            return $this->json(['error' => 'Too many IDs provided'], 300);
+            return $this->json(["error" => "Too many IDs provided"], 300);
         }
 
-        $killmails = $this->killmails->find(['killmail_id' => ['$in' => $postData]], ['projection' => ['_id' => 0]], 300)->map(function ($killmail) {
-            return $this->cleanupTimestamps($killmail);
-        });
+        $killmails = $this->killmails
+            ->find(
+                ["killmail_id" => ['$in' => $postData]],
+                ["projection" => ["_id" => 0]],
+                300
+            )
+            ->map(function ($killmail) {
+                return $this->cleanupTimestamps($killmail);
+            });
 
         return $this->json($killmails->toArray(), 300);
     }
