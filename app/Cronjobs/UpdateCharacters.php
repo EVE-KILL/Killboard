@@ -38,6 +38,6 @@ class UpdateCharacters extends Cronjob
         }, $unknownCharacters->toArray());
 
         $this->logger->info("Updating " . count($updates) . " characters");
-        $this->updateCharacter->massEnqueue($updates);
+        $this->updateCharacter->massEnqueue($updates, "low");
     }
 }
