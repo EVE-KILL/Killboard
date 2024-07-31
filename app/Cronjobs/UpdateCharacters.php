@@ -22,7 +22,11 @@ class UpdateCharacters extends Cronjob
     public function handle(): void
     {
         $this->logger->info("Updating characters with names set to Unknown");
-        $unknownCharacters = $this->characters->find(["name" => "Unknown"]);
+        // Find characters with the name set to Unknown, but ignore them if they have deleted = true
+        $unknownCharacters = $this->characters->find([
+            "name" => "Unknown",
+            "deleted" => ['$ne' => true],
+        ]);
 
         $updates = array_map(function ($character) {
             return [
