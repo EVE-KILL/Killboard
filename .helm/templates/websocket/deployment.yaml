@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: websocket
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: websocket
+  template:
+    metadata:
+      labels:
+        app: websocket
+    spec:
+      serviceAccountName: evekill
+      restartPolicy: Always
+      containers:
+        - name: websocket
+          command:
+            - php
+            - bin/console
+            - server:ws
+            - --host=0.0.0.0
+          image: {{ .Values.server.image }}:{{ .Values.server.version }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          {{- if or (eq .Values.server.resources.limits.enabled true) (eq .Values.server.resources.requests.enabled true) }}
+          resources:
+            {{- if eq .Values.server.resources.limits.enabled true }}
+            limits:
+              {{- if .Values.server.resources.limits.cpu }}
+              cpu: {{ .Values.server.resources.limits.cpu }}
+              {{- end }}
+              memory: {{ .Values.server.resources.limits.memory }}
+            {{- end }}
+            {{- if eq .Values.server.resources.requests.enabled true }}
+            requests:
+              {{- if .Values.server.resources.requests.cpu }}
+              cpu: {{ .Values.server.resources.requests.cpu }}
+              {{- end }}
+              memory: {{ .Values.server.resources.requests.memory }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: 9201
+          volumeMounts:
+            - name: evekill-config
+              mountPath: /app/config/config.php
+              subPath: config.php
+              readOnly: true
+            - mountPath: /app/cache
+              name: cache
+            - mountPath: /app/logs
+              name: logs
+      volumes:
+        - name: evekill-config
+          configMap:
+            name: evekill-config
+            items:
+              - key: config.php
+                path: config.php
+        - name: cache
+          persistentVolumeClaim:
+            claimName: cache
+        - name: logs
+          persistentVolumeClaim:
+            claimName: logs

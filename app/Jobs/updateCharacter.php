@@ -3,14 +3,13 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Fetchers\CorporationHistory;
 use EK\Fetchers\ESI;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 
 class updateCharacter extends Jobs
 {
-    protected string $defaultQueue = 'character';
+    protected string $defaultQueue = "character";
     public function __construct(
         protected \EK\Models\Characters $characters,
         protected \EK\Models\Alliances $alliances,
@@ -28,36 +27,48 @@ class updateCharacter extends Jobs
 
     public function handle(array $data): void
     {
-        $characterId = $data['character_id'];
+        $characterId = $data["character_id"];
 
-        $characterData = $this->characters->findOneOrNull(['character_id' => $characterId]) ??
-            $this->esiCharacters->getCharacterInfo($characterId);
-        $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
+        $characterData =
+            $this->characters->findOneOrNull([
+                "character_id" => $characterId,
+            ]) ?? $this->esiCharacters->getCharacterInfo($characterId);
+        $characterData =
+            $characterData instanceof Collection
+                ? $characterData->toArray()
+                : $characterData;
 
-        $allianceId = $characterData['alliance_id'] ?? 0;
-        $corporationId = $characterData['corporation_id'] ?? 0;
-        $factionId = $characterData['faction_id'] ?? 0;
+        $allianceId = $characterData["alliance_id"] ?? 0;
+        $corporationId = $characterData["corporation_id"] ?? 0;
+        $factionId = $characterData["faction_id"] ?? 0;
 
         $allianceData = [];
         $factionData = [];
 
         if ($allianceId > 0) {
-            $allianceData = $this->alliances->findOneOrNull(['alliance_id' => $allianceId]) ??
-                $this->esiAlliances->getAllianceInfo($allianceId);
+            $allianceData =
+                $this->alliances->findOneOrNull([
+                    "alliance_id" => $allianceId,
+                ]) ?? $this->esiAlliances->getAllianceInfo($allianceId);
         }
 
         if ($corporationId > 0) {
-            $corporationData = $this->corporations->findOneOrNull(['corporation_id' => $corporationId]) ??
+            $corporationData =
+                $this->corporations->findOneOrNull([
+                    "corporation_id" => $corporationId,
+                ]) ??
                 $this->esiCorporations->getCorporationInfo($corporationId);
         }
 
         if ($factionId > 0) {
-            $factionData = $this->factions->findOne(['faction_id' => $factionId]);
+            $factionData = $this->factions->findOne([
+                "faction_id" => $factionId,
+            ]);
         }
 
-        $characterData['alliance_name'] = $allianceData['name'] ?? '';
-        $characterData['corporation_name'] = $corporationData['name'] ?? '';
-        $characterData['faction_name'] = $factionData['name'] ?? '';
+        $characterData["alliance_name"] = $allianceData["name"] ?? "";
+        $characterData["corporation_name"] = $corporationData["name"] ?? "";
+        $characterData["faction_name"] = $factionData["name"] ?? "";
 
         ksort($characterData);
 
@@ -66,9 +77,9 @@ class updateCharacter extends Jobs
 
         // Push the alliance to the search index
         $this->meilisearch->addDocuments([
-            'id' => $characterData['character_id'],
-            'name' => $characterData['name'],
-            'type' => 'character'
+            "id" => $characterData["character_id"],
+            "name" => $characterData["name"],
+            "type" => "character",
         ]);
     }
 }

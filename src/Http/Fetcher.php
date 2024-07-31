@@ -15,9 +15,9 @@ use Psr\Http\Message\ResponseInterface;
 
 class Fetcher
 {
-    protected string $baseUri = '';
-    protected string $userAgent = 'EK/1.0';
-    protected string $bucketName = 'global';
+    protected string $baseUri = "";
+    protected string $userAgent = "EK/1.0";
+    protected string $bucketName = "global";
     protected bool $useProxy = false;
     protected bool $useThrottle = false;
     protected int $bucketLimit = 100;
@@ -27,12 +27,12 @@ class Fetcher
 
     public function __construct(
         protected Cache $cache,
-        protected Proxies $proxies,
+        protected Proxies $proxies
     ) {
         $this->throttleBucket = $this->generateBucket();
         $this->logger = new FileLogger(
-            BASE_DIR . '/logs/' . $this->bucketName . '.log',
-            $this->bucketName . '-logger'
+            BASE_DIR . "/logs/" . $this->bucketName . ".log",
+            $this->bucketName . "-logger"
         );
     }
 
@@ -48,9 +48,9 @@ class Fetcher
 
     public function fetch(
         string $path,
-        string $requestMethod = 'GET',
+        string $requestMethod = "GET",
         array $query = [],
-        string $body = '',
+        string $body = "",
         array $headers = [],
         array $options = [],
         ?string $proxy_id = null,
@@ -75,11 +75,13 @@ class Fetcher
         // If Proxy usage is enabled, and proxy_id isn't null, we need to fetch a proxy to use
         $proxy = null;
         if ($proxy_id !== null && $this->useProxy === true) {
-            $proxy = $this->proxies->findOne(['proxy_id' => $proxy_id])->toArray();
+            $proxy = $this->proxies
+                ->findOne(["proxy_id" => $proxy_id])
+                ->toArray();
         } elseif ($this->useProxy === true) {
             $proxy = $this->proxies->getRandomProxy();
             if (empty($proxy)) {
-                throw new \Exception('No proxies available');
+                throw new \Exception("No proxies available");
             }
         }
 
@@ -98,14 +100,14 @@ class Fetcher
 
         // Execute the request
         $response = $client->request($requestMethod, $path, [
-            'query' => $query,
-            'body' => $body,
-            'headers' => array_merge($headers, [
-                'User-Agent' => $this->userAgent
+            "query" => $query,
+            "body" => $body,
+            "headers" => array_merge($headers, [
+                "User-Agent" => $this->userAgent,
             ]),
-            'options' => $options,
-            'timeout' => $this->timeout,
-            'http_errors' => false
+            "options" => $options,
+            "timeout" => $this->timeout,
+            "http_errors" => false,
         ]);
 
         // Finish time for the request
@@ -115,23 +117,29 @@ class Fetcher
         $statusCode = $response->getStatusCode();
 
         // Get the expires header from the response (The Expires and Date are in GMT)
-        $now = new \DateTime('now', new \DateTimeZone('GMT'));
-        $expires = $response->getHeader('Expires')[0] ?? $now->format('D, d M Y H:i:s T');
-        $serverTime = $response->getHeader('Date')[0] ?? $now->format('D, d M Y H:i:s T');
+        $now = new \DateTime("now", new \DateTimeZone("GMT"));
+        $expires =
+            $response->getHeader("Expires")[0] ??
+            $now->format("D, d M Y H:i:s T");
+        $serverTime =
+            $response->getHeader("Date")[0] ?? $now->format("D, d M Y H:i:s T");
         $expiresInSeconds = strtotime($expires) - strtotime($serverTime) ?? 60;
 
         // Log the request
-        $this->logger->info(sprintf(
-            '%s %s %s %s',
-            $requestMethod,
-            $path,
-            $statusCode,
-            round($response->getBody()->getSize() / 1024, 2) . 'KB'
-        ), [
-            'proxy_id' => $proxy['proxy_id'] ?? null,
-            'status' => $statusCode,
-            'response_time' => $endTime - $startTime
-        ]);
+        $this->logger->info(
+            sprintf(
+                "%s %s %s %s",
+                $requestMethod,
+                $path,
+                $statusCode,
+                round($response->getBody()->getSize() / 1024, 2) . "KB"
+            ),
+            [
+                "proxy_id" => $proxy["proxy_id"] ?? null,
+                "status" => $statusCode,
+                "response_time" => $endTime - $startTime,
+            ]
+        );
 
         $response = $this->handle($response);
 
@@ -141,17 +149,22 @@ class Fetcher
 
         // Store the result in the cache
         if ($expiresInSeconds > 0 && in_array($statusCode, [200, 304])) {
-            $this->cache->set($cacheKey, [
-                'headers' => $response->getHeaders(),
-                'body' => $content
-            ], $cacheTime ?? $expiresInSeconds);
+            $theCacheTime = $cacheTime ?? $expiresInSeconds;
+            $this->cache->set(
+                $cacheKey,
+                [
+                    "headers" => $response->getHeaders(),
+                    "body" => $content,
+                ],
+                $theCacheTime > 0 ? $theCacheTime : 60
+            );
         }
 
         // Return the result
         return [
-            'status' => $statusCode,
-            'headers' => $response->getHeaders(),
-            'body' => $content
+            "status" => $statusCode,
+            "headers" => $response->getHeaders(),
+            "body" => $content,
         ];
     }
 
@@ -163,17 +176,17 @@ class Fetcher
     protected function getClient(?array $proxy = []): Client
     {
         if ($this->useProxy === true) {
-            if (!isset($proxy['url'])) {
-                throw new \Exception('Proxy URL not set');
+            if (!isset($proxy["url"])) {
+                throw new \Exception("Proxy URL not set");
             }
 
             return new Client([
-                'base_uri' => $proxy['url']
+                "base_uri" => $proxy["url"],
             ]);
         }
 
         return new Client([
-            'base_uri' => $this->baseUri
+            "base_uri" => $this->baseUri,
         ]);
     }
 
@@ -185,20 +198,22 @@ class Fetcher
         }
 
         $expireTTL = $this->cache->getTTL($cacheKey) ?? 0;
-        $expirationTime = time() + $expireTTL > 0 ? time() + $expireTTL : time();
-        $expireTimeGMT = new \DateTime('now', new \DateTimeZone('GMT'));
+        $expirationTime =
+            time() + $expireTTL > 0 ? time() + $expireTTL : time();
+        $expireTimeGMT = new \DateTime("now", new \DateTimeZone("GMT"));
         $expireTimeGMT->setTimestamp($expirationTime);
-        $currentTimeGMT = new \DateTime('now', new \DateTimeZone('GMT'));
+        $currentTimeGMT = new \DateTime("now", new \DateTimeZone("GMT"));
 
         return [
-            'status' => 304,
-            'headers' => array_merge($result['headers'], [
-                'Expires' => $expireTimeGMT->format('D, d M Y H:i:s \G\M\T'),
-                'Last-Modified' => $result['headers']['Last-Modified'],
-                'Cache-Control' => 'public, max-age=' . $this->cache->getTTL($cacheKey),
-                'Date' => $currentTimeGMT->format('D, d M Y H:i:s \G\M\T')
+            "status" => 304,
+            "headers" => array_merge($result["headers"], [
+                "Expires" => $expireTimeGMT->format("D, d M Y H:i:s \G\M\T"),
+                "Last-Modified" => $result["headers"]["Last-Modified"],
+                "Cache-Control" =>
+                    "public, max-age=" . $this->cache->getTTL($cacheKey),
+                "Date" => $currentTimeGMT->format("D, d M Y H:i:s \G\M\T"),
             ]),
-            'body' => $result['body']
+            "body" => $result["body"],
         ];
     }
 }
