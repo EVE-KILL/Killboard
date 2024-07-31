@@ -28,11 +28,21 @@ class updateCharacter extends Jobs
     public function handle(array $data): void
     {
         $characterId = $data["character_id"];
+        $deleted = false;
 
         $characterData =
             $this->characters->findOneOrNull([
                 "character_id" => $characterId,
+                "name" => ['$ne' => "Unknown"],
             ]) ?? $this->esiCharacters->getCharacterInfo($characterId);
+
+        if (
+            isset($characterData["error"]) &&
+            $characterData["error"] === "Character has been deleted!"
+        ) {
+            $deleted = true;
+        }
+
         $characterData =
             $characterData instanceof Collection
                 ? $characterData->toArray()
@@ -69,17 +79,20 @@ class updateCharacter extends Jobs
         $characterData["alliance_name"] = $allianceData["name"] ?? "";
         $characterData["corporation_name"] = $corporationData["name"] ?? "";
         $characterData["faction_name"] = $factionData["name"] ?? "";
+        $characterData["deleted"] = $deleted;
 
         ksort($characterData);
 
         $this->characters->setData($characterData);
         $this->characters->save();
 
-        // Push the alliance to the search index
-        $this->meilisearch->addDocuments([
-            "id" => $characterData["character_id"],
-            "name" => $characterData["name"],
-            "type" => "character",
-        ]);
+        if ($deleted === false) {
+            // Push the alliance to the search index
+            $this->meilisearch->addDocuments([
+                "id" => $characterData["character_id"],
+                "name" => $characterData["name"],
+                "type" => "character",
+            ]);
+        }
     }
 }

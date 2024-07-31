@@ -34,9 +34,9 @@ class TopLists
             $limit,
             $days
         );
-        //if ($this->cache->exists($cacheKey)) {
-        //    return $this->cache->get($cacheKey);
-        //}
+        if ($this->cache->exists($cacheKey)) {
+            return $this->cache->get($cacheKey);
+        }
 
         $timeCoverage = time() - $days * 86400;
         $aggregateQuery =
@@ -138,9 +138,9 @@ class TopLists
             $limit,
             $days
         );
-        //if ($this->cache->exists($cacheKey)) {
-        //    return $this->cache->get($cacheKey);
-        //}
+        if ($this->cache->exists($cacheKey)) {
+            return $this->cache->get($cacheKey);
+        }
 
         $aggregateQuery =
             $attackerType && $typeId
