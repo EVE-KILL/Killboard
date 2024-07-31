@@ -4,7 +4,6 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Http\Twig\Twig;
 use Psr\Http\Message\ResponseInterface;
 
 class Killmail extends Controller

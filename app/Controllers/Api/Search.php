@@ -4,48 +4,51 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Http\Twig\Twig;
 use EK\Meilisearch\Meilisearch;
 use Psr\Http\Message\ResponseInterface;
 
 class Search extends Controller
 {
-    public function __construct(
-        protected Meilisearch $meilisearch,
-    ) {
+    public function __construct(protected Meilisearch $meilisearch)
+    {
         parent::__construct();
     }
 
-    #[RouteAttribute('/search/{searchParam}[/]', ['GET'])]
+    #[RouteAttribute("/search/{searchParam}[/]", ["GET"])]
     public function search(string $searchParam): ResponseInterface
     {
         $results = $this->meilisearch->search($searchParam);
 
         return $this->json([
-            'query' => $results->getQuery(),
-            'hits' => $results->getHits(),
+            "query" => $results->getQuery(),
+            "hits" => $results->getHits(),
         ]);
     }
 
-    #[RouteAttribute('/search[/]', ['POST'])]
+    #[RouteAttribute("/search[/]", ["POST"])]
     public function searchPost(): ResponseInterface
     {
-        $postData = json_validate($this->getBody()) ? json_decode($this->getBody(), true) : [];
+        $postData = json_validate($this->getBody())
+            ? json_decode($this->getBody(), true)
+            : [];
         if (empty($postData)) {
-            return $this->json(['error' => 'No data provided'], 300);
+            return $this->json(["error" => "No data provided"], 300);
         }
 
         // Error if there are more than 1000 IDs
         if (count($postData) > 1000) {
-            return $this->json(['error' => 'Too many search params provided'], 300);
+            return $this->json(
+                ["error" => "Too many search params provided"],
+                300
+            );
         }
 
         $results = [];
         foreach ($postData as $searchParam) {
             $result = $this->meilisearch->search($searchParam);
             $results[] = [
-                'query' => $result->getQuery(),
-                'hits' => $result->getHits(),
+                "query" => $result->getQuery(),
+                "hits" => $result->getHits(),
             ];
         }
 
