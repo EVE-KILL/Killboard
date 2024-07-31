@@ -9,7 +9,7 @@ use EK\Models\Characters;
 
 class UpdateCharacters extends Cronjob
 {
-    protected string $cronTime = "0 0 * * *";
+    protected string $cronTime = "0 * * * *";
 
     public function __construct(
         protected Characters $characters,
@@ -23,10 +23,13 @@ class UpdateCharacters extends Cronjob
     {
         $this->logger->info("Updating characters with names set to Unknown");
         // Find characters with the name set to Unknown, but ignore them if they have deleted = true
-        $unknownCharacters = $this->characters->find([
-            "name" => "Unknown",
-            "deleted" => ['$ne' => true],
-        ]);
+        $unknownCharacters = $this->characters->find(
+            [
+                "name" => "Unknown",
+                "deleted" => ['$ne' => true],
+            ],
+            ["limit" => 1000]
+        );
 
         $updates = array_map(function ($character) {
             return [
