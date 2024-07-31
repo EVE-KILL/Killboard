@@ -22,16 +22,13 @@ class Bootstrap
         $this->container = $this->container ?? new Container();
 
         // Default to elements being shared
-        //$this->container->defaultToShared(true);
+        $this->container->defaultToShared(true);
 
         // Register the reflection container
-        $this->container->delegate(
-            new ReflectionContainer(true)
-        );
+        $this->container->delegate(new ReflectionContainer(true));
 
         // Register the config
-        $this->container->add(Config::class)
-            ->setShared(true);
+        $this->container->add(Config::class)->setShared(true);
 
         // Add the autoloader
         $this->container->add(ClassLoader::class, $this->autoloader);
