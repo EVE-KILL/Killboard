@@ -360,8 +360,11 @@ class TopLists
             $limit,
             $days
         );
-        if ($this->cache->exists($cacheKey)) {
-            return $this->cache->get($cacheKey);
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $cacheResult;
         }
 
         $aggregateQuery =
@@ -466,8 +469,11 @@ class TopLists
             $limit,
             $days
         );
-        if ($this->cache->exists($cacheKey)) {
-            return $this->cache->get($cacheKey);
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $cacheResult;
         }
 
         $aggregateQuery =
@@ -571,8 +577,11 @@ class TopLists
             $limit,
             $days
         );
-        if ($this->cache->exists($cacheKey)) {
-            return $this->cache->get($cacheKey);
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $cacheResult;
         }
 
         $aggregateQuery =
