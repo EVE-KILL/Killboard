@@ -34,8 +34,12 @@ class TopLists
             $limit,
             $days
         );
-        if ($this->cache->exists($cacheKey)) {
-            return $this->cache->get($cacheKey);
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $cacheResult;
         }
 
         $timeCoverage = time() - $days * 86400;
@@ -95,6 +99,7 @@ class TopLists
                     ['$sort' => ["count" => -1]],
                     ['$limit' => $limit],
                 ];
+
         $data = $this->killmails->aggregate($aggregateQuery, [
             "allowDiskUse" => true,
             "maxTimeMS" => 30000,
@@ -138,8 +143,12 @@ class TopLists
             $limit,
             $days
         );
-        if ($this->cache->exists($cacheKey)) {
-            return $this->cache->get($cacheKey);
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $cacheResult;
         }
 
         $aggregateQuery =
@@ -246,8 +255,12 @@ class TopLists
             $limit,
             $days
         );
-        if ($this->cache->exists($cacheKey)) {
-            return $this->cache->get($cacheKey);
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $cacheResult;
         }
 
         $aggregateQuery =
