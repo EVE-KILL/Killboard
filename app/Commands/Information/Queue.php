@@ -13,8 +13,8 @@ use RuntimeException;
 
 class Queue extends ConsoleCommand
 {
-    public string $signature = 'info:queue { --json : Output as JSON }';
-    public string $description = 'List all the information about the queue';
+    public string $signature = "info:queue { --json : Output as JSON }";
+    public string $description = "List all the information about the queue";
     protected Client $redisClient;
     public function __construct(
         protected ClassLoader $autoloader,
@@ -24,33 +24,31 @@ class Queue extends ConsoleCommand
         $this->redisClient = $redis->getClient();
     }
 
-
     final public function handle(): void
     {
         $queuesAvailable = [
-            'high',
-            'character',
-            'corporation',
-            'alliance',
-            'universe',
-            'websocket',
-            'killmail',
-            'low',
-            'default'
+            "high",
+            "websocket",
+            "killmail",
+            "character",
+            "corporation",
+            "alliance",
+            "universe",
+            "low",
+            "default",
         ];
 
         // Get how many items are in the queue
         $queueInformation = [];
-        foreach($queuesAvailable as $queue) {
+        foreach ($queuesAvailable as $queue) {
             $queueInformation[$queue] = $this->redisClient->llen($queue);
         }
 
-        if($this->json) {
+        if ($this->json) {
             echo json_encode($queueInformation, JSON_PRETTY_PRINT);
             return;
         }
 
         $this->tableOneRow($queueInformation);
-
     }
 }
