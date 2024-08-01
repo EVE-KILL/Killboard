@@ -4,6 +4,7 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Cache\Cache;
 use EK\Helpers\TopLists;
 use EK\Models\Killmails;
 use Psr\Http\Message\ResponseInterface;
@@ -13,7 +14,8 @@ class Stats extends Controller
     protected int $daysSinceEarlyDays;
     public function __construct(
         protected TopLists $topLists,
-        protected Killmails $killmails
+        protected Killmails $killmails,
+        protected Cache $cache
     ) {
         parent::__construct();
 
@@ -81,6 +83,18 @@ class Stats extends Controller
     public function mostValuableKillsLast7Days(
         int $limit = 6
     ): ResponseInterface {
+        $cacheKey = $this->cache->generateKey(
+            "most_valuable_kills_last_7_days",
+            $limit
+        );
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult, 300);
+        }
+
         $kills = $this->killmails->find(
             [
                 "kill_time" => [
@@ -96,6 +110,7 @@ class Stats extends Controller
             ]
         );
 
+        $this->cache->set($cacheKey, $kills->toArray(), 300);
         return $this->json($kills->toArray(), 300);
     }
 
