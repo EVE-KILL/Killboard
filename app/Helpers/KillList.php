@@ -31,7 +31,7 @@ class KillList
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
         ) {
-            return $cacheResult;
+            return collect($cacheResult);
         }
 
         $result = $this->killmails->find(
@@ -91,7 +91,7 @@ class KillList
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
         ) {
-            return $cacheResult;
+            return collect($cacheResult);
         }
 
         $result = $this->killmails->find(
