@@ -117,6 +117,15 @@ class Stats extends Controller
     #[RouteAttribute("/stats/sevendaykillcount[/]", ["GET"])]
     public function sevenDayKillCount(): ResponseInterface
     {
+        $cacheKey = $this->cache->generateKey("seven_day_kill_count");
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult, 300);
+        }
+
         $kills = $this->killmails->count([
             "kill_time" => [
                 '$gte' => new \MongoDB\BSON\UTCDateTime(
@@ -125,6 +134,7 @@ class Stats extends Controller
             ],
         ]);
 
+        $this->cache->set($cacheKey, ["count" => $kills], 300);
         return $this->json(["count" => $kills], 300);
     }
 }
