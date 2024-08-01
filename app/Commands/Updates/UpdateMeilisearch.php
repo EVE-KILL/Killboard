@@ -61,7 +61,7 @@ class UpdateMeilisearch extends ConsoleCommand
             $documents[] = [
                 "id" => $alliance["alliance_id"],
                 "name" => $alliance["name"],
-                "ticker" => $alliance["ticker"],
+                "ticker" => $alliance["ticker"] ?? "",
                 "type" => "alliance",
             ];
         }
@@ -70,12 +70,16 @@ class UpdateMeilisearch extends ConsoleCommand
             $documents[] = [
                 "id" => $corporation["corporation_id"],
                 "name" => $corporation["name"],
-                "ticker" => $corporation["ticker"],
+                "ticker" => $corporation["ticker"] ?? "",
                 "type" => "corporation",
             ];
         }
 
         foreach ($characters as $character) {
+            if (empty($character["name"])) {
+                continue;
+            }
+
             $documents[] = [
                 "id" => $character["character_id"],
                 "name" => $character["name"],
