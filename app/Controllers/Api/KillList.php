@@ -33,17 +33,9 @@ class KillList extends Controller
             "GET",
         ])
     ]
-    public function killsForType(
-        string $type,
-        int $value,
-        int $page = 1
-    ): ResponseInterface {
-        $data = $this->killlistHelper->getKillsForType(
-            $type,
-            $value,
-            $page,
-            100
-        );
+    public function killsForType(string $type, int $value, int $page = 1): ResponseInterface
+    {
+        $data = $this->killlistHelper->getKillsForType($type, $value, $page, 100);
         if ($data->has("error")) {
             return $this->json($data, 300);
         }
