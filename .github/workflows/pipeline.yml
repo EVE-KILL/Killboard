@@ -13,7 +13,7 @@ jobs:
         run: |
           # Define the repository we are pushing to
           repo_owner="EVE-KILL"
-          repo_name="Killboard"
+          repo_name="Deployment"
 
           # Define the event type
           event_type="update-submodule"
