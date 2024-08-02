@@ -35,7 +35,7 @@ jobs:
             "event_type": "'$event_type'",
             "client_payload":
               {
-                "submodule": "backend",
+                "submodule": "killboard",
                 "environment": "'$branch'",
                 "commit": "'$commit_hash'"
               }
