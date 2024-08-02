@@ -66,6 +66,7 @@ RUN \
         php${PHP_VERSION}-fileinfo \
         php${PHP_VERSION}-uploadprogress \
         php${PHP_VERSION}-sqlite3 \
+        php${PHP_VERSION}-gmp \
         php${PHP_VERSION}-dev \
         libcurl4-openssl-dev \
     && \
