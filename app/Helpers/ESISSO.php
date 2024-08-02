@@ -35,6 +35,6 @@ class ESISSO
     {
         $provider = $this->getProvider();
         $_SESSION['state'] = $provider->generateState();
-        return $this->provider->buildLoginUrl($_SESSION['state']);
+        return $provider->buildLoginUrl($_SESSION['state']);
     }
 }
