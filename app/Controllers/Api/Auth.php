@@ -33,7 +33,7 @@ class Auth extends Controller
     public function callback(): ResponseInterface
     {
         session_start();
-        $auth = $this->sso->provider->validateAuthenticationV2($this->getParam('state'), $this->getParam('state'), $this->getParam('code'));
+        $auth = $this->sso->getProvider()->validateAuthenticationV2($this->getParam('state'), $this->getParam('state'), $this->getParam('code'));
 
         $characterId = $auth->getCharacterId();
         $characterName = $auth->getCharacterName();

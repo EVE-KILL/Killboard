@@ -1,6 +1,6 @@
 FROM bitnami/minideb:latest
 
-LABEL org.opencontainers.image.source = "https://github.com/EVE-KILL/Killboard"
+LABEL org.opencontainers.image.source="https://github.com/EVE-KILL/Killboard"
 
 # Run as root
 USER root

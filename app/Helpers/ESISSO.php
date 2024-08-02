@@ -14,9 +14,13 @@ class ESISSO
         protected Config $config,
         protected ESI $esi
     ) {
+    }
+
+    public function getProvider(): AuthenticationProvider
+    {
         $developmentMode = $this->config->get('development');
 
-        $this->provider = new AuthenticationProvider([
+        return new AuthenticationProvider([
             'clientId' => $this->config->get($developmentMode ? 'sso/dev/client_id' : 'sso/prod/client_id'),
             'clientSecret' => $this->config->get($developmentMode ? 'sso/dev/client_secret' : 'sso/prod/client_secret'),
             'redirectUri' => $this->config->get($developmentMode ? 'sso/dev/callback_url' : 'sso/prod/callback_url')
@@ -29,7 +33,8 @@ class ESISSO
 
     public function getLoginUrl(): string
     {
-        $_SESSION['state'] = $this->provider->generateState();
+        $provider = $this->getProvider();
+        $_SESSION['state'] = $provider->generateState();
         return $this->provider->buildLoginUrl($_SESSION['state']);
     }
 }
