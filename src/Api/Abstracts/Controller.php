@@ -101,7 +101,7 @@ abstract class Controller
      *
      * @return string|bool|null
      */
-    protected function getParam(string $key, mixed $default): mixed
+    protected function getParam(string $key, mixed $default = null): mixed
     {
         return $this->getParams()->get($key, $default);
     }
@@ -356,9 +356,13 @@ abstract class Controller
      *
      * @return ResponseInterface
      */
-    protected function redirect(string $url): ResponseInterface
+    protected function redirect(string $url, int $status = 302): ResponseInterface
     {
-        return $this->response->withAddedHeader('Location', $url);
+        $response = $this->generateResponse($status, 'text/html', 0);
+        $response = $response->withHeader('Location', $url);
+        $response->getBody()->write('');
+
+        return $response;
     }
 
     protected function cleanupTimestamps(array $data): array

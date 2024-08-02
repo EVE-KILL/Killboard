@@ -384,6 +384,9 @@ class Collection
                     // Add the name to the options
                     $options['name'] = $name;
 
+                    // Create the index in the background
+                    $options['background'] = true;
+
                     // Modify the index to add the direction
                     $modifiedIndex = [];
                     foreach ($index as $key) {

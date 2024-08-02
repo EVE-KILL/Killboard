@@ -17,67 +17,63 @@ class Users extends Collection
     public string $indexField = 'email';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
-    public array $hiddenFields = [];
+    public array $hiddenFields = ['character_owner_hash', 'refresh_token', 'access_token', 'sso_expires'];
 
     /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
-    public array $required = ['email', 'password'];
+    public array $required = ['character_name', 'character_id'];
 
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
-        'unique' => ['email'],
-        'desc' => [],
+        'unique' => ['character_name', 'character_id'],
+        'desc' => ['identifier'],
         'asc' => [],
         'text' => []
     ];
 
-    public function addUser(string $email, string $password): bool
+    public function getUser(int $characterId): array
     {
-        $userExists = $this->findOne(['email' => $email]);
-        if ($userExists) {
+        $currentTime = time();
+        $user = $this->findOne(['character_id' => $characterId]);
+
+        if ($user === null) {
+            throw new RuntimeException('User not found');
+        }
+
+        if ($user['expiration'] < $currentTime) {
+            throw new RuntimeException('User has expired');
+        }
+
+        return $user;
+    }
+
+    public function addUser(int $characterId, string $characterName, int $expiration, string $identifier): int
+    {
+        $user = $this->findOneOrNull(['character_id' => $characterId]);
+
+        if ($user !== null) {
             throw new RuntimeException('User already exists');
         }
 
-        $this->data->add([
-            'email' => $email,
-            'password' => password_hash($password, PASSWORD_DEFAULT),
+        $this->setData([
+            'character_id' => $characterId,
+            'character_name' => $characterName,
+            'expiration' => $expiration,
+            'identifier' => $identifier
         ]);
 
-        $saveResult = $this->save();
-        if ($saveResult->getInsertedCount() >= 1 && $saveResult->isAcknowledged()) {
-            return true;
-        }
-
-        return false;
+        return $this->save();
     }
 
-    public function deleteUser(string $email): bool
+    public function updateExpiration(int $characterId, int $expiration): bool
     {
-        $user = $this->find(['email' => $email]);
-        if (!$user) {
-            throw new RuntimeException('User does not exist');
+        $user = $this->findOneOrNull(['character_id' => $characterId]);
+
+        if ($user === null) {
+            throw new RuntimeException('User not found');
         }
 
-        $deleteResult = $this->delete(['email' => $email]);
-        if ($deleteResult->getDeletedCount() >= 1 && $deleteResult->isAcknowledged()) {
-            return true;
-        }
-    }
-
-    public function validUser(string $email, string $password, string $passwordConfirm): bool
-    {
-        if ($password !== $passwordConfirm) {
-            throw new RuntimeException('Passwords do not match');
-        }
-
-        $user = $this->find(['email' => $email]);
-        if (!$user) {
-            throw new RuntimeException('User does not exist');
-        }
-
-        if (password_verify($password, $user->password)) {
-            return true;
-        }
-
-        throw new RuntimeException('Password is incorrect');
+        $user['expiration'] = $expiration;
+        $this->setData($user->toArray());
+        return $this->save();
     }
 }

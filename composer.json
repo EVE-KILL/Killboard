@@ -46,7 +46,8 @@
     "cweagans/composer-patches": "*",
     "meilisearch/meilisearch-php": "*",
     "psr/log": "^2",
-    "phrity/websocket": "*"
+    "phrity/websocket": "*",
+    "tkhamez/eve-sso": "^5.1"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",

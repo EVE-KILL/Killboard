@@ -32,34 +32,38 @@ class Killmails extends Collection
             ['kill_time', 'system_id'],
             ['kill_time', 'region_id'],
             'system_security',
+            ['system_security', 'kill_time'],
             'war_id',
             'last_modified',
             'near',
             'is_npc',
+            ['is_npc', 'kill_time'],
             'is_solo',
+            ['is_solo', 'kill_time'],
             'total_value',
+            ['total_value', 'kill_time'],
 
             // Items
             'items.type_id',
             'items.group_id',
 
             // Victim fields
-            'victim.ship_group_id',
             [ 'victim.character_id', 'kill_time' ],
             [ 'victim.corporation_id', 'kill_time' ],
             [ 'victim.alliance_id', 'kill_time' ],
             [ 'victim.faction_id', 'kill_time' ],
             [ 'victim.ship_id', 'kill_time' ],
+            [ 'victim.ship_group_id', 'kill_time' ],
             [ 'victim.weapon_type_id', 'kill_time' ],
 
             // Attacker fields
             'attackers.final_blow',
-            'attackers.ship_group_id',
             [ 'attackers.character_id', 'kill_time' ],
             [ 'attackers.corporation_id', 'kill_time' ],
             [ 'attackers.alliance_id', 'kill_time' ],
             [ 'attackers.faction_id', 'kill_time' ],
             [ 'attackers.ship_id', 'kill_time' ],
+            [ 'attackers.ship_group_id', 'kill_time' ],
             [ 'attackers.weapon_type_id', 'kill_time' ],
         ]
     ];

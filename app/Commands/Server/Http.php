@@ -10,7 +10,6 @@ use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
 use OpenSwoole\Constant;
 use OpenSwoole\Core\Psr\ServerRequest;
-use OpenSwoole\Table;
 use Slim\Factory\AppFactory;
 use Slim\Psr7\Response;
 
