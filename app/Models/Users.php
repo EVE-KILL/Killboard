@@ -3,6 +3,7 @@
 namespace EK\Models;
 
 use EK\Database\Collection;
+use Illuminate\Support\Collection as SupportCollection;
 use RuntimeException;
 
 class Users extends Collection
@@ -17,7 +18,7 @@ class Users extends Collection
     public string $indexField = 'email';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
-    public array $hiddenFields = ['character_owner_hash', 'refresh_token', 'access_token', 'sso_expires'];
+    public array $hiddenFields = ['character_owner_hash', 'refresh_token', 'access_token', 'sso_expires', 'config'];
 
     /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
     public array $required = ['character_name', 'character_id'];
@@ -73,6 +74,30 @@ class Users extends Collection
         }
 
         $user['expiration'] = $expiration;
+        $this->setData($user->toArray());
+        return $this->save();
+    }
+
+    public function getUserConfig(string $identifier): SupportCollection
+    {
+        $user = $this->findOneOrNull(['identifier' => $identifier], showHidden: true);
+
+        if ($user === null) {
+            throw new RuntimeException('User not found');
+        }
+
+        return $user;
+    }
+
+    public function setUserConfig(string $identifier, array $config): bool
+    {
+        $user = $this->findOneOrNull(['identifier' => $identifier]);
+
+        if ($user === null) {
+            throw new RuntimeException('User not found');
+        }
+
+        $user['config'] = $config;
         $this->setData($user->toArray());
         return $this->save();
     }

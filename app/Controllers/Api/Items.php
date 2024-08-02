@@ -82,37 +82,6 @@ class Items extends Controller
         return $this->json($item);
     }
 
-    #[RouteAttribute("/items/{item_id:[0-9]+}/killmails[/{limit:[0-9+]}]", ["GET"])]
-    public function killmails(int $item_id, int $limit = 100): ResponseInterface
-    {
-        $cacheKey = "items.{$item_id}.killmails";
-        if ($this->cache->exists($cacheKey)) {
-            return $this->json(
-                $this->cache->get($cacheKey),
-                $this->cache->getTTL($cacheKey)
-            );
-        }
-
-        $killmails = $this->killmails->find([
-            "items.type_id" => $item_id
-        ], [
-            'projection' => [
-                '_id' => 0,
-                'killmail_id' => 1,
-                'kill_time_str' => 1
-            ],
-            //'sort' => ['kill_time' => -1],
-            'limit' => $limit
-        ]);//->map(function($killmail) {
-        //    return $killmail['killmail_id'];
-        //});
-
-
-        //$this->cache->set($cacheKey, $killmails, 3600);
-
-        return $this->json($killmails);
-    }
-
     #[RouteAttribute("/items/{item_id:[0-9]+}/pricing[/{region_id:[0-9]+}[/{days:[0-9]+}]]", ["GET"])]
     public function pricing(int $item_id, int $days = 7, int $region_id = 10000002): ResponseInterface
     {
@@ -141,5 +110,36 @@ class Items extends Controller
         $this->cache->set($cacheKey, $pricing, 3600);
 
         return $this->json($pricing);
+    }
+
+    #[RouteAttribute("/items/{item_id:\d+}/killmails[/{limit:\d+}]", ["GET"])]
+    public function killmails(int $item_id, int $limit = 100): ResponseInterface
+    {
+        $cacheKey = "items.{$item_id}.killmails";
+        if ($this->cache->exists($cacheKey)) {
+            return $this->json(
+                $this->cache->get($cacheKey),
+                $this->cache->getTTL($cacheKey)
+            );
+        }
+
+        $killmails = $this->killmails->find([
+            "items.type_id" => $item_id
+        ], [
+            'projection' => [
+                '_id' => 0,
+                'killmail_id' => 1,
+                'kill_time_str' => 1
+            ],
+            //'sort' => ['kill_time' => -1],
+            'limit' => $limit
+        ]);//->map(function($killmail) {
+        //    return $killmail['killmail_id'];
+        //});
+
+
+        //$this->cache->set($cacheKey, $killmails, 3600);
+
+        return $this->json($killmails);
     }
 }
