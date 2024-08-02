@@ -48,11 +48,10 @@ class Auth extends Controller
             'characterName' => $characterName
         ]));
 
-        // @TODO Change to 5s
         $this->cache->set($loginHash, json_encode([
             'character_id' => $characterId,
             'character_name' => $characterName
-        ]), 3600);
+        ]), 5);
 
         $this->users->setData([
             'character_id' => $characterId,
