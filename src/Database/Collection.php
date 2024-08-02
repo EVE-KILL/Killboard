@@ -375,6 +375,11 @@ class Collection
                         default => null
                     };
 
+                    // If the direction is ascending (asc) we need to add -1 to the end of the name
+                    if ($direction === 1) {
+                        $name .= '_1';
+                    }
+
                     // Set the options of the index
                     $options = match($indexType) {
                         'unique' => ['unique' => true],

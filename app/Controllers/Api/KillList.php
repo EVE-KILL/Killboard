@@ -65,7 +65,7 @@ class KillList extends Controller
     #[RouteAttribute("/killlist/highsec[/{page:[0-9]+}]", ["GET"])]
     public function highsec(int $page = 1): ResponseInterface
     {
-        $data = $this->killlistHelper->getHighsec($page, 100);
+        $data = $this->killlistHelper->getHighsec($page, 100, 300);
         if ($data->has("error")) {
             return $this->json($data, 300);
         }
@@ -80,7 +80,7 @@ class KillList extends Controller
     #[RouteAttribute("/killlist/lowsec[/{page:[0-9]+}]", ["GET"])]
     public function lowsec(int $page = 1): ResponseInterface
     {
-        $data = $this->killlistHelper->getLowsec($page, 100);
+        $data = $this->killlistHelper->getLowsec($page, 100, 300);
         if ($data->has("error")) {
             return $this->json($data, 300);
         }
@@ -95,7 +95,7 @@ class KillList extends Controller
     #[RouteAttribute("/killlist/nullsec[/{page:[0-9]+}]", ["GET"])]
     public function nullsec(int $page = 1): ResponseInterface
     {
-        $data = $this->killlistHelper->getNullsec($page, 100);
+        $data = $this->killlistHelper->getNullsec($page, 100, 300);
         if ($data->has("error")) {
             return $this->json($data, 300);
         }

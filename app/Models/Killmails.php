@@ -31,16 +31,12 @@ class Killmails extends Collection
             'kill_time',
             ['kill_time', 'system_id'],
             ['kill_time', 'region_id'],
-            'system_security',
             ['system_security', 'kill_time'],
             'war_id',
             'last_modified',
             'near',
-            'is_npc',
             ['is_npc', 'kill_time'],
-            'is_solo',
             ['is_solo', 'kill_time'],
-            'total_value',
             ['total_value', 'kill_time'],
 
             // Items
@@ -65,6 +61,9 @@ class Killmails extends Collection
             [ 'attackers.ship_id', 'kill_time' ],
             [ 'attackers.ship_group_id', 'kill_time' ],
             [ 'attackers.weapon_type_id', 'kill_time' ],
+        ],
+        'asc' => [
+            ['system_security', 'kill_time'],
         ]
     ];
 
