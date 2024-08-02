@@ -4,7 +4,6 @@ namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
 use EK\Jobs\updateCharacter;
-use EK\Logger\Logger;
 use EK\Models\Characters;
 
 class UpdateCharacters extends Cronjob
@@ -13,10 +12,8 @@ class UpdateCharacters extends Cronjob
 
     public function __construct(
         protected Characters $characters,
-        protected updateCharacter $updateCharacter,
-        protected Logger $logger
+        protected updateCharacter $updateCharacter
     ) {
-        parent::__construct($logger);
     }
 
     public function handle(): void

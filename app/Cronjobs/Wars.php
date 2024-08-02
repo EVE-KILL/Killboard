@@ -3,10 +3,6 @@
 namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
-use EK\Logger\Logger;
-use EK\Models\Prices;
-use League\Csv\Reader;
-use MongoDB\BSON\UTCDateTime;
 
 class Wars extends Cronjob
 {
@@ -15,10 +11,8 @@ class Wars extends Cronjob
     public function __construct(
         protected \EK\Models\Wars $warsModel,
         protected \EK\ESI\Wars $esiWars,
-        protected \EK\Jobs\processWar $processWar,
-        protected Logger $logger
+        protected \EK\Jobs\processWar $processWar
     ) {
-        parent::__construct($logger);
     }
 
     public function handle(): void
