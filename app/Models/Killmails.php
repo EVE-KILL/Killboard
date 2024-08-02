@@ -40,8 +40,8 @@ class Killmails extends Collection
             ['total_value', 'kill_time'],
 
             // Items
-            'items.type_id',
-            'items.group_id',
+            ['items.type_id', 'kill_time'],
+            ['items.group_id', 'kill_time'],
 
             // Victim fields
             [ 'victim.character_id', 'kill_time' ],
