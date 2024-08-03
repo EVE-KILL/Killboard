@@ -8,7 +8,7 @@ use EK\Models\Proxies;
 use EK\Redis\Redis;
 use MongoDB\BSON\UTCDateTime;
 
-class validateProxy extends Jobs
+class ValidateProxy extends Jobs
 {
     protected string $defaultQueue = 'high';
     protected array $knownData = [

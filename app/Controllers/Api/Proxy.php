@@ -4,7 +4,7 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Jobs\validateProxy;
+use EK\Jobs\ValidateProxy;
 use EK\Models\Proxies;
 use Psr\Http\Message\ResponseInterface;
 
@@ -12,7 +12,7 @@ class Proxy extends Controller
 {
     public function __construct(
         protected Proxies $proxiesModel,
-        protected validateProxy $validateProxy
+        protected ValidateProxy $validateProxy
     ) {
         parent::__construct();
     }

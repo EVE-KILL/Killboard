@@ -3,9 +3,9 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Jobs\updateAlliance;
-use EK\Jobs\updateCharacter;
-use EK\Jobs\updateCorporation;
+use EK\Jobs\UpdateAlliance;
+use EK\Jobs\UpdateCharacter;
+use EK\Jobs\UpdateCorporation;
 use EK\Models\Characters;
 use EK\Models\KillmailsESI;
 
@@ -18,9 +18,9 @@ class UpdateEntitiesFromKillmailsESI extends ConsoleCommand
 
     public function __construct(
         protected KillmailsESI $killmailsESI,
-        protected updateCharacter $updateCharacter,
-        protected updateCorporation $updateCorporation,
-        protected updateAlliance $updateAlliance,
+        protected UpdateCharacter $updateCharacter,
+        protected UpdateCorporation $updateCorporation,
+        protected UpdateAlliance $updateAlliance,
         ?string $name = null
     ) {
         parent::__construct($name);

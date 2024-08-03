@@ -3,8 +3,9 @@
 namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
-use EK\Jobs\updateCharacter;
+use EK\Jobs\UpdateCharacter;
 use EK\Models\Characters;
+use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacters extends Cronjob
 {
@@ -12,30 +13,35 @@ class UpdateCharacters extends Cronjob
 
     public function __construct(
         protected Characters $characters,
-        protected updateCharacter $updateCharacter
+        protected UpdateCharacter $updateCharacter
     ) {
     }
 
     public function handle(): void
     {
-        return;
-        $this->logger->info("Updating characters with names set to Unknown");
-        // Find characters with the name set to Unknown, but ignore them if they have deleted = true
-        $unknownCharacters = $this->characters->find(
+        $this->logger->info("Updating characters that haven't been updated in the last 14 days");
+
+        $fourteenDaysAgo = new UTCDateTime((time() - 14 * 86400) * 1000);
+
+        // Find characters that haven't been updated in the last 14 days, but ignore them if they have deleted = true
+        $staleCharacters = $this->characters->find(
             [
-                "name" => "Unknown",
+                "last_modified" => ['$lt' => $fourteenDaysAgo],
                 "deleted" => ['$ne' => true],
             ],
-            ["limit" => 1000]
+            ["limit" => 15000]
         );
 
         $updates = array_map(function ($character) {
             return [
                 "character_id" => $character["character_id"],
             ];
-        }, $unknownCharacters->toArray());
+        }, $staleCharacters->toArray());
 
         $this->logger->info("Updating " . count($updates) . " characters");
-        $this->updateCharacter->massEnqueue($updates, "low");
+
+        foreach ($updates as $update) {
+            $this->updateCharacter->enqueue(['character_id' => $update["character_id"]]);
+        }
     }
 }

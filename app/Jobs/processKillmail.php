@@ -6,13 +6,13 @@ use EK\Api\Abstracts\Jobs;
 use EK\Models\Killmails;
 use EK\Redis\Redis;
 
-class processKillmail extends Jobs
+class ProcessKillmail extends Jobs
 {
     protected string $defaultQueue = 'killmail';
     public function __construct(
         protected Killmails $killmails,
         protected \EK\Helpers\Killmails $killmailHelper,
-        protected emitKillmailWS $emitKillmailWS,
+        protected EmitKillmailWS $emitKillmailWS,
         protected Redis $redis
     ) {
         parent::__construct($redis);

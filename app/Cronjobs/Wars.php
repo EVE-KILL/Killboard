@@ -11,7 +11,7 @@ class Wars extends Cronjob
     public function __construct(
         protected \EK\Models\Wars $warsModel,
         protected \EK\ESI\Wars $esiWars,
-        protected \EK\Jobs\processWar $processWar
+        protected \EK\Jobs\ProcessWar $processWar
     ) {
     }
 

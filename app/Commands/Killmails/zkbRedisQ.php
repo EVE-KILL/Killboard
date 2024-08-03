@@ -4,7 +4,7 @@ namespace EK\Commands\Killmails;
 
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Jobs\processKillmail;
+use EK\Jobs\ProcessKillmail;
 use EK\Models\Killmails;
 
 class zkbRedisQ extends ConsoleCommand
@@ -15,7 +15,7 @@ class zkbRedisQ extends ConsoleCommand
     public function __construct(
         protected ClassLoader $autoloader,
         protected Killmails $killmails,
-        protected processKillmail $processKillmail
+        protected ProcessKillmail $processKillmail
     ) {
         parent::__construct();
     }

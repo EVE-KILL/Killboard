@@ -3,7 +3,7 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Jobs\updateCharacter;
+use EK\Jobs\UpdateCharacter;
 use EK\Models\Characters;
 
 class UpdateCharacters extends ConsoleCommand
@@ -13,7 +13,7 @@ class UpdateCharacters extends ConsoleCommand
 
     public function __construct(
         protected Characters $characters,
-        protected updateCharacter $updateCharacter
+        protected UpdateCharacter $updateCharacter
     ) {
         parent::__construct();
     }

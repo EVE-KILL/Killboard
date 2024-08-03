@@ -5,7 +5,7 @@ namespace EK\Commands\Killmails;
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Fetchers\zKillboard;
-use EK\Jobs\processKillmail;
+use EK\Jobs\ProcessKillmail;
 use EK\Models\Killmails;
 use Illuminate\Support\Collection;
 
@@ -21,7 +21,7 @@ class FetchKillmails extends ConsoleCommand
         protected ClassLoader $autoloader,
         protected Killmails $killmails,
         protected zKillboard $zkbFetcher,
-        protected processKillmail $processKillmail,
+        protected ProcessKillmail $processKillmail,
     ) {
         parent::__construct();
     }

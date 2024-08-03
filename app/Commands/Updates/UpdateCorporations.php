@@ -3,7 +3,7 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Jobs\updateCorporation;
+use EK\Jobs\UpdateCorporation;
 use EK\Models\Corporations;
 
 class UpdateCorporations extends ConsoleCommand
@@ -13,7 +13,7 @@ class UpdateCorporations extends ConsoleCommand
 
     public function __construct(
         protected Corporations $corporations,
-        protected updateCorporation $updateCorporation
+        protected UpdateCorporation $updateCorporation
     ) {
         parent::__construct();
     }

@@ -47,7 +47,7 @@ class Characters
         $this->characters->setData($characterData);
         $this->characters->save();
 
-        $updateCharacter = $this->container->get(\EK\Jobs\updateCharacter::class);
+        $updateCharacter = $this->container->get(\EK\Jobs\UpdateCharacter::class);
         $updateCharacter->enqueue(['character_id' => $characterData['character_id']]);
 
         return $characterData;

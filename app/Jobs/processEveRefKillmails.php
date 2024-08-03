@@ -7,7 +7,7 @@ use EK\Models\KillmailsESI;
 use EK\Redis\Redis;
 use MongoDB\BSON\UTCDateTime;
 
-class processEveRefKillmails extends Jobs
+class ProcessEveRefKillmails extends Jobs
 {
     protected string $defaultQueue = 'low';
 

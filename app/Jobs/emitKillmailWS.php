@@ -8,7 +8,7 @@ use EK\Redis\Redis;
 use MongoDB\BSON\UTCDateTime;
 use WebSocket\Client;
 
-class emitKillmailWS extends Jobs
+class EmitKillmailWS extends Jobs
 {
     protected string $defaultQueue = 'websocket';
     public function __construct(

@@ -4,7 +4,7 @@ namespace EK\Commands\Killmails;
 
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Jobs\processKillmail;
+use EK\Jobs\ProcessKillmail;
 use EK\Models\Killmails;
 
 class ParseKillmails extends ConsoleCommand
@@ -19,7 +19,7 @@ class ParseKillmails extends ConsoleCommand
         protected ClassLoader $autoloader,
         protected killmails $killmails,
         protected \EK\Helpers\Killmails $killmailsHelper,
-        protected processKillmail $parseKillmailJob
+        protected ProcessKillmail $parseKillmailJob
     ) {
         parent::__construct();
     }

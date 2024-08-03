@@ -3,18 +3,17 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Models\Killmails;
 use EK\Models\Wars;
 use EK\Redis\Redis;
 use MongoDB\BSON\UTCDateTime;
 
-class processWar extends Jobs
+class ProcessWar extends Jobs
 {
     protected string $defaultQueue = 'low';
     public function __construct(
         protected Wars $warsModel,
         protected \EK\ESI\Wars $esiWars,
-        protected processKillmail $killmailJob,
+        protected ProcessKillmail $killmailJob,
         protected Redis $redis
     ) {
         parent::__construct($redis);

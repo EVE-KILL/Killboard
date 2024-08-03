@@ -8,9 +8,10 @@ use EK\Meilisearch\Meilisearch;
 use EK\Redis\Redis;
 use Illuminate\Support\Collection;
 
-class updateAlliance extends Jobs
+class UpdateAlliance extends Jobs
 {
     protected string $defaultQueue = "alliance";
+
     public function __construct(
         protected \EK\Models\Alliances $alliances,
         protected \EK\Models\Corporations $corporations,
@@ -21,7 +22,7 @@ class updateAlliance extends Jobs
         protected \EK\ESI\Characters $esiCharacters,
         protected Meilisearch $meilisearch,
         protected EveWho $eveWhoFetcher,
-        protected updateCharacter $updateCharacter,
+        protected UpdateCharacter $updateCharacter,
         protected Redis $redis
     ) {
         parent::__construct($redis);
@@ -31,64 +32,76 @@ class updateAlliance extends Jobs
     {
         $allianceId = $data["alliance_id"];
 
-        $allianceData =
-            $this->alliances->findOneOrNull(["alliance_id" => $allianceId]) ??
-            $this->esiAlliances->getAllianceInfo($allianceId);
-        $allianceData =
-            $allianceData instanceof Collection
-                ? $allianceData->toArray()
-                : $allianceData;
+        $allianceData = $this->fetchAllianceData($allianceId);
 
-        $creatorCorporationId = $allianceData["creator_corporation_id"];
-        $executor_CorporationId = $allianceData["executor_corporation_id"];
-        $creatorCharacterId = $allianceData["creator_id"];
-        $factionId = $allianceData["faction_id"] ?? 0;
-        $factionData = [];
+        $this->updateAllianceData($allianceData);
+        $this->updateAllianceCharacters($allianceId);
+    }
 
-        if ($factionId > 0) {
-            $factionData = $this->factions->findOne([
-                "faction_id" => $factionId,
-            ]);
-        }
+    protected function fetchAllianceData($allianceId)
+    {
+        return $this->alliances->findOneOrNull(["alliance_id" => $allianceId]) ??
+               $this->esiAlliances->getAllianceInfo($allianceId);
+    }
 
-        $creatorCorporationData =
-            $this->corporations->findOneOrNull([
-                "corporation_id" => $creatorCorporationId,
-            ]) ??
-            $this->esiCorporations->getCorporationInfo($creatorCorporationId);
+    protected function updateAllianceData($allianceData)
+    {
+        $allianceData = $allianceData instanceof Collection ? $allianceData->toArray() : $allianceData;
 
-        $executorCorporationData =
-            $this->corporations->findOneOrNull([
-                "corporation_id" => $executor_CorporationId,
-            ]) ??
-            $this->esiCorporations->getCorporationInfo($executor_CorporationId);
-
-        $creatorCharacterData =
-            $this->characters->findOneOrNull([
-                "character_id" => $creatorCharacterId,
-            ]) ?? $this->esiCharacters->getCharacterInfo($creatorCharacterId);
-
-        $allianceData["creator_corporation_name"] =
-            $creatorCorporationData["name"];
-        $allianceData["executor_corporation_name"] =
-            $executorCorporationData["name"];
-        $allianceData["creator_name"] = $creatorCharacterData["name"];
-        $allianceData["faction_name"] = $factionData["name"] ?? "";
+        $allianceData["creator_corporation_name"] = $this->fetchCorporationName($allianceData["creator_corporation_id"]);
+        $allianceData["executor_corporation_name"] = $this->fetchCorporationName($allianceData["executor_corporation_id"]);
+        $allianceData["creator_name"] = $this->fetchCharacterName($allianceData["creator_id"]);
+        $allianceData["faction_name"] = $this->fetchFactionName($allianceData["faction_id"] ?? 0);
 
         ksort($allianceData);
 
         $this->alliances->setData($allianceData);
         $this->alliances->save();
 
-        // Push the alliance to the search index
+        $this->indexAllianceInSearch($allianceData);
+    }
+
+    protected function fetchCorporationName($corporationId)
+    {
+        if ($corporationId > 0) {
+            $corporationData = $this->corporations->findOneOrNull(["corporation_id" => $corporationId]) ??
+                               $this->esiCorporations->getCorporationInfo($corporationId);
+            return $corporationData["name"] ?? "";
+        }
+        return "";
+    }
+
+    protected function fetchCharacterName($characterId)
+    {
+        if ($characterId > 0) {
+            $characterData = $this->characters->findOneOrNull(["character_id" => $characterId]) ??
+                             $this->esiCharacters->getCharacterInfo($characterId);
+            return $characterData["name"] ?? "";
+        }
+        return "";
+    }
+
+    protected function fetchFactionName($factionId)
+    {
+        if ($factionId > 0) {
+            $factionData = $this->factions->findOne(["faction_id" => $factionId]);
+            return $factionData["name"] ?? "";
+        }
+        return "";
+    }
+
+    protected function indexAllianceInSearch($allianceData)
+    {
         $this->meilisearch->addDocuments([
             "id" => $allianceData["alliance_id"],
             "name" => $allianceData["name"],
             "ticker" => $allianceData["ticker"],
             "type" => "alliance",
         ]);
+    }
 
-        // Get the list of characters in the alliance from evewho
+    protected function updateAllianceCharacters($allianceId)
+    {
         $url = "https://evewho.com/api/allilist/{$allianceId}";
         $request = $this->eveWhoFetcher->fetch($url);
         $data = $request["body"] ?? "";
@@ -99,10 +112,9 @@ class updateAlliance extends Jobs
         foreach ($characters as $character) {
             $this->characters->findOneOrNull([
                 "character_id" => $character["character_id"],
-            ]) ??
-                $this->updateCharacter->enqueue([
-                    "character_id" => $character["character_id"],
-                ]);
+            ]) ?? $this->updateCharacter->enqueue([
+                "character_id" => $character["character_id"],
+            ]);
         }
     }
 }

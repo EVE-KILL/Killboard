@@ -3,7 +3,7 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Jobs\updateAlliance;
+use EK\Jobs\UpdateAlliance;
 use EK\Models\Alliances;
 
 class UpdateAlliances extends ConsoleCommand
@@ -13,7 +13,7 @@ class UpdateAlliances extends ConsoleCommand
 
     public function __construct(
         protected Alliances $alliances,
-        protected updateAlliance $updateAlliance
+        protected UpdateAlliance $updateAlliance
     ) {
         parent::__construct();
     }

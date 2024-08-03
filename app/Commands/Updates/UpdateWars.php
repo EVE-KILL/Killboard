@@ -4,8 +4,8 @@ namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\ESI\Wars;
-use EK\Jobs\processWar;
-use EK\Jobs\updateAlliance;
+use EK\Jobs\ProcessWar;
+use EK\Jobs\UpdateAlliance;
 use EK\Models\Alliances;
 
 class UpdateWars extends ConsoleCommand
@@ -16,7 +16,7 @@ class UpdateWars extends ConsoleCommand
     public function __construct(
         protected \EK\Models\Wars $wars,
         protected Wars $esiWars,
-        protected processWar $warJob
+        protected ProcessWar $warJob
     ) {
         parent::__construct();
     }

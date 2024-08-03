@@ -12,7 +12,7 @@ class Characters extends Controller
     public function __construct(
         protected \EK\Models\Characters $characters,
         protected \EK\Models\Corporations $corporations,
-        protected \EK\Jobs\updateCorporation $updateCorporation,
+        protected \EK\Jobs\UpdateCorporation $updateCorporation,
         protected \EK\ESI\Corporations $corporationESI,
         protected \EK\Helpers\TopLists $topLists,
         protected \EK\Cache\Cache $cache,

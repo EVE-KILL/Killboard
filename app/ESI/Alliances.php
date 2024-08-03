@@ -29,7 +29,7 @@ class Alliances
         $this->alliances->setData($allianceData);
         $this->alliances->save();
 
-        $updateAlliance = $this->container->get(\EK\Jobs\updateAlliance::class);
+        $updateAlliance = $this->container->get(\EK\Jobs\UpdateAlliance::class);
         $updateAlliance->enqueue(['alliance_id' => $allianceData['alliance_id']]);
 
         return $allianceData;

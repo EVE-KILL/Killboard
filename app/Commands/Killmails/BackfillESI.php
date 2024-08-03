@@ -4,7 +4,7 @@ namespace EK\Commands\Killmails;
 
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Jobs\processEveRefKillmails;
+use EK\Jobs\ProcessEveRefKillmails;
 
 class BackfillESI extends ConsoleCommand
 {
@@ -15,7 +15,7 @@ class BackfillESI extends ConsoleCommand
 
     public function __construct(
         protected ClassLoader $autoloader,
-        protected processEveRefKillmails $processEveRefKillmails,
+        protected ProcessEveRefKillmails $processEveRefKillmails,
     ) {
         parent::__construct();
     }
