@@ -106,7 +106,7 @@ class Killmails
             'fitting_value' => (float)$killValue['item_value'],
             'total_value' => (float)$killValue['total_value'],
             'point_value' => $pointValue,
-            'dna' => $this->getDNA($killmail['victim']['items'], $shipTypeID),
+            'dna' => $this->generateDNA($killmail['victim']['items'], $shipTypeID),
             'is_npc' => $this->isNPC($killmail),
             'is_solo' => $this->isSolo($killmail),
             'war_id' => $war_id,
@@ -428,7 +428,7 @@ class Killmails
         return $celestialName;
     }
 
-    private function getDNA(array $items, $shipTypeID): string
+    public function generateDNA(array $items, $shipTypeID): string
     {
         $slots = [
             'LoSlot0', 'LoSlot1', 'LoSlot2', 'LoSlot3', 'LoSlot4', 'LoSlot5', 'LoSlot6', 'LoSlot7', 'MedSlot0',
@@ -461,6 +461,67 @@ class Killmails
         }
         $fittingString .= ':';
         return $fittingString;
+    }
+
+    public function decodeDNA(array $items): array
+    {
+        $itemSlotTypes = $this->itemSlotTypes();
+        $fittingArray = [];
+
+        foreach ($items as $item) {
+            $flag = $item['flag'];
+            $typeID = $item['type_id'] ?? 0;
+            $typeName = $item['type_name'] ?? '';
+            $quantity = ($item['qty_dropped'] ?? 0) + ($item['qty_destroyed'] ?? 0);
+
+            foreach ($itemSlotTypes as $slotType => $slotFlags) {
+                if (in_array($flag, $slotFlags)) {
+                    if (!isset($fittingArray[$slotType])) {
+                        $fittingArray[$slotType] = [];
+                    }
+                    $fittingArray[$slotType][] = [
+                        'item_id' => $typeID,
+                        'item_name' => $typeName,
+                        'quantity' => $quantity
+                    ];
+                    break;
+                }
+            }
+        }
+
+        return $fittingArray;
+    }
+
+    private function itemSlotTypes()
+    {
+        return [
+            'High Slot' => [27, 28, 29, 30, 31, 32, 33, 34],
+            'Medium Slot' => [19, 20, 21, 22, 23, 24, 25, 26],
+            'Low Slot' => [11, 12, 13, 14, 15, 16, 17, 18],
+            'Rig Slot' => [92, 93, 94, 95, 96, 97, 98, 99],
+            'Subsystem' => [125, 126, 127, 128, 129, 130, 131, 132],
+            'Drone Bay' => [87],
+            'Cargo Bay' => [5],
+            'Fuel Bay' => [133],
+            'Fleet Hangar' => [155],
+            'Fighter Bay' => [158],
+            'Fighter Launch Tubes' => [159, 160, 161, 162, 163],
+            'Ship Hangar' => [90],
+            'Ore Hold' => [134],
+            'Gas Hold' => [135],
+            'Mineral Hold' => [136],
+            'Salvage Hold' => [137],
+            'Ship Hold' => [138],
+            'Small Ship Hold' => [139],
+            'Medium Ship Hold' => [140],
+            'Large Ship Hold' => [141],
+            'Industrial Ship Hold' => [142],
+            'Ammo Hold' => [143],
+            'Quafe Bay' => [154],
+            'Structure Services' => [164, 165, 166, 167, 168, 169, 170, 171],
+            'Structure Fuel' => [172],
+            'Implants' => [89]
+        ];
     }
 
     private function isNPC(array $killmail): bool
