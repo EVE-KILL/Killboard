@@ -430,101 +430,38 @@ class Killmails
 
     public function generateDNA(array $items, $shipTypeID): string
     {
-        $slots = [
-            'LoSlot0', 'LoSlot1', 'LoSlot2', 'LoSlot3', 'LoSlot4', 'LoSlot5', 'LoSlot6', 'LoSlot7', 'MedSlot0',
-            'MedSlot1', 'MedSlot2', 'MedSlot3', 'MedSlot4', 'MedSlot5', 'MedSlot6', 'MedSlot7', 'HiSlot0', 'HiSlot1', 'HiSlot2',
-            'HiSlot3', 'HiSlot4', 'HiSlot5', 'HiSlot6', 'HiSlot7', 'DroneBay', 'RigSlot0', 'RigSlot1', 'RigSlot2', 'RigSlot3',
-            'RigSlot4', 'RigSlot5', 'RigSlot6', 'RigSlot7', 'SubSystem0', 'SubSystem1', 'SubSystem2', 'SubSystem3',
-            'SubSystem4', 'SubSystem5', 'SubSystem6', 'SubSystem7', 'SpecializedFuelBay',
-        ];
+    $slots = [
+        'LoSlot0', 'LoSlot1', 'LoSlot2', 'LoSlot3', 'LoSlot4', 'LoSlot5', 'LoSlot6', 'LoSlot7', 'MedSlot0',
+        'MedSlot1', 'MedSlot2', 'MedSlot3', 'MedSlot4', 'MedSlot5', 'MedSlot6', 'MedSlot7', 'HiSlot0', 'HiSlot1', 'HiSlot2',
+        'HiSlot3', 'HiSlot4', 'HiSlot5', 'HiSlot6', 'HiSlot7', 'DroneBay', 'RigSlot0', 'RigSlot1', 'RigSlot2', 'RigSlot3',
+        'RigSlot4', 'RigSlot5', 'RigSlot6', 'RigSlot7', 'SubSystem0', 'SubSystem1', 'SubSystem2', 'SubSystem3',
+        'SubSystem4', 'SubSystem5', 'SubSystem6', 'SubSystem7', 'SpecializedFuelBay',
+    ];
 
-        $fittingArray = [];
-        $fittingString = $shipTypeID . ':';
+    $fittingArray = [];
+    $fittingString = $shipTypeID . ':';
 
-        foreach ($items as $item) {
-            $flagName = $this->invFlags->findOne(['flag_id' => $item['flag']])->get('flag_name');
-            $categoryID = $item['category_id'] ?? 0;
-            if ($categoryID === 8 || in_array($flagName, $slots)) {
-                $typeID = $item['item_type_id'] ?? 0;
-                $dropped = $item['quantity_dropped'] ?? 0;
-                $destroyed = $item['quantity_destroyed'] ?? 0;
-                if (isset($fittingArray[$typeID])) {
-                    $fittingArray[$typeID]['count'] += ($dropped + $destroyed);
-                } else {
-                    $fittingArray[$typeID] = ['count' => $dropped + $destroyed];
-                }
+    foreach ($items as $item) {
+        $flagName = $this->invFlags->findOne(['flag_id' => $item['flag']])->get('flag_name');
+        $categoryID = $item['category_id'] ?? 0;
+        if ($categoryID === 8 || in_array($flagName, $slots)) {
+            $typeID = $item['item_type_id'] ?? 0;
+            $dropped = $item['quantity_dropped'] ?? 0;
+            $destroyed = $item['quantity_destroyed'] ?? 0;
+            if (isset($fittingArray[$typeID])) {
+                $fittingArray[$typeID]['count'] += ($dropped + $destroyed);
+            } else {
+                $fittingArray[$typeID] = ['count' => $dropped + $destroyed];
             }
         }
-
-        foreach ($fittingArray as $key => $item) {
-            $fittingString .= "{$key};{$item['count']}:";
-        }
-        $fittingString .= ':';
-        return $fittingString;
     }
 
-    public function decodeDNA(array $items): array
-    {
-        $itemSlotTypes = $this->itemSlotTypes();
-        $fittingArray = [];
-
-        foreach ($items as $item) {
-            $flag = $item['flag'];
-            $typeID = $item['type_id'] ?? 0;
-            $typeName = $item['type_name'] ?? '';
-            $quantity = ($item['qty_dropped'] ?? 0) + ($item['qty_destroyed'] ?? 0);
-            $value = $item['value'] ?? 0;
-
-            foreach ($itemSlotTypes as $slotType => $slotFlags) {
-                if (in_array($flag, $slotFlags)) {
-                    if (!isset($fittingArray[$slotType])) {
-                        $fittingArray[$slotType] = [];
-                    }
-                    $fittingArray[$slotType][] = [
-                        'item_id' => $typeID,
-                        'item_name' => $typeName,
-                        'quantity' => $quantity,
-                        'value' => $value
-                    ];
-                    break;
-                }
-            }
-        }
-
-        return $fittingArray;
+    foreach ($fittingArray as $key => $item) {
+        $fittingString .= "{$key};{$item['count']}:";
     }
-
-    private function itemSlotTypes()
-    {
-        return [
-            'High Slot' => [27, 28, 29, 30, 31, 32, 33, 34],
-            'Medium Slot' => [19, 20, 21, 22, 23, 24, 25, 26],
-            'Low Slot' => [11, 12, 13, 14, 15, 16, 17, 18],
-            'Rig Slot' => [92, 93, 94, 95, 96, 97, 98, 99],
-            'Subsystem' => [125, 126, 127, 128, 129, 130, 131, 132],
-            'Drone Bay' => [87],
-            'Cargo Bay' => [5],
-            'Fuel Bay' => [133],
-            'Fleet Hangar' => [155],
-            'Fighter Bay' => [158],
-            'Fighter Launch Tubes' => [159, 160, 161, 162, 163],
-            'Ship Hangar' => [90],
-            'Ore Hold' => [134],
-            'Gas Hold' => [135],
-            'Mineral Hold' => [136],
-            'Salvage Hold' => [137],
-            'Ship Hold' => [138],
-            'Small Ship Hold' => [139],
-            'Medium Ship Hold' => [140],
-            'Large Ship Hold' => [141],
-            'Industrial Ship Hold' => [142],
-            'Ammo Hold' => [143],
-            'Quafe Bay' => [154],
-            'Structure Services' => [164, 165, 166, 167, 168, 169, 170, 171],
-            'Structure Fuel' => [172],
-            'Implants' => [89]
-        ];
-    }
+    $fittingString .= ':';
+    return $fittingString;
+}
 
     private function isNPC(array $killmail): bool
     {

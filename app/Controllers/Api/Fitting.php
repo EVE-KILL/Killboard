@@ -64,9 +64,7 @@ class Fitting extends Controller
                                 'hash' => '$hash'
                             ]
                         ],
-                        'items' => ['$first' => '$items'], // assuming items array is same for each dna
-                        'ship_image_url' => ['$first' => '$victim.ship_image_url'],
-                        'fitting_value' => ['$first' => '$fitting_value']
+                        'ship_image_url' => ['$first' => '$victim.ship_image_url']
                     ]
                 ],
                 [
@@ -80,9 +78,7 @@ class Fitting extends Controller
                         'dna' => '$_id',
                         'count' => 1,
                         'killmails' => 1,
-                        'items' => 1,
-                        'ship_image_url' => 1,
-                        'fitting_value' => 1
+                        'ship_image_url' => 1
                     ]
                 ]
             ];
@@ -90,31 +86,37 @@ class Fitting extends Controller
             $result = $this->killmails->aggregate($pipeline);
 
             foreach ($result as $res) {
-                if (empty($res['dna']) || empty($res['items'])) {
+                if (empty($res['killmails'])) {
                     continue;
                 }
 
-                $decodedItems = $this->killmailsHelper->decodeDNA($res['items']);
-                if (!empty($decodedItems)) {
-                    $shipValue = $this->prices->getPriceByTypeId($ship_id, new \MongoDB\BSON\UTCDateTime((new \DateTime())->getTimestamp() * 1000));
-                    $rank = count($validResults) + 1;
-                    $svg = $this->generateSVG($decodedItems, $res['ship_image_url'], $res['fitting_value'], $shipValue, $rank);
+                $firstKillmail = $res['killmails'][0];
+                $killmailDetails = $this->killmails->findOne(['killmail_id' => $firstKillmail['killmail_id']]);
 
-                    $killmailLinks = [];
-                    foreach ($res['killmails'] as $killmail) {
-                        $killmailLinks[] = [
-                            'killmail_id' => $killmail['killmail_id'],
-                            'hash' => $killmail['hash']
+                if ($killmailDetails) {
+                    $fitting = $this->generateFitting($killmailDetails['items']);
+                    if (!empty(array_filter($fitting))) {
+                        $shipValue = $this->prices->getPriceByTypeId($ship_id, new \MongoDB\BSON\UTCDateTime((new \DateTime())->getTimestamp() * 1000));
+                        $fitCost = $this->calculateFitCost($fitting);
+                        $rank = count($validResults) + 1;
+                        $svg = $this->generateSVG($fitting, $res['ship_image_url'], $fitCost, $shipValue, $rank);
+
+                        $killmailLinks = [];
+                        foreach ($res['killmails'] as $killmail) {
+                            $killmailLinks[] = [
+                                'killmail_id' => $killmail['killmail_id'],
+                                'hash' => $killmail['hash']
+                            ];
+                        }
+
+                        $validResults[] = [
+                            'dna' => $res['dna'],
+                            'count' => $res['count'],
+                            'killmails' => $killmailLinks,
+                            'fitting' => $fitting,
+                            'svg' => $svg
                         ];
                     }
-
-                    $validResults[] = [
-                        'dna' => $res['dna'],
-                        'count' => $res['count'],
-                        'killmails' => $killmailLinks,
-                        'fitting' => $decodedItems,
-                        'svg' => $svg
-                    ];
                 }
 
                 if (count($validResults) >= $desiredCount) {
@@ -128,6 +130,69 @@ class Fitting extends Controller
         }
 
         return $this->json(array_slice($validResults, 0, $desiredCount));
+    }
+
+    private function generateFitting(array $items): array
+    {
+        $itemSlotTypes = $this->itemSlotTypes();
+        $fittingArray = [
+            'high_slot' => [],
+            'medium_slot' => [],
+            'low_slot' => [],
+            'rig_slot' => [],
+            'subsystem' => [],
+            'drone_bay' => [],
+            'fighter_bay' => []
+        ];
+
+        foreach ($items as $item) {
+            $flag = $item['flag'];
+            $typeID = $item['type_id'] ?? 0;
+            $typeName = $item['type_name'] ?? '';
+            $quantity = ($item['qty_dropped'] ?? 0) + ($item['qty_destroyed'] ?? 0);
+            $value = $item['value'] ?? 0;
+
+            foreach ($itemSlotTypes as $slotType => $slotFlags) {
+                if (in_array($flag, $slotFlags)) {
+                    $fittingArray[$slotType][] = [
+                        'item_id' => $typeID,
+                        'item_name' => $typeName,
+                        'quantity' => $quantity,
+                        'value' => $value
+                    ];
+                    break;
+                }
+            }
+        }
+
+        return $fittingArray;
+    }
+
+    private function itemSlotTypes(): array
+    {
+        return [
+            'high_slot' => [27, 28, 29, 30, 31, 32, 33, 34],
+            'medium_slot' => [19, 20, 21, 22, 23, 24, 25, 26],
+            'low_slot' => [11, 12, 13, 14, 15, 16, 17, 18],
+            'rig_slot' => [92, 93, 94, 95, 96, 97, 98, 99],
+            'subsystem' => [125, 126, 127, 128, 129, 130, 131, 132],
+            'drone_bay' => [87],
+            'fighter_bay' => [158]
+        ];
+    }
+
+    private function calculateFitCost(array $decodedItems): float
+    {
+        $totalCost = 0.0;
+
+        foreach ($decodedItems as $slotItems) {
+            foreach ($slotItems as $item) {
+                $price = $this->prices->getPriceByTypeId($item['item_id'], new \MongoDB\BSON\UTCDateTime((new \DateTime())->getTimestamp() * 1000));
+                $totalCost += $price * $item['quantity'];
+            }
+        }
+
+        return $totalCost;
     }
 
     private function generateSVG(array $fitting, string $shipImageUrl, float $fitCost, float $shipCost, int $rank): string
