@@ -612,6 +612,9 @@ class TopLists
                                 "_id" => 0,
                                 "last_modified" => 0,
                                 "planets" => 0,
+                                "stargates" => 0,
+                                "stations" => 0,
+                                "position" => 0,
                             ],
                         ]
                     )
@@ -726,7 +729,11 @@ class TopLists
                 $this->regions
                     ->findOne(
                         ["region_id" => $region["id"]],
-                        ["projection" => ["_id" => 0, "last_modified" => 0]]
+                        ["projection" => [
+                            "_id" => 0,
+                            "last_modified" => 0,
+                            "constellations" => 0,
+                        ]]
                     )
                     ->toArray()
             );
