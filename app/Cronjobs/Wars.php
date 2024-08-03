@@ -23,9 +23,8 @@ class Wars extends Cronjob
 
         // Get the wars from the ESI and insert them into the database
         $warData = $this->esiWars->getWars($latestWarId);
-        $data = json_decode($warData['body'], true);
 
-        foreach ($data as $warId) {
+        foreach ($warData as $warId) {
             $this->processWar->enqueue(['war_id' => $warId]);
         }
 

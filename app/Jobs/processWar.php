@@ -23,32 +23,28 @@ class ProcessWar extends Jobs
     {
         $war_id = $data['war_id'];
         $warData = $this->esiWars->getWar($war_id);
-
-        $war = json_decode($warData['body'], true);
-
         $warKills = $this->esiWars->getWarKills($war_id);
-        $kills = json_decode($warKills['body'], true);
 
-        $war['kills'] = count($kills);
+        $warData['kills'] = count($warKills);
 
         // Sort out all the timestamps
-        if (isset($war['started'])) {
-            $war['started'] = new UTCDateTime(strtotime($war['started']) * 1000);
+        if (isset($warData['started'])) {
+            $warData['started'] = new UTCDateTime(strtotime($warData['started']) * 1000);
         }
-        if (isset($war['finished'])) {
-            $war['finished'] = new UTCDateTime(strtotime($war['finished']) * 1000);
+        if (isset($warData['finished'])) {
+            $warData['finished'] = new UTCDateTime(strtotime($warData['finished']) * 1000);
         }
-        if (isset($war['retracted'])) {
-            $war['retracted'] = new UTCDateTime(strtotime($war['retracted']) * 1000);
+        if (isset($warData['retracted'])) {
+            $warData['retracted'] = new UTCDateTime(strtotime($warData['retracted']) * 1000);
         }
-        if (isset($war['declared'])) {
-            $war['declared'] = new UTCDateTime(strtotime($war['declared']) * 1000);
+        if (isset($warData['declared'])) {
+            $warData['declared'] = new UTCDateTime(strtotime($warData['declared']) * 1000);
         }
 
-        $this->warsModel->setData($war);
+        $this->warsModel->setData($warData);
         $this->warsModel->save();
 
-        foreach ($kills as $kill) {
+        foreach ($warKills as $kill) {
             $this->killmailJob->enqueue(['killmail_id' => $kill['killmail_id'], 'hash' => $kill['killmail_hash'], 'war_id' => $war_id]);
         }
     }
