@@ -20,13 +20,8 @@ class TopLists
     ) {
     }
 
-    public function topCharacters(
-        ?string $attackerType = null,
-        ?int $typeId = null,
-        int $days = 30,
-        int $limit = 10,
-        int $cacheTime = 300
-    ): array {
+    public function topCharacters(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
         $cacheKey = $this->cache->generateKey(
             "top_characters",
             $attackerType,
@@ -42,6 +37,7 @@ class TopLists
             return $cacheResult;
         }
 
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
         $aggregateQuery =
             $attackerType && $typeId
                 ? [
@@ -49,8 +45,9 @@ class TopLists
                         '$match' => [
                             "attackers.{$attackerType}" => $typeId,
                             "attackers.character_id" => ['$ne' => 0],
+                            "attackers.character_name" => ['$ne' => 'Unknown'],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime((time() - ($days * 86400)) * 1000),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -58,7 +55,15 @@ class TopLists
                     ['$match' => ["attackers.{$attackerType}" => $typeId]],
                     [
                         '$group' => [
-                            "_id" => '$attackers.character_id',
+                            "_id" => [
+                                'character_id' => '$attackers.character_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.character_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -76,15 +81,24 @@ class TopLists
                     [
                         '$match' => [
                             "attackers.character_id" => ['$ne' => 0],
+                            "attackers.character_name" => ['$ne' => 'Unknown'],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime((time() - ($days * 86400)) * 1000),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
                     ['$unwind' => '$attackers'],
                     [
                         '$group' => [
-                            "_id" => '$attackers.character_id',
+                            "_id" => [
+                                'character_id' => '$attackers.character_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.character_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -128,13 +142,8 @@ class TopLists
         return $data->toArray();
     }
 
-    public function topCorporations(
-        ?string $attackerType = null,
-        int $typeId = null,
-        int $days = 30,
-        int $limit = 10,
-        int $cacheTime = 300
-    ): array {
+    public function topCorporations(?string $attackerType = null, int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
         $cacheKey = $this->cache->generateKey(
             "top_corporations",
             $attackerType,
@@ -150,6 +159,7 @@ class TopLists
             return $cacheResult;
         }
 
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
         $aggregateQuery =
             $attackerType && $typeId
                 ? [
@@ -158,9 +168,7 @@ class TopLists
                             "attackers.{$attackerType}" => $typeId,
                             "attackers.corporation_id" => ['$ne' => 0],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -168,7 +176,15 @@ class TopLists
                     ['$match' => ["attackers.{$attackerType}" => $typeId]],
                     [
                         '$group' => [
-                            "_id" => '$attackers.corporation_id',
+                            "_id" => [
+                                'corporation_id' => '$attackers.corporation_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.corporation_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -187,16 +203,22 @@ class TopLists
                         '$match' => [
                             "attackers.corporation_id" => ['$ne' => 0],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
                     ['$unwind' => '$attackers'],
                     [
                         '$group' => [
-                            "_id" => '$attackers.corporation_id',
+                            "_id" => [
+                                'corporation_id' => '$attackers.corporation_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.corporation_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -240,13 +262,8 @@ class TopLists
         return $data->toArray();
     }
 
-    public function topAlliances(
-        ?string $attackerType = null,
-        ?int $typeId = null,
-        int $days = 30,
-        int $limit = 10,
-        int $cacheTime = 300
-    ): array {
+    public function topAlliances(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
         $cacheKey = $this->cache->generateKey(
             "top_alliances",
             $attackerType,
@@ -280,7 +297,15 @@ class TopLists
                     ['$match' => ["attackers.{$attackerType}" => $typeId]],
                     [
                         '$group' => [
-                            "_id" => '$attackers.alliance_id',
+                            "_id" => [
+                                'alliance_id' => '$attackers.alliance_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.alliance_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -308,7 +333,15 @@ class TopLists
                     ['$unwind' => '$attackers'],
                     [
                         '$group' => [
-                            "_id" => '$attackers.alliance_id',
+                            "_id" => [
+                                'alliance_id' => '$attackers.alliance_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.alliance_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -345,13 +378,8 @@ class TopLists
         return $data->toArray();
     }
 
-    public function topShips(
-        ?string $attackerType = null,
-        ?int $typeId = null,
-        int $days = 30,
-        int $limit = 10,
-        int $cacheTime = 300
-    ): array {
+    public function topShips(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
         $cacheKey = $this->cache->generateKey(
             "top_ships",
             $attackerType,
@@ -383,7 +411,15 @@ class TopLists
                     ['$match' => ["attackers.{$attackerType}" => $typeId]],
                     [
                         '$group' => [
-                            "_id" => '$attackers.ship_id',
+                            "_id" => [
+                                'ship_id' => '$attackers.ship_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.ship_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -410,7 +446,15 @@ class TopLists
                     ['$unwind' => '$attackers'],
                     [
                         '$group' => [
-                            "_id" => '$attackers.ship_id',
+                            "_id" => [
+                                'ship_id' => '$attackers.ship_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.ship_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -454,13 +498,8 @@ class TopLists
         return $data->toArray();
     }
 
-    public function topSystems(
-        ?string $attackerType = null,
-        ?int $typeId = null,
-        int $days = 30,
-        int $limit = 10,
-        int $cacheTime = 300
-    ): array {
+    public function topSystems(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
         $cacheKey = $this->cache->generateKey(
             "top_systems",
             $attackerType,
@@ -492,7 +531,15 @@ class TopLists
                     ['$match' => ["attackers.{$attackerType}" => $typeId]],
                     [
                         '$group' => [
-                            "_id" => '$system_id',
+                            "_id" => [
+                                'system_id' => '$system_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.system_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -519,7 +566,15 @@ class TopLists
                     ['$unwind' => '$attackers'],
                     [
                         '$group' => [
-                            "_id" => '$system_id',
+                            "_id" => [
+                                'system_id' => '$system_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.system_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -562,13 +617,8 @@ class TopLists
         return $data->toArray();
     }
 
-    public function topRegions(
-        ?string $attackerType = null,
-        ?int $typeId = null,
-        int $days = 30,
-        int $limit = 10,
-        int $cacheTime = 300
-    ): array {
+    public function topRegions(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
         $cacheKey = $this->cache->generateKey(
             "top_regions",
             $attackerType,
@@ -600,7 +650,15 @@ class TopLists
                     ['$match' => ["attackers.{$attackerType}" => $typeId]],
                     [
                         '$group' => [
-                            "_id" => '$region_id',
+                            "_id" => [
+                                'region_id' => '$region_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.region_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
@@ -627,7 +685,15 @@ class TopLists
                     ['$unwind' => '$attackers'],
                     [
                         '$group' => [
-                            "_id" => '$region_id',
+                            "_id" => [
+                                'region_id' => '$region_id',
+                                'killmail_id' => '$killmail_id',
+                            ],
+                        ],
+                    ],
+                    [
+                        '$group' => [
+                            "_id" => '$_id.region_id',
                             "count" => ['$sum' => 1],
                         ],
                     ],
