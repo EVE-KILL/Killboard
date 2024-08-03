@@ -58,7 +58,12 @@ class Fitting extends Controller
                     '$group' => [
                         '_id' => '$dna',
                         'count' => ['$sum' => 1],
-                        'killmail_ids' => ['$push' => '$killmail_id'],
+                        'killmails' => [
+                            '$push' => [
+                                'killmail_id' => '$killmail_id',
+                                'hash' => '$hash'
+                            ]
+                        ],
                         'items' => ['$first' => '$items'], // assuming items array is same for each dna
                         'ship_image_url' => ['$first' => '$victim.ship_image_url'],
                         'fitting_value' => ['$first' => '$fitting_value']
@@ -74,7 +79,7 @@ class Fitting extends Controller
                     '$project' => [
                         'dna' => '$_id',
                         'count' => 1,
-                        'killmail_ids' => 1,
+                        'killmails' => 1,
                         'items' => 1,
                         'ship_image_url' => 1,
                         'fitting_value' => 1
@@ -94,10 +99,19 @@ class Fitting extends Controller
                     $shipValue = $this->prices->getPriceByTypeId($ship_id, new \MongoDB\BSON\UTCDateTime((new \DateTime())->getTimestamp() * 1000));
                     $rank = count($validResults) + 1;
                     $svg = $this->generateSVG($decodedItems, $res['ship_image_url'], $res['fitting_value'], $shipValue, $rank);
+
+                    $killmailLinks = [];
+                    foreach ($res['killmails'] as $killmail) {
+                        $killmailLinks[] = [
+                            'killmail_id' => $killmail['killmail_id'],
+                            'hash' => $killmail['hash']
+                        ];
+                    }
+
                     $validResults[] = [
                         'dna' => $res['dna'],
                         'count' => $res['count'],
-                        'killmail_ids' => $res['killmail_ids'],
+                        'killmails' => $killmailLinks,
                         'fitting' => $decodedItems,
                         'svg' => $svg
                     ];
