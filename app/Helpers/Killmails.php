@@ -473,6 +473,7 @@ class Killmails
             $typeID = $item['type_id'] ?? 0;
             $typeName = $item['type_name'] ?? '';
             $quantity = ($item['qty_dropped'] ?? 0) + ($item['qty_destroyed'] ?? 0);
+            $value = $item['value'] ?? 0;
 
             foreach ($itemSlotTypes as $slotType => $slotFlags) {
                 if (in_array($flag, $slotFlags)) {
@@ -482,7 +483,8 @@ class Killmails
                     $fittingArray[$slotType][] = [
                         'item_id' => $typeID,
                         'item_name' => $typeName,
-                        'quantity' => $quantity
+                        'quantity' => $quantity,
+                        'value' => $value
                     ];
                     break;
                 }

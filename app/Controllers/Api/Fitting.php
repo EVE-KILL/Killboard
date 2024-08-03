@@ -6,6 +6,7 @@ use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Helpers\Killmails as HelpersKillmails;
 use EK\Models\Killmails;
+use EK\Models\Prices;
 use EK\Models\TypeIDs;
 use Psr\Http\Message\ResponseInterface;
 
@@ -25,7 +26,8 @@ class Fitting extends Controller
     public function __construct(
         protected Killmails $killmails,
         protected HelpersKillmails $killmailsHelper,
-        protected TypeIDs $typeIDs
+        protected TypeIDs $typeIDs,
+        protected Prices $prices
     ) {
     }
 
@@ -57,7 +59,9 @@ class Fitting extends Controller
                         '_id' => '$dna',
                         'count' => ['$sum' => 1],
                         'killmail_ids' => ['$push' => '$killmail_id'],
-                        'items' => ['$first' => '$items'] // assuming items array is same for each dna
+                        'items' => ['$first' => '$items'], // assuming items array is same for each dna
+                        'ship_image_url' => ['$first' => '$victim.ship_image_url'],
+                        'fitting_value' => ['$first' => '$fitting_value']
                     ]
                 ],
                 [
@@ -71,7 +75,9 @@ class Fitting extends Controller
                         'dna' => '$_id',
                         'count' => 1,
                         'killmail_ids' => 1,
-                        'items' => 1
+                        'items' => 1,
+                        'ship_image_url' => 1,
+                        'fitting_value' => 1
                     ]
                 ]
             ];
@@ -85,11 +91,15 @@ class Fitting extends Controller
 
                 $decodedItems = $this->killmailsHelper->decodeDNA($res['items']);
                 if (!empty($decodedItems)) {
+                    $shipValue = $this->prices->getPriceByTypeId($ship_id, new \MongoDB\BSON\UTCDateTime((new \DateTime())->getTimestamp() * 1000));
+                    $rank = count($validResults) + 1;
+                    $svg = $this->generateSVG($decodedItems, $res['ship_image_url'], $res['fitting_value'], $shipValue, $rank);
                     $validResults[] = [
                         'dna' => $res['dna'],
                         'count' => $res['count'],
                         'killmail_ids' => $res['killmail_ids'],
-                        'fitting' => $decodedItems
+                        'fitting' => $decodedItems,
+                        'svg' => $svg
                     ];
                 }
 
@@ -104,5 +114,31 @@ class Fitting extends Controller
         }
 
         return $this->json(array_slice($validResults, 0, $desiredCount));
+    }
+
+    private function generateSVG(array $fitting, string $shipImageUrl, float $fitCost, float $shipCost, int $rank): string
+    {
+        $totalCost = $fitCost + $shipCost;
+
+        $svg = '<svg width="300" height="60" xmlns="http://www.w3.org/2000/svg">';
+
+        // Ship image
+        $svg .= '<image href="' . $shipImageUrl . '" x="0" y="0" height="60" width="60"/>';
+
+        // Rank
+        $svg .= '<text x="70" y="15" font-family="Arial" font-size="12" fill="white">Rank: ' . $rank . '</text>';
+
+        // Fit cost
+        $svg .= '<text x="70" y="30" font-family="Arial" font-size="12" fill="white">Fit Cost: ' . number_format($fitCost, 2) . ' ISK</text>';
+
+        // Ship cost
+        $svg .= '<text x="70" y="45" font-family="Arial" font-size="12" fill="white">Ship Cost: ' . number_format($shipCost, 2) . ' ISK</text>';
+
+        // Total cost
+        $svg .= '<text x="70" y="60" font-family="Arial" font-size="12" fill="white">Total Cost: ' . number_format($totalCost, 2) . ' ISK</text>';
+
+        $svg .= '</svg>';
+
+        return $svg;
     }
 }
