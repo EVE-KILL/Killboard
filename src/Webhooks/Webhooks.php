@@ -28,19 +28,23 @@ class Webhooks
 
     private function send(string $url, string $message): void
     {
-        $data = [
-            'content' => $message
-        ];
+        try {
+            $data = [
+                'content' => $message
+            ];
 
-        $options = [
-            'http' => [
-                'header'  => "Content-type: application/json\r\n",
-                'method'  => 'POST',
-                'content' => json_encode($data)
-            ]
-        ];
+            $options = [
+                'http' => [
+                    'header'  => "Content-type: application/json\r\n",
+                    'method'  => 'POST',
+                    'content' => json_encode($data)
+                ]
+            ];
 
-        $context  = stream_context_create($options);
-        file_get_contents($url, false, $context);
+            $context  = stream_context_create($options);
+            file_get_contents($url, false, $context);
+        } catch (\Exception $e) {
+            // Do nothing
+        }
     }
 }

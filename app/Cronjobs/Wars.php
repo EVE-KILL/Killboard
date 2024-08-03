@@ -13,6 +13,7 @@ class Wars extends Cronjob
         protected \EK\ESI\Wars $esiWars,
         protected \EK\Jobs\ProcessWar $processWar
     ) {
+        parent::__construct();
     }
 
     public function handle(): void

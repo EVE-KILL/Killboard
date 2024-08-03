@@ -15,6 +15,7 @@ class UpdateCharacters extends Cronjob
         protected Characters $characters,
         protected UpdateCharacter $updateCharacter
     ) {
+        parent::__construct();
     }
 
     public function handle(): void
@@ -39,9 +40,6 @@ class UpdateCharacters extends Cronjob
         }, $staleCharacters->toArray());
 
         $this->logger->info("Updating " . count($updates) . " characters");
-
-        foreach ($updates as $update) {
-            $this->updateCharacter->enqueue(['character_id' => $update["character_id"]]);
-        }
+        $this->updateCharacter->massEnqueue($updates);
     }
 }

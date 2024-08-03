@@ -24,11 +24,11 @@ class Meilisearch extends Cronjob
         protected Regions $regions,
         protected MeilisearchClient $meilisearch,
     ) {
+        parent::__construct();
     }
 
     public function handle(): void
     {
-        $this->meilisearch->clearIndex();
         $this->logger->info("Updating Meilisearch index");
 
         $alliances = $this->alliances->find([

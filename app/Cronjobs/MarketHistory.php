@@ -13,6 +13,7 @@ class MarketHistory extends Cronjob
         protected Prices $prices,
         protected \EK\Helpers\MarketHistory $marketHistory,
     ) {
+        parent::__construct();
     }
 
     public function handle(): void

@@ -46,7 +46,7 @@ class UpdateCharacter extends Jobs
         $this->updateCharacterData($characterData, $deleted);
     }
 
-    protected function fetchCharacterData($characterId)
+    protected function fetchCharacterData(int $characterId): array
     {
         return $this->characters->findOneOrNull([
                 "character_id" => $characterId,
@@ -54,12 +54,12 @@ class UpdateCharacter extends Jobs
             ]) ?? $this->esiCharacters->getCharacterInfo($characterId);
     }
 
-    protected function isCharacterDeleted($characterData)
+    protected function isCharacterDeleted(array $characterData): bool
     {
         return isset($characterData["error"]) && $characterData["error"] === "Character has been deleted!";
     }
 
-    protected function updateDeletedCharacter($characterId)
+    protected function updateDeletedCharacter(int $characterId): void
     {
         $this->characters->setData([
             "character_id" => $characterId,
@@ -68,7 +68,7 @@ class UpdateCharacter extends Jobs
         $this->characters->save();
     }
 
-    protected function fetchCharacterDataFromEVEWho($characterId)
+    protected function fetchCharacterDataFromEVEWho(int $characterId): ?array
     {
         try {
             $client = new Client();
