@@ -16,7 +16,7 @@ jobs:
           repo_name="Deployment"
 
           # Define the event type
-          event_type="update-submodule"
+          event_type="update-killboard"
 
           # Define the branch we are pushing to
           branch="main"
