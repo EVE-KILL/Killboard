@@ -387,6 +387,7 @@ class TopLists
             $limit,
             $days
         );
+
         if (
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
@@ -408,7 +409,10 @@ class TopLists
                         ],
                     ],
                     ['$unwind' => '$attackers'],
-                    ['$match' => ["attackers.{$attackerType}" => $typeId]],
+                    ['$match' => [
+                        "attackers.{$attackerType}" => $typeId,
+                        "attackers.ship_id" => ['$nin' => [0, 670]],
+                    ]],
                     [
                         '$group' => [
                             "_id" => [
@@ -444,6 +448,9 @@ class TopLists
                         ],
                     ],
                     ['$unwind' => '$attackers'],
+                    ['$match' => [
+                        "attackers.ship_id" => ['$nin' => [0, 670]],
+                    ]],
                     [
                         '$group' => [
                             "_id" => [
