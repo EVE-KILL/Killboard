@@ -75,6 +75,16 @@ class Stats extends Controller
         return $this->json($data, 3600);
     }
 
+    #[RouteAttribute("/stats/top10ships[/{all_time:[0-1]}]", ["GET"])]
+    public function top10Ships(int $all_time = 0): ResponseInterface
+    {
+        $data = $this->topLists->topShips(
+            days: $all_time ? $this->daysSinceEarlyDays : 7,
+            cacheTime: 3600
+        );
+        return $this->json($data, 3600);
+    }
+
     #[
         RouteAttribute("/stats/mostvaluablekillslast7days[/{limit:[0-9]+}]", [
             "GET",
