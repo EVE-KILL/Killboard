@@ -46,7 +46,9 @@ class Items extends Controller
                 "published" => 0,
                 "radius" => 0,
                 "volume" => 0,
-            ]], 0);
+            ]],
+            0
+        );
 
         $this->cache->set($cacheKey, $items, 3600);
 
@@ -75,7 +77,9 @@ class Items extends Controller
             ["projection" => [
                 "_id" => 0,
                 "last_modified" => 0,
-            ]], 0);
+            ]],
+            0
+        );
 
         $this->cache->set($cacheKey, $item, 3600);
 
@@ -124,21 +128,22 @@ class Items extends Controller
         }
 
         $killmails = $this->killmails->find([
-            "items.type_id" => $item_id
+            '$or' => [
+                ['items.type_id' => $item_id],
+                ['victim.ship_id' => $item_id]
+            ]
         ], [
             'projection' => [
                 '_id' => 0,
-                'killmail_id' => 1,
-                'kill_time_str' => 1
+                'killmail_id' => 1
             ],
-            //'sort' => ['kill_time' => -1],
+            'sort' => ['kill_time' => -1],
             'limit' => $limit
-        ]);//->map(function($killmail) {
-        //    return $killmail['killmail_id'];
-        //});
+        ])->map(function ($killmail) {
+            return $killmail['killmail_id'] ?? $killmail;
+        });
 
-
-        //$this->cache->set($cacheKey, $killmails, 3600);
+        $this->cache->set($cacheKey, $killmails, 3600);
 
         return $this->json($killmails);
     }
