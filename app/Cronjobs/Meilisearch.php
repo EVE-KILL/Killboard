@@ -1,9 +1,9 @@
 <?php
 
-namespace EK\Commands\Updates;
+namespace EK\Cronjobs;
 
-use EK\Api\Abstracts\ConsoleCommand;
-use EK\Meilisearch\Meilisearch;
+use EK\Api\Abstracts\Cronjob;
+use EK\Meilisearch\Meilisearch as MeilisearchClient;
 use EK\Models\Alliances;
 use EK\Models\Characters;
 use EK\Models\Corporations;
@@ -11,10 +11,9 @@ use EK\Models\Regions;
 use EK\Models\SolarSystems;
 use EK\Models\TypeIDs;
 
-class UpdateMeilisearch extends ConsoleCommand
+class Meilisearch extends Cronjob
 {
-    protected string $signature = "update:meilisearch";
-    protected string $description = "Updates the search index in Meilisearch";
+    protected string $cronTime = '0 0 * * *';
 
     public function __construct(
         protected Alliances $alliances,
@@ -23,16 +22,14 @@ class UpdateMeilisearch extends ConsoleCommand
         protected TypeIDs $typeIDs,
         protected SolarSystems $solarSystems,
         protected Regions $regions,
-        protected Meilisearch $meilisearch,
-        ?string $name = null
+        protected MeilisearchClient $meilisearch,
     ) {
-        parent::__construct($name);
     }
 
-    final public function handle(): void
+    public function handle(): void
     {
         $this->meilisearch->clearIndex();
-        $this->out("Updating Meilisearch index");
+        $this->logger->info("Updating Meilisearch index");
 
         $alliances = $this->alliances->find([
             "name" => ['$ne' => ""],
@@ -80,7 +77,7 @@ class UpdateMeilisearch extends ConsoleCommand
             ["projection" => ["_id" => 0, "name" => 1, "region_id" => 1]]
         );
 
-        $this->out("Found " . count($alliances) . " alliances, " . count($corporations) . " corporations, " . count($characters) . " characters, " . count($items) . " items, " . count($systems) . " systems, and " . count($regions) . " regions");
+        $this->logger->info("Found " . count($alliances) . " alliances, " . count($corporations) . " corporations, " . count($characters) . " characters, " . count($items) . " items, " . count($systems) . " systems, and " . count($regions) . " regions");
 
         $documents = [];
         foreach ($alliances as $alliance) {
@@ -145,17 +142,15 @@ class UpdateMeilisearch extends ConsoleCommand
             ];
         }
 
-        $this->out("Adding " . count($documents) . " documents to Meilisearch");
+        $this->logger->info("Adding " . count($documents) . " documents to Meilisearch");
 
         // Insert in chunks of 1000
-        $progressBar = $this->progressBar(count($documents));
         $chunkedDocuments = array_chunk($documents, 1000);
 
         foreach ($chunkedDocuments as $chunk) {
             $this->meilisearch->addDocuments($chunk);
-            $progressBar->advance(count($chunk));
         }
 
-        $progressBar->finish();
+        $this->logger->info("Meilisearch update complete");
     }
 }

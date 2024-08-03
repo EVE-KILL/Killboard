@@ -27,4 +27,10 @@ class Meilisearch
         $index = $this->client->index($indexName);
         return $index->search($query);
     }
+
+    public function clearIndex(string $indexName = 'search'): void
+    {
+        $index = $this->client->index($indexName);
+        $index->deleteAllDocuments();
+    }
 }
