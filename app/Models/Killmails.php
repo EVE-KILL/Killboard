@@ -61,9 +61,6 @@ class Killmails extends Collection
             [ 'attackers.ship_id', 'kill_time' ],
             [ 'attackers.ship_group_id', 'kill_time' ],
             [ 'attackers.weapon_type_id', 'kill_time' ],
-        ],
-        'asc' => [
-            ['system_security', 'kill_time'],
         ]
     ];
 
