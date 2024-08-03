@@ -42,7 +42,6 @@ class TopLists
             return $cacheResult;
         }
 
-        $timeCoverage = time() - $days * 86400;
         $aggregateQuery =
             $attackerType && $typeId
                 ? [
@@ -51,7 +50,7 @@ class TopLists
                             "attackers.{$attackerType}" => $typeId,
                             "attackers.character_id" => ['$ne' => 0],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime($timeCoverage * 1000),
+                                '$gte' => new UTCDateTime((time() - ($days * 86400)) * 1000),
                             ],
                         ],
                     ],
@@ -78,7 +77,7 @@ class TopLists
                         '$match' => [
                             "attackers.character_id" => ['$ne' => 0],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime($timeCoverage * 1000),
+                                '$gte' => new UTCDateTime((time() - ($days * 86400)) * 1000),
                             ],
                         ],
                     ],
@@ -160,7 +159,7 @@ class TopLists
                             "attackers.corporation_id" => ['$ne' => 0],
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -189,7 +188,7 @@ class TopLists
                             "attackers.corporation_id" => ['$ne' => 0],
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -272,7 +271,7 @@ class TopLists
                             "attackers.alliance_id" => ['$ne' => 0],
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -301,7 +300,7 @@ class TopLists
                             "attackers.alliance_id" => ['$ne' => 0],
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -375,7 +374,7 @@ class TopLists
                             "attackers.{$attackerType}" => $typeId,
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -403,7 +402,7 @@ class TopLists
                         '$match' => [
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -484,7 +483,7 @@ class TopLists
                             "attackers.{$attackerType}" => $typeId,
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -512,7 +511,7 @@ class TopLists
                         '$match' => [
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -592,7 +591,7 @@ class TopLists
                             "attackers.{$attackerType}" => $typeId,
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
@@ -620,7 +619,7 @@ class TopLists
                         '$match' => [
                             "kill_time" => [
                                 '$gte' => new UTCDateTime(
-                                    (time() - $days * 86400) * 1000
+                                    (time() - ($days * 86400)) * 1000
                                 ),
                             ],
                         ],
