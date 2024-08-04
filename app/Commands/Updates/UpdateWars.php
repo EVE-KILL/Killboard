@@ -46,7 +46,7 @@ class UpdateWars extends ConsoleCommand
                 ['projection' => ['id' => 1]]
             )->toArray();
 
-            $existingWarIds = array_column($existingWars, 'war_id');
+            $existingWarIds = array_column($existingWars, 'id');
             $newWars = array_diff($chunk, $existingWarIds);
 
             if (!empty($newWars)) {
