@@ -33,7 +33,7 @@ class Sitemap extends Controller
         $sitemapCount = $this->sitemap->count();
         $numberOfSitemaps = ceil($sitemapCount / 50000);
         // Generate a $links array that contains links to /sitemap/x where x is the number of sitemap files
-        $links = array_map(fn($i) => "/sitemap/{$i}", range(1, $numberOfSitemaps));
+        $links = array_map(fn($i) => "/api/sitemap/{$i}", range(1, $numberOfSitemaps));
 
         $result = [
             'count' => $sitemapCount,
