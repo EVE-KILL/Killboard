@@ -135,7 +135,7 @@ abstract class Controller
      */
     protected function getPostParams(): Collection
     {
-        $post = array_diff_key($this->request->getParsedBody(), array_flip([
+        $post = array_diff_key($this->request->getParsedBody() ?? [], array_flip([
             '_METHOD',
         ]));
 

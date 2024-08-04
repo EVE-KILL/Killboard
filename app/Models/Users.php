@@ -47,6 +47,22 @@ class Users extends Collection
         return $user;
     }
 
+    public function getUserByIdentifier(string $identifier): array
+    {
+        $currentTime = time();
+        $user = $this->findOne(['identifier' => $identifier])->toArray();
+
+        if ($user === null) {
+            throw new RuntimeException('User not found');
+        }
+
+        if ($user['expiration'] < $currentTime) {
+            throw new RuntimeException('User has expired');
+        }
+
+        return $user;
+    }
+
     public function addUser(int $characterId, string $characterName, int $expiration, string $identifier): int
     {
         $user = $this->findOneOrNull(['character_id' => $characterId]);
@@ -76,6 +92,17 @@ class Users extends Collection
         $user['expiration'] = $expiration;
         $this->setData($user->toArray());
         return $this->save();
+    }
+
+    public function validateIdentifier(string $identifier): bool
+    {
+        $user = $this->findOneOrNull(['identifier' => $identifier]);
+
+        if ($user === null) {
+            throw new RuntimeException('User not found');
+        }
+
+        return true;
     }
 
     public function getUserConfig(string $identifier): SupportCollection
