@@ -42,7 +42,7 @@ class Webhooks
             ];
 
             $context  = stream_context_create($options);
-            file_get_contents($url, false, $context);
+            @file_get_contents($url, false, $context);
         } catch (\Exception $e) {
             // Do nothing
         }

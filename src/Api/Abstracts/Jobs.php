@@ -18,6 +18,7 @@ abstract class Jobs
         'default'
     ];
     protected string $defaultQueue = 'low';
+    protected bool $requeue = true;
 
     protected Client $client;
     public function __construct(

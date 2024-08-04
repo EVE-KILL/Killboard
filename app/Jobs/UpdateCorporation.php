@@ -122,11 +122,42 @@ class UpdateCorporation extends Jobs
         $characters = $decoded["characters"] ?? [];
 
         foreach ($characters as $character) {
-            $this->characters->findOneOrNull([
-                "character_id" => $character["character_id"],
-            ]) ?? $this->updateCharacter->enqueue([
-                "character_id" => $character["character_id"],
-            ]);
+            $characterId = $character["character_id"];
+            $characterData = $this->characters->findOneOrNull(["character_id" => $characterId]);
+
+            if ($characterData && !empty($characterData["deleted"])) {
+                // If the character is marked as deleted, fetch from EVEWho
+                $this->fetchAndUpdateCharacterFromEVEWho($characterId);
+            } elseif (!$characterData) {
+                // Enqueue the character for updating if not found in the database
+                $this->updateCharacter->enqueue(["character_id" => $characterId]);
+            }
+        }
+    }
+
+    protected function fetchAndUpdateCharacterFromEVEWho($characterId)
+    {
+        try {
+            $client = new \GuzzleHttp\Client();
+            $response = $client->get("https://evewho.com/api/character/{$characterId}");
+            $data = json_decode($response->getBody()->getContents(), true);
+
+            $characterData = [
+                "character_id" => $characterId,
+                "name" => $data["name"] ?? "Unknown",
+                "alliance_id" => $data["alliance_id"] ?? 0,
+                "corporation_id" => $data["corporation_id"] ?? 0,
+                "faction_id" => $data["faction_id"] ?? 0,
+                "deleted" => false, // Update the deleted status
+                "last_modified" => new \MongoDB\BSON\UTCDateTime()
+            ];
+
+            $this->characters->setData($characterData);
+            $this->characters->save();
+
+            $this->logger->info("Updated character $characterId from EVEWho");
+        } catch (\Exception $e) {
+            $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
         }
     }
 }

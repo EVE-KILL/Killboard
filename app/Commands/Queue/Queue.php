@@ -52,6 +52,7 @@ class Queue extends ConsoleCommand
                     if ($job !== null) {
                         $startTime = microtime(true);
                         $jobData = json_decode($job, true);
+                        $requeue = true;
 
                         try {
                             $className = $jobData["job"] ?? null;
@@ -80,6 +81,7 @@ class Queue extends ConsoleCommand
                             $instance->handle($data);
 
                             $endTime = microtime(true);
+                            $requeue = $instance->requeue ?? true;
                             $this->out(
                                 "Job completed in " .
                                     ($endTime - $startTime) .

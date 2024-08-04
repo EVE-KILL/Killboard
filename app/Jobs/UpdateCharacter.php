@@ -11,6 +11,7 @@ use GuzzleHttp\Client;
 class UpdateCharacter extends Jobs
 {
     protected string $defaultQueue = "character";
+    protected bool $requeue = false;
 
     public function __construct(
         protected \EK\Models\Characters $characters,
@@ -46,7 +47,7 @@ class UpdateCharacter extends Jobs
         $this->updateCharacterData($characterData, $deleted);
     }
 
-    protected function fetchCharacterData(int $characterId): array
+    protected function fetchCharacterData(int $characterId)
     {
         return $this->characters->findOneOrNull([
                 "character_id" => $characterId,
@@ -54,12 +55,12 @@ class UpdateCharacter extends Jobs
             ]) ?? $this->esiCharacters->getCharacterInfo($characterId);
     }
 
-    protected function isCharacterDeleted(array $characterData): bool
+    protected function isCharacterDeleted($characterData)
     {
         return isset($characterData["error"]) && $characterData["error"] === "Character has been deleted!";
     }
 
-    protected function updateDeletedCharacter(int $characterId): void
+    protected function updateDeletedCharacter($characterId)
     {
         $this->characters->setData([
             "character_id" => $characterId,
@@ -68,7 +69,7 @@ class UpdateCharacter extends Jobs
         $this->characters->save();
     }
 
-    protected function fetchCharacterDataFromEVEWho(int $characterId): ?array
+    protected function fetchCharacterDataFromEVEWho($characterId)
     {
         try {
             $client = new Client();
