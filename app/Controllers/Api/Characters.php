@@ -55,7 +55,7 @@ class Characters extends Controller
     {
         $character = $this->characters->findOne(
             ["character_id" => $character_id],
-            ["projection" => ["_id" => 0]]
+            ["projection" => ["_id" => 0, 'error' => 0]]
         );
         if ($character->isEmpty()) {
             return $this->json(["error" => "Character not found"], 300);
@@ -85,7 +85,7 @@ class Characters extends Controller
         $characters = $this->characters
             ->find(
                 ["character_id" => ['$in' => $postData]],
-                ["projection" => ["_id" => 0]],
+                ["projection" => ["_id" => 0, 'error' => 0]],
                 300
             )
             ->map(function ($character) {
@@ -95,12 +95,7 @@ class Characters extends Controller
         return $this->json($characters->toArray(), 300);
     }
 
-    #[
-        RouteAttribute(
-            "/characters/{character_id:[0-9]+}/corporationhistory[/]",
-            ["GET"]
-        )
-    ]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"])]
     public function corporationHistory(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -219,11 +214,7 @@ class Characters extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[
-        RouteAttribute("/characters/{character_id:[0-9]+}/killmails/count[/]", [
-            "GET",
-        ])
-    ]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails/count[/]", ["GET"])]
     public function killmailsCount(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -248,12 +239,7 @@ class Characters extends Controller
         );
     }
 
-    #[
-        RouteAttribute(
-            "/characters/{character_id:[0-9]+}/killmails/latest[/]",
-            ["GET"]
-        )
-    ]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails/latest[/]", ["GET"])]
     public function latestKillmails(int $character_id): ResponseInterface
     {
         $limit = (int) $this->getParam("limit", 1000);
@@ -311,11 +297,7 @@ class Characters extends Controller
         return $this->json($topShips, 300);
     }
 
-    #[
-        RouteAttribute("/characters/{character_id:[0-9]+}/top/systems[/]", [
-            "GET",
-        ])
-    ]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/systems[/]", ["GET"])]
     public function topSystems(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -333,11 +315,7 @@ class Characters extends Controller
         return $this->json($topSystems, 300);
     }
 
-    #[
-        RouteAttribute("/characters/{character_id:[0-9]+}/top/regions[/]", [
-            "GET",
-        ])
-    ]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/regions[/]", ["GET"])]
     public function topRegions(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
