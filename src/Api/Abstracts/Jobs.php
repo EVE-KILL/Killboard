@@ -2,6 +2,7 @@
 
 namespace EK\Api\Abstracts;
 
+use EK\Logger\FileLogger;
 use EK\Redis\Redis;
 use Predis\Client;
 
@@ -21,10 +22,15 @@ abstract class Jobs
     protected bool $requeue = true;
 
     protected Client $client;
+    protected FileLogger $logger;
     public function __construct(
         protected Redis $redis
     ) {
         $this->client = $redis->getClient();
+        $this->logger = new FileLogger(
+            BASE_DIR . '/logs/jobs.log',
+            'queue-logger'
+        );
     }
 
     /**

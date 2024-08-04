@@ -66,6 +66,7 @@ class Queue extends ConsoleCommand
                             $this->out(
                                 "Processing job {$className} from {$queueName} ({$workerId})"
                             );
+                            $this->out("Data: " . json_encode($data));
 
                             // If the job is scheduled for later, push it back to the queue
                             if ($processAfter > 0 && $processAfter > time()) {

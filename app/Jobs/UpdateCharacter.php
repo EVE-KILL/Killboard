@@ -8,6 +8,7 @@ use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 use GuzzleHttp\Client;
+use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacter extends Jobs
 {
@@ -35,12 +36,21 @@ class UpdateCharacter extends Jobs
         $characterId = $data["character_id"];
         $deleted = false;
 
-        $characterData = $this->fetchCharacterData($characterId);
+        $characterData = $this->characters->findOneOrNull([
+            "character_id" => $characterId,
+            "name" => ['$ne' => "Unknown"],
+        ])?->toArray();
+        if ($characterData === null) {
+            $this->logger->info("Character $characterId not found in database, fetching from ESI");
+            $characterData = $this->esiCharacters->getCharacterInfo($characterId);
+        }
 
         if ($this->isCharacterDeleted($characterData)) {
+            $this->logger->info("Character $characterId has been deleted, updating database and fetching from EVEWho");
             $this->updateDeletedCharacter($characterId);
             $characterData = $this->fetchCharacterDataFromEVEWho($characterId);
             if ($characterData) {
+                $this->logger->info("Character $characterId found in EVEWho, updating database");
                 $this->updateCharacterData($characterData, true);
             }
             return;
@@ -49,20 +59,16 @@ class UpdateCharacter extends Jobs
         $this->updateCharacterData($characterData, $deleted);
     }
 
-    protected function fetchCharacterData(int $characterId)
+    protected function isCharacterDeleted(array $characterData): bool
     {
-        return $this->characters->findOneOrNull([
-                "character_id" => $characterId,
-                "name" => ['$ne' => "Unknown"],
-            ]) ?? $this->esiCharacters->getCharacterInfo($characterId);
+        $deleted = isset($characterData["error"]) && $characterData["error"] === "Character has been deleted!";
+        if ($deleted) {
+            $this->logger->info("Character {$characterData['character_id']} has been deleted");
+        }
+        return $deleted;
     }
 
-    protected function isCharacterDeleted($characterData)
-    {
-        return isset($characterData["error"]) && $characterData["error"] === "Character has been deleted!";
-    }
-
-    protected function updateDeletedCharacter($characterId)
+    protected function updateDeletedCharacter(int $characterId): void
     {
         $this->characters->setData([
             "character_id" => $characterId,
@@ -71,19 +77,28 @@ class UpdateCharacter extends Jobs
         $this->characters->save();
     }
 
-    protected function fetchCharacterDataFromEVEWho($characterId)
+    protected function fetchCharacterDataFromEVEWho(int $characterId): ?array
     {
         try {
             $client = new Client();
             $response = $client->get("https://evewho.com/api/character/{$characterId}");
             $data = json_decode($response->getBody()->getContents(), true);
+            $characterInfo = $data["info"][0] ?? [];
+            $characterHistory = $data["history"] ?? [];
             return [
-                "character_id" => $characterId,
-                "name" => $data["name"] ?? "Unknown",
-                "alliance_id" => $data["alliance_id"] ?? 0,
-                "corporation_id" => $data["corporation_id"] ?? 0,
-                "faction_id" => $data["faction_id"] ?? 0,
-                "deleted" => true, // Ensure the deleted flag is set
+                'character_id' => $characterInfo["character_id"] ?? $characterId,
+                'name' => $characterInfo["name"] ?? "Unknown",
+                'corporation_id' => $characterInfo["corporation_id"] ?? 0,
+                'corporation_name' => $this->fetchCorporationData($characterInfo["corporation_id"] ?? 0)["name"] ?? "",
+                'alliance_id' => $characterInfo["alliance_id"] ?? 0,
+                'alliance_name' => $this->fetchAllianceData($characterInfo["alliance_id"] ?? 0)["name"] ?? "",
+                'security_status' => $characterInfo["sec_status"] ?? 0,
+                'history' => array_map(function($history) {
+                    return [
+                        'corporation_id' => $history['corporation_id'],
+                        'start_date' => new UTCDateTime(strtotime($history['start_date']) * 1000)
+                    ];
+                }, $characterHistory),
             ];
         } catch (\Exception $e) {
             $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
@@ -91,7 +106,7 @@ class UpdateCharacter extends Jobs
         }
     }
 
-    protected function updateCharacterData($characterData, $deleted)
+    protected function updateCharacterData(array $characterData, bool $deleted): void
     {
         $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
 
@@ -117,22 +132,22 @@ class UpdateCharacter extends Jobs
         }
     }
 
-    protected function fetchAllianceData($allianceId)
+    protected function fetchAllianceData(int $allianceId): array
     {
         if ($allianceId > 0) {
             return $this->alliances->findOneOrNull([
                 "alliance_id" => $allianceId,
-            ]) ?? $this->esiAlliances->getAllianceInfo($allianceId);
+            ])?->toArray() ?? $this->esiAlliances->getAllianceInfo($allianceId);
         }
         return [];
     }
 
-    protected function fetchCorporationData($corporationId)
+    protected function fetchCorporationData(int $corporationId): array
     {
         if ($corporationId > 0) {
             return $this->corporations->findOneOrNull([
                 "corporation_id" => $corporationId,
-            ]) ?? $this->esiCorporations->getCorporationInfo($corporationId);
+            ])?->toArray() ?? $this->esiCorporations->getCorporationInfo($corporationId);
         }
         return [];
     }
@@ -142,7 +157,7 @@ class UpdateCharacter extends Jobs
         if ($factionId > 0) {
             return $this->factions->findOne([
                 "faction_id" => $factionId,
-            ]);
+            ])?->toArray();
         }
         return [];
     }
