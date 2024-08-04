@@ -42,8 +42,8 @@ class UpdateWars extends ConsoleCommand
 
         foreach ($chunks as $chunk) {
             $existingWars = $this->wars->find(
-                ['war_id' => ['$in' => $chunk]],
-                ['projection' => ['war_id' => 1]]
+                ['id' => ['$in' => $chunk]],
+                ['projection' => ['id' => 1]]
             )->toArray();
 
             $existingWarIds = array_column($existingWars, 'war_id');
