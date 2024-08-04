@@ -34,6 +34,5 @@ class Characters extends Collection
             "name",
             "deleted",
         ],
-        "text" => ["character_name"],
     ];
 }
