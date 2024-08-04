@@ -5,8 +5,7 @@ namespace EK\Commands\Updates;
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\ESI\Wars;
 use EK\Jobs\ProcessWar;
-use EK\Jobs\UpdateAlliance;
-use EK\Models\Alliances;
+use EK\Models\Wars as WarModel;
 
 class UpdateWars extends ConsoleCommand
 {
@@ -14,15 +13,16 @@ class UpdateWars extends ConsoleCommand
     protected string $description = 'Updates all the wars available';
 
     public function __construct(
-        protected \EK\Models\Wars $wars,
         protected Wars $esiWars,
-        protected ProcessWar $warJob
+        protected ProcessWar $warJob,
+        protected WarModel $wars
     ) {
         parent::__construct();
     }
 
     final public function handle(): void
     {
+        $this->out('Updating wars..');
         $wars = [];
         $minWarId = 999999999;
         $resultCount = 0;
@@ -34,11 +34,28 @@ class UpdateWars extends ConsoleCommand
             $minWarId = !empty($warData) ? min($warData) : $minWarId;
         } while ($resultCount >= 2000);
 
-        foreach ($wars as $warId) {
-            if ($this->wars->findOneOrNull(['war_id' => $warId]) === null) {
-                $this->out("War $warId not found, enqueuing for processing");
-                $this->warJob->enqueue(['war_id' => $warId]);
+        $this->out("Found " . count($wars) . " wars");
+        $enqueuedCount = 0;
+
+        // Chunk the wars array into pieces of 100
+        $chunks = array_chunk($wars, 100);
+
+        foreach ($chunks as $chunk) {
+            $existingWars = $this->wars->find(
+                ['war_id' => ['$in' => $chunk]],
+                ['projection' => ['war_id' => 1]]
+            )->toArray();
+
+            $existingWarIds = array_column($existingWars, 'war_id');
+            $newWars = array_diff($chunk, $existingWarIds);
+
+            if (!empty($newWars)) {
+                $enqueuedCount += count($newWars);
+                $enqueueData = array_map(fn($warId) => ['war_id' => $warId], $newWars);
+                $this->warJob->massEnqueue($enqueueData);
             }
         }
+
+        $this->out("Enqueued " . $enqueuedCount . " wars");
     }
 }
