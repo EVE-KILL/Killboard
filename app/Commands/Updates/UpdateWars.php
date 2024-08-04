@@ -29,10 +29,9 @@ class UpdateWars extends ConsoleCommand
 
         do {
             $warData = $this->esiWars->getWars($minWarId);
-            $data = json_decode($warData['body'], true);
-            $resultCount = count($data);
-            $wars = array_unique(array_merge($wars, $data));
-            $minWarId = !empty($data) ? min($data) : $minWarId;
+            $resultCount = count($warData);
+            $wars = array_unique(array_merge($wars, $warData));
+            $minWarId = !empty($warData) ? min($warData) : $minWarId;
         } while ($resultCount >= 2000);
 
         foreach ($wars as $warId) {
