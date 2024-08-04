@@ -4,6 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\EveWho;
+use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use EK\Redis\Redis;
 use Illuminate\Support\Collection;
@@ -23,7 +24,8 @@ class UpdateAlliance extends Jobs
         protected Meilisearch $meilisearch,
         protected EveWho $eveWhoFetcher,
         protected UpdateCharacter $updateCharacter,
-        protected Redis $redis
+        protected Redis $redis,
+        protected FileLogger $logger,
     ) {
         parent::__construct($redis);
     }

@@ -4,6 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\ESI;
+use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 use GuzzleHttp\Client;
@@ -23,7 +24,8 @@ class UpdateCharacter extends Jobs
         protected \EK\ESI\Characters $esiCharacters,
         protected ESI $esiFetcher,
         protected Meilisearch $meilisearch,
-        protected \EK\Redis\Redis $redis
+        protected \EK\Redis\Redis $redis,
+        protected FileLogger $logger,
     ) {
         parent::__construct($redis);
     }

@@ -13,12 +13,11 @@ class FileLogger implements LoggerInterface
 
     public function __construct(
         protected string $logFile = BASE_DIR . '/logs/request.log',
-        protected string $loggerName = 'request-logger',
-        protected Level $logLevel = Level::Debug
+        protected string $loggerName = 'request-logger'
     )
     {
         $this->logger = new MonologLogger($this->loggerName);
-        $this->logger->pushHandler(new StreamHandler($this->logFile, $this->logLevel));
+        $this->logger->pushHandler(new StreamHandler($this->logFile, Level::Debug));
     }
 
     public function __call($name, $arguments)
