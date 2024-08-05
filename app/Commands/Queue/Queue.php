@@ -91,12 +91,15 @@ class Queue extends ConsoleCommand
                             unset($instance);
                             continue 2;
                         } catch (\Exception $e) {
-                            // If it fails, push it back to the queue it came from
-                            $client->rpush($queueName, [json_encode($jobData)]);
-                            $this->out(
-                                "Job failed, pushed back to {$queueName}"
-                            );
-                            $this->out("Error: " . $e->getMessage());
+                            if ($requeue) {
+                                $client->rpush($queueName, $job);
+                                $this->out(
+                                    "Job failed, pushed back to {$queueName}"
+                                );
+                                $this->out("Error: " . $e->getMessage());
+                            } else {
+                                $this->out("Error: " . $e->getMessage());
+                            }
                         }
                     }
                 }

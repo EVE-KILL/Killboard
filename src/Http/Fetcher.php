@@ -10,7 +10,6 @@ use EK\Cache\Cache;
 use EK\Logger\FileLogger;
 use EK\Models\Proxies;
 use GuzzleHttp\Client;
-use GuzzleHttp\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
 
 class Fetcher

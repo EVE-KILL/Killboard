@@ -65,5 +65,10 @@ abstract class Jobs
         $this->client->rpush($queue ?? $this->defaultQueue, $jobs);
     }
 
+    public function emptyQueue(?string $queue = null): void
+    {
+        $this->client->del($queue ?? $this->defaultQueue);
+    }
+
     abstract public function handle(array $data): void;
 }

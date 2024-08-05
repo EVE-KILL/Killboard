@@ -26,6 +26,11 @@ class Webhooks
         $this->send($this->config->get('webhooks/comments'), $message);
     }
 
+    public function sendToNewCharactersFound(string $message): void
+    {
+        $this->send($this->config->get('webhooks/new-characters-found'), $message);
+    }
+
     private function send(string $url, string $message): void
     {
         try {
