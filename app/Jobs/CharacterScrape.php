@@ -50,7 +50,12 @@ class CharacterScrape extends Jobs
         $characterData = $this->characters->findOneOrNull([
             "character_id" => $characterId,
             "name" => ['$ne' => "Unknown"],
+        ], [
+            'projection' => [
+                'error' => 0
+            ]
         ])?->toArray();
+
         if ($characterData === null) {
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
         }
@@ -66,7 +71,9 @@ class CharacterScrape extends Jobs
             return;
         }
 
-        $this->updateCharacterData($characterData, $deleted);
+        if (!isset($characterData['error'])) {
+            $this->updateCharacterData($characterData, $deleted);
+        }
     }
 
     protected function isCharacterDeleted(array $characterData): bool
