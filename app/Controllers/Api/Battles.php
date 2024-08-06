@@ -4,6 +4,7 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Cache\Cache;
 use EK\Helpers\Battle;
 use EK\Models\Battles as BattlesModel;
 use Psr\Http\Message\ResponseInterface;
@@ -12,7 +13,8 @@ class Battles extends Controller
 {
     public function __construct(
         protected BattlesModel $battles,
-        protected Battle $battleHelper
+        protected Battle $battleHelper,
+        protected Cache $cache
     ) {
         parent::__construct();
     }
@@ -58,10 +60,19 @@ class Battles extends Controller
             return $this->json(["error" => "Killmail not in a battle"]);
         }
 
+        $cacheKey = $this->cache->generateKey("battle", $killmailId);
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult);
+        }
+
         // Get battle data
         $battleData = $this->battleHelper->getBattleData($killmailId);
-
         $battleData = $this->cleanupTimestamps($battleData);
+
+        $this->cache->set($cacheKey, $battleData, 60);
 
         return $this->json($battleData);
     }
