@@ -242,7 +242,13 @@ class Battle
         }
 
         // Kills can sometimes show up in both blue and red team, remove them from blue team if they do
-        $blueTeam['kills'] = array_diff($redTeam['kills'] ?? [], $blueTeam['kills'] ?? []);
+        $blueTeam['kills'] = array_diff($blueTeam['kills'] ?? [], $redTeam['kills'] ?? []);
+
+        // @TODO Fix properly
+        // RedTeam kills is blueteam kills, and vice versa
+        $temp = $redTeam['kills'];
+        $redTeam['kills'] = $blueTeam['kills'];
+        $blueTeam['kills'] = $temp;
 
         // Total stats
         $battle = [
