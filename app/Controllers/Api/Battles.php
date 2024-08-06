@@ -4,12 +4,16 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Helpers\Battle;
+use EK\Models\Battles as BattlesModel;
 use Psr\Http\Message\ResponseInterface;
 
 class Battles extends Controller
 {
-    public function __construct(protected \EK\Models\Battles $battles)
-    {
+    public function __construct(
+        protected BattlesModel $battles,
+        protected Battle $battleHelper
+    ) {
         parent::__construct();
     }
 
@@ -40,5 +44,25 @@ class Battles extends Controller
             ->toArray();
 
         return $this->json($this->cleanupTimestamps($battle));
+    }
+
+    #[RouteAttribute("/battles/killmail/{killmailId:[0-9]+}[/]")]
+    public function isKillmailInBattle(int $killmailId): ResponseInterface
+    {
+        $killmailInBattle = $this->battleHelper->isKillInBattle($killmailId);
+        if ($killmailInBattle === null) {
+            return $this->json(["error" => "Killmail not found"]);
+        }
+
+        if ($killmailInBattle === false) {
+            return $this->json(["error" => "Killmail not in a battle"]);
+        }
+
+        // Get battle data
+        $battleData = $this->battleHelper->getBattleData($killmailId);
+
+        $battleData = $this->cleanupTimestamps($battleData);
+
+        return $this->json($battleData);
     }
 }
