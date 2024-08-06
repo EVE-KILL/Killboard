@@ -4,13 +4,17 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Cache\Cache;
+use EK\Helpers\Battle;
 use Psr\Http\Message\ResponseInterface;
 
 class Killmail extends Controller
 {
     public function __construct(
         protected \EK\Models\Killmails $killmails,
-        protected \EK\Models\KillmailsESI $killmailsESI
+        protected \EK\Models\KillmailsESI $killmailsESI,
+        protected Battle $battleHelper,
+        protected Cache $cache
     ) {
         parent::__construct();
     }
@@ -60,6 +64,31 @@ class Killmail extends Controller
         }
 
         return $this->json($this->cleanupTimestamps($killmail->toArray()));
+    }
+
+    #[RouteAttribute("/killmail/{killmail_id:[0-9]+}/inbattle[/]", ["GET"])]
+    public function inBattle(int $killmail_id): ResponseInterface
+    {
+        $cacheKey = $this->cache->generateKey("inBattle", $killmail_id);
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult);
+        }
+
+        $killmailInBattle = $this->battleHelper->isKillInBattle($killmail_id);
+        if ($killmailInBattle === null) {
+            return $this->json(["error" => "Killmail not found"]);
+        }
+
+        if ($killmailInBattle === false) {
+            $this->cache->set($cacheKey, [false], 300);
+            return $this->json([false]);
+        }
+
+        $this->cache->set($cacheKey, [true], 300);
+        return $this->json([true]);
     }
 
     #[RouteAttribute("/killmail[/]", ["POST"])]
