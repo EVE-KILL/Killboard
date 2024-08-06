@@ -34,7 +34,7 @@ class Battle
         $pipeline = [
             ['$match' => ['system_id' => $systemId, 'kill_time' => ['$gte' => new UTCDateTime($startTime * 1000), '$lte' => new UTCDateTime($endTime * 1000)]]],
             ['$group' => ['_id' => '$battle_id', 'count' => ['$sum' => 1]]],
-            ['$match' => ['count' => ['$gte' => 25]]],
+            ['$match' => ['count' => ['$gte' => 25]]], // @TODO play with the gte number, because sometimes this can say yes, when the fact is no..
             ['$sort' => ['count' => -1]],
             ['$limit' => 1]
         ];
@@ -242,7 +242,7 @@ class Battle
         }
 
         // Kills can sometimes show up in both blue and red team, remove them from blue team if they do
-        $blueTeam['kills'] = array_diff($blueTeam['kills'] ?? [], $redTeam['kills'] ?? []);
+        $blueTeam['kills'] = array_diff($redTeam['kills'] ?? [], $blueTeam['kills'] ?? []);
 
         // Total stats
         $battle = [
