@@ -8,7 +8,6 @@ use EK\Models\Battles;
 use EK\Models\Corporations;
 use EK\Models\Killmails;
 use EK\Models\SolarSystems;
-use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 
 class BackfillBattles extends ConsoleCommand
@@ -88,10 +87,6 @@ class BackfillBattles extends ConsoleCommand
                             }
                             $failCounter = 0;
                         } else {
-                            if ($failCounter >= 5) {
-                                $foundEnd = true;
-                                $battleEndTime = $segmentStart;
-                            }
                             $failCounter++;
                         }
 
@@ -103,6 +98,11 @@ class BackfillBattles extends ConsoleCommand
 
                         $segmentStart += 300;
                         $segmentEnd += 300;
+                        if ($failCounter === 5) {
+                            $foundEnd = true;
+                            $battleEndTime = $segmentStart;
+                            break;
+                        }
                     } while ($segmentEnd < $extensibleToTime);
 
                     if ($foundStart && $foundEnd) {
@@ -130,8 +130,6 @@ class BackfillBattles extends ConsoleCommand
             $toTime += 7200;
         } while($fromTime < $endTime);
     }
-
-
 
     private function getStartAndEndTime(): array
     {

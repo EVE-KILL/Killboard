@@ -23,6 +23,7 @@ class ScrapeCharacters extends ConsoleCommand
 
     final public function handle(): void
     {
+        $this->characterScrape->emptyQueue();
         $chunkSize = 10000; // Variable for chunk size
 
         // The actual lowest character id known is 90000001
@@ -67,7 +68,7 @@ class ScrapeCharacters extends ConsoleCommand
             $currentId = $nextChunkEnd + 1;
 
             if (count($missingCharacterIds) >= $chunkSize) {
-                $this->massEnqueueMissingCharacters($missingCharacterIds);
+                $this->massEnqueueMissingCharacters($missingCharacterIds, $characterIdsEnqueued);
                 $missingCharacterIds = []; // Reset the array after enqueueing
             }
 
@@ -76,7 +77,7 @@ class ScrapeCharacters extends ConsoleCommand
 
         // Enqueue any remaining missing character IDs that didn't fill up a whole chunk
         if (!empty($missingCharacterIds)) {
-            $this->massEnqueueMissingCharacters($missingCharacterIds);
+            $this->massEnqueueMissingCharacters($missingCharacterIds, $characterIdsEnqueued);
         }
 
         $characterIdsEnqueued += count($missingCharacterIds);
@@ -84,9 +85,9 @@ class ScrapeCharacters extends ConsoleCommand
         $this->out("Enqueued $characterIdsEnqueued characters.");
     }
 
-    private function massEnqueueMissingCharacters(array $missingCharacterIds): void
+    private function massEnqueueMissingCharacters(array $missingCharacterIds, int $characterIdsEnqueued): void
     {
-        $this->out("Enqueueing " . count($missingCharacterIds) . " missing characters.");
+        $this->out("Enqueueing " . count($missingCharacterIds) . " missing characters. Total enqueued: $characterIdsEnqueued");
         $queueData = array_map(fn($id) => ['character_id' => $id], $missingCharacterIds);
         $this->characterScrape->massEnqueue($queueData);
     }
