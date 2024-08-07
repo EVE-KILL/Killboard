@@ -88,6 +88,7 @@ class EBCharacters extends ConsoleCommand
                         'Static' => 9,
                         'Vherokior' => 14,
                         'Drifter' => 19,
+                        'Unknown' => 0,
                         '' => 0
                     },
                     'gender' => $record['gender'],
