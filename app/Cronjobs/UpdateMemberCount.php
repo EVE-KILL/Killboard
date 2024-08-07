@@ -7,7 +7,6 @@ use EK\Models\Alliances;
 use EK\Models\Characters;
 use EK\Models\Corporations;
 use EK\Models\StatsHistorical;
-use MongoDB\BSON\UTCDateTime;
 
 class UpdateMemberCount extends Cronjob
 {

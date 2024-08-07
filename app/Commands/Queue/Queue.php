@@ -57,7 +57,6 @@ class Queue extends ConsoleCommand
                         try {
                             $className = $jobData["job"] ?? null;
                             $data = $jobData["data"] ?? [];
-                            $processAfter = $jobData["process_after"] ?? 0;
 
                             if ($className === null) {
                                 throw new \Exception("Job class not found");
@@ -68,26 +67,14 @@ class Queue extends ConsoleCommand
                             );
                             $this->out("Data: " . json_encode($data));
 
-                            // If the job is scheduled for later, push it back to the queue
-                            if ($processAfter > 0 && $processAfter > time()) {
-                                $client->rpush($queueName, $job);
-                                $this->out(
-                                    "Job scheduled for later, pushed back to {$queueName}"
-                                );
-                                continue 2;
-                            }
-
                             // Create a new instance of the job class
                             $instance = $this->container->get($className);
                             $instance->handle($data);
 
                             $endTime = microtime(true);
                             $requeue = $instance->requeue ?? true;
-                            $this->out(
-                                "Job completed in " .
-                                    ($endTime - $startTime) .
-                                    " seconds"
-                            );
+
+                            $this->out("Job completed in " . ($endTime - $startTime) . " seconds");
                             unset($instance);
                             continue 2;
                         } catch (\Exception $e) {
