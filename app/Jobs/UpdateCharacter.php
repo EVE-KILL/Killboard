@@ -46,7 +46,7 @@ class UpdateCharacter extends Jobs
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
         }
 
-        if ($this->isCharacterDeleted($characterData)) {
+        if ($this->isCharacterDeleted($characterData) && $this->isCharacterFound($characterData)) {
             $this->logger->info("Character $characterId has been deleted, updating database and fetching from EVEWho");
             $this->updateDeletedCharacter($characterId);
             $characterData = $this->fetchCharacterDataFromEVEWho($characterId);
@@ -57,7 +57,9 @@ class UpdateCharacter extends Jobs
             return;
         }
 
-        $this->updateCharacterData($characterData, $deleted);
+        if ($this->isCharacterFound($characterData)) {
+            $this->updateCharacterData($characterData, $deleted);
+        }
     }
 
     protected function isCharacterDeleted(array $characterData): bool
@@ -67,6 +69,16 @@ class UpdateCharacter extends Jobs
             $this->logger->info("Character {$characterData['character_id']} has been deleted");
         }
         return $deleted;
+    }
+
+    protected function isCharacterFound(array $characterData): bool
+    {
+        $found = isset($characterData["error"]) && $characterData["error"] === "Character not found!";
+        if ($found) {
+            $this->logger->info("Character {$characterData['character_id']} not found");
+        }
+        // Return the inverse because if $found is true, then the character is not found, meaning the return has to be inverted
+        return !$found;
     }
 
     protected function updateDeletedCharacter(int $characterId): void
