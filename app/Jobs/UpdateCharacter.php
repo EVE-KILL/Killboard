@@ -73,7 +73,7 @@ class UpdateCharacter extends Jobs
 
     protected function isCharacterFound(array $characterData): bool
     {
-        $found = isset($characterData["error"]) && $characterData["error"] === "Character not found!";
+        $found = isset($characterData["error"]) && $characterData["error"] === "Character not found";
         if ($found) {
             $this->logger->info("Character {$characterData['character_id']} not found");
         }
