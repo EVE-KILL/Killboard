@@ -129,7 +129,7 @@ class UpdateCharacter extends Jobs
         $this->characters->setData($characterData);
         $this->characters->save();
 
-        if ($deleted === false) {
+        if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
         }
     }
