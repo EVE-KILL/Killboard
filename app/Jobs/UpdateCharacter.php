@@ -88,6 +88,7 @@ class UpdateCharacter extends Jobs
             return [
                 'character_id' => $characterInfo["character_id"] ?? $characterId,
                 'name' => $characterInfo["name"] ?? "Unknown",
+                'birthday' => new UTCDateTime(strtotime($characterInfo["birthday"]) * 1000),
                 'corporation_id' => $characterInfo["corporation_id"] ?? 0,
                 'corporation_name' => $this->fetchCorporationData($characterInfo["corporation_id"] ?? 0)["name"] ?? "",
                 'alliance_id' => $characterInfo["alliance_id"] ?? 0,

@@ -212,7 +212,6 @@ class Collection
 
     public function saveMany(): int
     {
-        $bulkWrite = new BulkWrite();
         $bulkWrites = [];
 
         foreach($this->data->all() as $document) {

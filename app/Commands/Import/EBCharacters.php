@@ -46,19 +46,25 @@ class EBCharacters extends ConsoleCommand
 
         $characterBatch = [];
         $updateBatch = [];
+        $loadedAlliances = [];
+        $loadedCorporations = [];
         $batchSize = 10000;
 
         foreach ($records as $record) {
             if ($this->offset > 0) {
                 $offset++;
                 if ($offset < $this->offset) {
-                    $progressBar->advance();
                     continue;
                 }
             }
 
             $deleted = false;
             try {
+                $alliance = (int) $record['allianceID'] > 0 ?
+                    $loadedAlliances[$record['allianceID']] ?? $this->alliances->findOne(['alliance_id' => (int) $record['allianceID']]) : null;
+                $corporation = (int) $record['corporationID'] > 0 ?
+                    $loadedCorporations[$record['corporationID']] ?? $this->corporations->findOne(['corporation_id' => (int) $record['corporationID']]) : null;
+
                 $character = [
                     'character_id' => (int) $record['characterID'],
                     'name' => $record['CharacterName'],
@@ -95,10 +101,10 @@ class EBCharacters extends ConsoleCommand
                         '' => 0
                     },
                     'security_status' => (float) $record['securityStatus'],
-                    'alliance_name' => (int) $record['allianceID'] > 0 ? $this->alliances->findOne(['alliance_id' => (int) $record['allianceID']])->get('name', '') ?? '' : '',
+                    'alliance_name' => $alliance ? $alliance->get('name', '') : '',
                     'alliance_id' => (int) $record['allianceID'] ?? 0,
                     'corporation_id' => (int) $record['corporationID'] ?? 0,
-                    'corporation_name' => (int) $record['corporationID'] > 0 ? $this->corporations->findOne(['corporation_id' => (int) $record['corporationID']])->get('name', '') ?? '' : '',
+                    'corporation_name' => $corporation ? $corporation->get('name', '') : '',
                 ];
 
                 if ((int) $record['corporationID'] === 1000001) {
@@ -115,16 +121,13 @@ class EBCharacters extends ConsoleCommand
                 if (count($characterBatch) >= $batchSize) {
                     $this->characters->setData($characterBatch);
                     $this->characters->saveMany();
-                    $characterBatch = [];
-                }
 
-                if (count($updateBatch) >= $batchSize) {
                     $this->updateCharacter->massEnqueue($updateBatch);
+                    $characterBatch = [];
                     $updateBatch = [];
                 }
-
             } catch(\Exception $e) {
-                // Do nothing
+                $this->out("Failed to import character {$record['CharacterName']}: {$e->getMessage()}");
             }
 
             $progressBar->advance();
