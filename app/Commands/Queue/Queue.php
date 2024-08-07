@@ -14,7 +14,7 @@ class Queue extends ConsoleCommand
 {
     protected string $signature = 'queue
         { --workers=4 : Number of queue workers }
-        { --queues=high,websocket,killmail,character,corporation,alliance,universe,low,default : Queues to listen on (Default is high,low,default) }
+        { --queues=high,websocket,killmail,character,corporation,alliance,universe,low,default,character_scrape : Queues to listen on (Default is high,low,default) }
     ';
     protected string $description = "Start the queue worker.";
 

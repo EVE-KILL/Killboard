@@ -37,9 +37,10 @@ class UpdateCharacter extends Jobs
         $deleted = false;
 
         $characterData = $this->characters->findOneOrNull([
-            "character_id" => $characterId,
-            "name" => ['$ne' => "Unknown"],
+            'character_id' => $characterId,
+            'name' => ['$ne' => 'Unknown'],
         ])?->toArray();
+
         if ($characterData === null) {
             $this->logger->info("Character $characterId not found in database, fetching from ESI");
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
