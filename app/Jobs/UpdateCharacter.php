@@ -112,6 +112,11 @@ class UpdateCharacter extends Jobs
     {
         $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
 
+        if (!isset($characterData['name'])) {
+            $this->logger->error("Character data is missing name, skipping update", $characterData);
+            return;
+        }
+
         $allianceId = $characterData["alliance_id"] ?? 0;
         $corporationId = $characterData["corporation_id"] ?? 0;
         $factionId = $characterData["faction_id"] ?? 0;
