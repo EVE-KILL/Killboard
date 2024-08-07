@@ -71,7 +71,7 @@ class CharacterScrape extends Jobs
             return;
         }
 
-        if (!isset($characterData['error'])) {
+        if ($this->isCharacterFound($characterData)) {
             $this->updateCharacterData($characterData, $deleted);
         }
     }
@@ -83,6 +83,16 @@ class CharacterScrape extends Jobs
             $this->logger->info("Character {$characterData['character_id']} has been deleted");
         }
         return $deleted;
+    }
+
+    protected function isCharacterFound(array $characterData): bool
+    {
+        $found = isset($characterData["error"]) && $characterData["error"] === "Character not found";
+        if ($found) {
+            $this->logger->info("Character {$characterData['character_id']} not found");
+        }
+        // Return the inverse because if $found is true, then the character is not found, meaning the return has to be inverted
+        return !$found;
     }
 
     protected function updateDeletedCharacter(int $characterId): void
@@ -145,7 +155,7 @@ class CharacterScrape extends Jobs
 
         // We found a new character, let the webhooks know
         $this->webhooks->sendToNewCharactersFound("{$characterData['name']} / {$characterData['corporation_name']} | <https://eve-kill.com/character/{$characterData['character_id']}>");
-        if ($deleted === false) {
+        if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
         }
     }

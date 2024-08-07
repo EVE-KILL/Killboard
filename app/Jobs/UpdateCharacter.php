@@ -4,6 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\ESI;
+use EK\Fetchers\EveWho;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
@@ -27,6 +28,7 @@ class UpdateCharacter extends Jobs
         protected Meilisearch $meilisearch,
         protected \EK\Redis\Redis $redis,
         protected FileLogger $logger,
+        protected EveWho $eveWhoFetcher
     ) {
         parent::__construct($redis);
     }
@@ -42,7 +44,6 @@ class UpdateCharacter extends Jobs
         ])?->toArray();
 
         if ($characterData === null) {
-            $this->logger->info("Character $characterId not found in database, fetching from ESI");
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
         }
 
@@ -93,9 +94,8 @@ class UpdateCharacter extends Jobs
     protected function fetchCharacterDataFromEVEWho(int $characterId): ?array
     {
         try {
-            $client = new Client();
-            $response = $client->get("https://evewho.com/api/character/{$characterId}");
-            $data = json_decode($response->getBody()->getContents(), true);
+            $response = $this->eveWhoFetcher->fetch("https://evewho.com/api/character/{$characterId}");
+            $data = json_decode($response['body'], true);
             $characterInfo = $data["info"][0] ?? [];
             $characterHistory = $data["history"] ?? [];
             return [
