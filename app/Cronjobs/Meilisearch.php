@@ -54,6 +54,7 @@ class Meilisearch extends Cronjob
         $characters = $this->characters->find(
             [
                 "name" => ['$ne' => ""],
+                "deleted" => false,
             ],
             ["projection" => ["_id" => 0, "name" => 1, "character_id" => 1]]
         );
