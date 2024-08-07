@@ -8,7 +8,6 @@ use EK\Fetchers\EveWho;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
-use GuzzleHttp\Client;
 use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacter extends Jobs

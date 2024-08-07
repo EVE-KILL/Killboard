@@ -5,7 +5,6 @@ namespace EK\Cronjobs;
 use EK\Api\Abstracts\Cronjob;
 use EK\Cache\Cache;
 use EK\Jobs\CharacterScrape;
-use EK\Jobs\UpdateCharacter;
 use EK\Models\Characters;
 
 class CharacterScraper extends Cronjob
@@ -22,6 +21,7 @@ class CharacterScraper extends Cronjob
 
     public function handle(): void
     {
+        return;
         // Get the biggest characterId from the database
         $largestCharacterId = $this->characters->findOne([], ['sort' => ['character_id' => -1]])['character_id'] ?? 0;
 
