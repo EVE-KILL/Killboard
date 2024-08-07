@@ -67,7 +67,8 @@ class Battle
         $battleStartTime = 0;
         $battleEndTime = 0;
         $failCounter = 0;
-        $killCountToConsider = 2;
+        $killCountToConsiderStart = 5;
+        $killCountToConsiderEnd = 15;
 
         do {
             $killCount = $this->killmails->count([
@@ -75,14 +76,14 @@ class Battle
                 'system_id' => $systemId
             ]);
 
-            if ($killCount >= $killCountToConsider) {
+            if ($killCount >= $killCountToConsiderStart) {
                 if (!$foundStart) {
                     $foundStart = true;
                     $battleStartTime = $segmentStart;
                 }
                 $failCounter = 0;
             } else {
-                if ($failCounter >= 5) {
+                if ($failCounter >= 3) {
                     $foundEnd = true;
                     $battleEndTime = $segmentStart;
                 }
@@ -90,7 +91,7 @@ class Battle
             }
 
             // We can _ONLY_ extend $toTime by 1h if we hit >5 kills in the last 5 minute segment
-            if ($segmentEnd >= $extensibleToTime && $killCount >= $killCountToConsider) {
+            if ($segmentEnd >= $extensibleToTime && $killCount >= $killCountToConsiderEnd) {
                 $extensibleToTime += 1600;
             }
 

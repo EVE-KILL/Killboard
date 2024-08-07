@@ -1,6 +1,6 @@
 <?php
 
-namespace EK\Commands\Killmails;
+namespace EK\Commands\Imports;
 
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
