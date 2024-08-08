@@ -21,13 +21,8 @@ class CharacterScraper extends Cronjob
 
     public function handle(): void
     {
-        $largestCharacterId = $this->cache->get('largestCharacterId') ?? 0;
-
         // Get the biggest characterId from the database
-        if ($largestCharacterId === 0) {
-            $largestCharacterId = $this->characters->findOne([], ['sort' => ['character_id' => -1]])['character_id'] ?? 0;
-            $this->cache->set('largestCharacterId', $largestCharacterId, 60 * 60 * 24);
-        }
+        $largestCharacterId = $this->characters->findOne([], ['sort' => ['character_id' => -1]])['character_id'] ?? 0;
 
         // Generate an array of characterIds to scrape (Largest +100)
         $characterIds = range($largestCharacterId + 1, $largestCharacterId + 5);

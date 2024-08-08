@@ -3,7 +3,6 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Cache\Cache;
 use EK\Fetchers\CharacterScrape as FetchersCharacterScrape;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
@@ -38,7 +37,6 @@ class CharacterScrape extends Jobs
         protected FetchersCharacterScrape $esiFetcher,
         protected EveWho $eveWhoFetcher,
         protected Webhooks $webhooks,
-        protected Cache $cache,
         protected EmitCharacterWS $emitCharacterWS
     ) {
         parent::__construct($redis);
@@ -61,7 +59,6 @@ class CharacterScrape extends Jobs
 
         if ($this->isCharacterFound($characterData)) {
             $this->updateCharacterData($characterData, $deleted);
-            $this->cache->set('largestCharacterId', $characterId, 60 * 60 * 24);
         }
     }
 
