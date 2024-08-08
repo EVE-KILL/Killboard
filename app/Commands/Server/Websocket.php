@@ -118,6 +118,7 @@ class Websocket extends ConsoleCommand
             switch($type) {
                 case 'subscribe':
                     if(!empty($this->wsEndpoints[$fdData['endpoint']])) {
+                        $data = array_merge($data, ['connection_time' => time()]);
                         $this->wsEndpoints[$fdData['endpoint']]->subscribe($frame->fd, $data);
                     }
                     break;

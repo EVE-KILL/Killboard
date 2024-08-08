@@ -10,6 +10,7 @@ class Kills extends Websocket
 
     public function handle(array $data): void
     {
+        $killTime = strtotime($data['kill_time']);
         $sendToTypes = ['alliance_id', 'corporation_id', 'faction_id', 'character_id', 'ship_id', 'group_id', 'weapon_type_id'];
 
         $emit = [
@@ -31,6 +32,10 @@ class Kills extends Websocket
             $intersect = array_intersect_key($emit, $clientSubscriptions);
             foreach($intersect as $type => $ids) {
                 if (in_array($clientSubscriptions[$type], $ids)) {
+                    if ($killTime < $clientSubscriptions['connection_time']) {
+                        continue;
+                    }
+
                     $emitToClients[$client['fd']] = $client['fd'];
                     break;
                 }
