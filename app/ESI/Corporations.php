@@ -29,9 +29,6 @@ class Corporations
         $this->corporations->setData($corporationData);
         $this->corporations->save();
 
-        $updateCorporation = $this->container->get(\EK\Jobs\UpdateCorporation::class);
-        $updateCorporation->enqueue(['corporation_id' => $corporationData['corporation_id']]);
-
         return $corporationData;
     }
 }
