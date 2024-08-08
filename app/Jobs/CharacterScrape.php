@@ -55,7 +55,7 @@ class CharacterScrape extends Jobs
             return;
         }
 
-        $characterData = $this->esiCharacters->getCharacterInfo($characterId);
+        $characterData = $this->fetchCharacter($characterId);
 
         if ($this->isCharacterFound($characterData)) {
             $this->updateCharacterData($characterData, $deleted);
@@ -138,5 +138,23 @@ class CharacterScrape extends Jobs
             "name" => $characterData["name"],
             "type" => "character",
         ]);
+    }
+
+    protected function fetchCharacter(int $characterId): array
+    {
+        if ($characterId < 10000) {
+            return [];
+        }
+
+        $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterId);
+        $characterData = json_validate($characterData['body']) ? json_decode($characterData['body'], true) : [];
+        $characterData['character_id'] = $characterId;
+
+        ksort($characterData);
+
+        $this->characters->setData($characterData);
+        $this->characters->save();
+
+        return $characterData;
     }
 }
