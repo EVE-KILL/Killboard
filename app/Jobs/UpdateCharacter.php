@@ -42,7 +42,7 @@ class UpdateCharacter extends Jobs
             'name' => ['$ne' => 'Unknown'],
         ])?->toArray();
 
-        $lastUpdated = $characterData['last_updated'] ?? new UTCDateTime(0);
+        $lastUpdated = $characterData['last_updated']?->toDateTime() ?? new \DateTime();
         if ($characterData === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
         }

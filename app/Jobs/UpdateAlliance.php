@@ -49,7 +49,7 @@ class UpdateAlliance extends Jobs
     {
         $alliance = $this->alliances->findOneOrNull(["alliance_id" => $allianceId]);
 
-        $lastUpdated = $alliance->get('last_updated')->toDateTime() ?? new \DateTime(0);
+        $lastUpdated = $alliance->get('last_updated')?->toDateTime() ?? new \DateTime();
         if ($alliance === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
             $alliance = $this->esiAlliances->getAllianceInfo($allianceId);
         }

@@ -58,7 +58,7 @@ class UpdateCorporation extends Jobs
     {
         $corporation = $this->corporations->findOneOrNull(["corporation_id" => $corporationId]);
 
-        $lastUpdated = $corporation->get('last_updated')->toDateTime() ?? new \DateTime(0);
+        $lastUpdated = $corporation->get('last_updated')?->toDateTime() ?? new \DateTime();
         if ($corporation === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
             $corporation = $this->esiCorporations->getCorporationInfo($corporationId);
         }
