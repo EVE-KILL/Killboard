@@ -9,7 +9,7 @@ use League\Container\Container;
 /**
  * @property $manualPath
  */
-class QueueTwo extends ConsoleCommand
+class Queue extends ConsoleCommand
 {
     protected string $signature = 'queue {queue : Queue to listen on}';
     protected string $description = "";
