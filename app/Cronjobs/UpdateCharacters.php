@@ -31,7 +31,7 @@ class UpdateCharacters extends Cronjob
                 "last_updated" => ['$lt' => $fourteenDaysAgo],
                 "deleted" => ['$ne' => true],
             ],
-            ["limit" => (int) round(($characterCount / 7) / 24, 0)] // Update 1/14th of the characters every hour
+            ["limit" => (int) round(($characterCount / 7) / 24, 0)] // Update 1/168th of the characters every hour
         );
 
         $updates = array_map(function ($character) {
