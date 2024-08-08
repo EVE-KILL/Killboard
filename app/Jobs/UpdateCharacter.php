@@ -8,8 +8,15 @@ use EK\Fetchers\EveWho;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
-use League\Container\Container;
 use MongoDB\BSON\UTCDateTime;
+use EK\Models\Characters;
+use EK\Models\Alliances;
+use EK\Models\Corporations;
+use EK\Models\Factions ;
+use EK\ESI\Alliances as ESIAlliances;
+use EK\ESI\Corporations as ESICorporations;
+use EK\ESI\Characters as ESICharacters;
+use EK\Redis\Redis;
 
 class UpdateCharacter extends Jobs
 {
@@ -17,19 +24,19 @@ class UpdateCharacter extends Jobs
     public bool $requeue = false;
 
     public function __construct(
-        protected \EK\Models\Characters $characters,
-        protected \EK\Models\Alliances $alliances,
-        protected \EK\Models\Corporations $corporations,
-        protected \EK\Models\Factions $factions,
-        protected \EK\ESI\Alliances $esiAlliances,
-        protected \EK\ESI\Corporations $esiCorporations,
-        protected \EK\ESI\Characters $esiCharacters,
+        protected Characters $characters,
+        protected Alliances $alliances,
+        protected Corporations $corporations,
+        protected Factions $factions,
+        protected ESIAlliances $esiAlliances,
+        protected ESICorporations $esiCorporations,
+        protected ESICharacters $esiCharacters,
         protected ESI $esiFetcher,
         protected Meilisearch $meilisearch,
-        protected \EK\Redis\Redis $redis,
         protected FileLogger $logger,
         protected EveWho $eveWhoFetcher,
-        protected Container $container,
+        protected EmitCharacterWS $emitCharacterWS,
+        protected Redis $redis,
     ) {
         parent::__construct($redis);
     }
@@ -146,8 +153,7 @@ class UpdateCharacter extends Jobs
 
         if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
-            $emitCharacterWS = $this->container->get(\EK\Jobs\EmitCharacterWS::class);
-            $emitCharacterWS->enqueue($characterData);
+            $this->emitCharacterWS->enqueue($characterData);
         }
     }
 

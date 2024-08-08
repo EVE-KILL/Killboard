@@ -20,9 +20,9 @@ abstract class Jobs
     ];
     protected string $defaultQueue = 'low';
     public bool $requeue = true;
-
     protected Client $client;
     protected FileLogger $logger;
+
     public function __construct(
         protected Redis $redis
     ) {
