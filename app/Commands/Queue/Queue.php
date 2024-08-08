@@ -41,6 +41,7 @@ class Queue extends ConsoleCommand
 
                     if ($className !== null) {
                         $this->out($this->formatOutput('<yellow>Processing job: ' . $className . '</yellow>'));
+                        $this->out($this->formatOutput('<yellow>Job data: ' . json_encode($data) . '</yellow>'));
 
                         // Load the instance and check if it should be requeued
                         $instance = $this->container->get($className);
