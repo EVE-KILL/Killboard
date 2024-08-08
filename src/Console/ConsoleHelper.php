@@ -1,4 +1,5 @@
 <?php
+
 namespace EK\Console;
 
 use InvalidArgumentException;
@@ -287,7 +288,35 @@ class ConsoleHelper extends Command
      */
     public function out(string $input, $newLine = true): null|bool|array|string
     {
-        return $this->output->write($input, $newLine);
+        $formattedInput = $this->formatOutput($input);
+        return $this->output->write($formattedInput, $newLine);
+    }
+
+    /**
+     * Format the input with custom color tags.
+     *
+     * @param string $input
+     * @return string
+     */
+    private function formatOutput(string $input): string
+    {
+        $colors = [
+            'red' => "\033[0;31m",
+            'green' => "\033[0;32m",
+            'yellow' => "\033[0;33m",
+            'blue' => "\033[0;34m",
+            'purple' => "\033[0;35m",
+            'cyan' => "\033[0;36m",
+            'white' => "\033[0;37m",
+            'reset' => "\033[0m"
+        ];
+
+        foreach ($colors as $color => $code) {
+            $input = str_replace("<$color>", $code, $input);
+            $input = str_replace("</$color>", $colors['reset'], $input);
+        }
+
+        return $input;
     }
 
     /**
@@ -300,6 +329,7 @@ class ConsoleHelper extends Command
      */
     public function ask(string $question, $default = ''): string
     {
+        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
         $helper = $this->getHelper('question');
         $q = new Question($question . ' ', $default);
 
@@ -316,6 +346,7 @@ class ConsoleHelper extends Command
      */
     public function askWithConfirmation(string $question, bool $default = true): bool
     {
+        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
         $helper = $this->getHelper('question');
         $q = new ConfirmationQuestion($question . ' ', $default);
 
@@ -338,6 +369,7 @@ class ConsoleHelper extends Command
      */
     public function askWithOptions(string $question, array $options, string $default = '0', bool $multipleChoice = false): string
     {
+        /** @var \Symfony\Component\Console\Helper\QuestionHelper $helper */
         $helper = $this->getHelper('question');
         $q = new ChoiceQuestion($question . ' ', $options, $default);
 

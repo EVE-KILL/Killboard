@@ -22,7 +22,7 @@ use MongoDB\BSON\UTCDateTime;
 class CharacterScrape extends Jobs
 {
     protected string $defaultQueue = 'character_scrape';
-    protected bool $requeue = false;
+    public bool $requeue = false;
 
     public function __construct(
         protected Characters $characters,

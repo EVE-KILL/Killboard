@@ -13,7 +13,7 @@ use MongoDB\BSON\UTCDateTime;
 class UpdateCharacter extends Jobs
 {
     protected string $defaultQueue = "character";
-    protected bool $requeue = false;
+    public bool $requeue = false;
 
     public function __construct(
         protected \EK\Models\Characters $characters,

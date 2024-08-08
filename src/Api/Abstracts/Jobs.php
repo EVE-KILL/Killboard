@@ -19,7 +19,7 @@ abstract class Jobs
         'default'
     ];
     protected string $defaultQueue = 'low';
-    protected bool $requeue = true;
+    public bool $requeue = true;
 
     protected Client $client;
     protected FileLogger $logger;

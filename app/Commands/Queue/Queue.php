@@ -5,18 +5,14 @@ namespace EK\Commands\Queue;
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Redis\Redis;
 use League\Container\Container;
-use OpenSwoole\Process\Pool;
 
 /**
  * @property $manualPath
  */
-class Queue extends ConsoleCommand
+class QueueTwo extends ConsoleCommand
 {
-    protected string $signature = 'queue
-        { --workers=4 : Number of queue workers }
-        { --queues=high,websocket,killmail,character,corporation,alliance,universe,low,default,character_scrape : Queues to listen on (Default is high,low,default) }
-    ';
-    protected string $description = "Start the queue worker.";
+    protected string $signature = 'queue {queue : Queue to listen on}';
+    protected string $description = "";
 
     public function __construct(
         protected Redis $redis,
@@ -28,81 +24,51 @@ class Queue extends ConsoleCommand
 
     final public function handle(): void
     {
-        $this->out("Queue worker started");
+        $this->out($this->formatOutput('<blue>Queue worker started</blue>: <green>' . $this->queue . '</green>'));
+        $run = true;
+        $client = $this->redis->getClient();
 
-        \OpenSwoole\Runtime::enableCoroutine(
-            true,
-            \OpenSwoole\Runtime::HOOK_ALL
-        );
+        do {
+            list($queueName, $job) = $client->blpop($this->queue, 0.5);
+            if ($job !== null) {
+                $startTime = microtime(true);
+                $jobData = json_decode($job, true);
+                $requeue = true;
 
-        $pool = new Pool($this->workers);
-        $pool->set(["enable_coroutine" => true]);
-        $queuesToListenOn = explode(",", $this->queues);
+                try {
+                    $className = $jobData["job"] ?? null;
+                    $data = $jobData["data"] ?? [];
 
-        $pool->on("WorkerStart", function ($pool, $workerId) use (
-            $queuesToListenOn
-        ) {
-            $this->out("Worker {$workerId} started");
-            $client = $this->redis->getClient();
-            while (true) {
-                // Listen on multiple queues
-                foreach ($queuesToListenOn as $queue) {
-                    list($queueName, $job) = $client->blpop($queue, 0.1);
+                    if ($className !== null) {
+                        $this->out($this->formatOutput('<yellow>Processing job: ' . $className . '</yellow>'));
 
-                    if ($job !== null) {
-                        $startTime = microtime(true);
-                        $jobData = json_decode($job, true);
-                        $requeue = true;
+                        // Load the instance and check if it should be requeued
+                        $instance = $this->container->get($className);
+                        $requeue = $instance->requeue ?? true;
 
-                        try {
-                            $className = $jobData["job"] ?? null;
-                            $data = $jobData["data"] ?? [];
+                        // Handle the queue
+                        $instance->handle($data);
 
-                            if ($className === null) {
-                                throw new \Exception("Job class not found");
-                            }
+                        $endTime = microtime(true);
 
-                            $this->out(
-                                "Processing job {$className} from {$queueName} ({$workerId})"
-                            );
-                            $this->out("Data: " . json_encode($data));
-
-                            // Create a new instance of the job class
-                            $instance = $this->container->get($className);
-                            $instance->handle($data);
-
-                            $endTime = microtime(true);
-                            $requeue = $instance->requeue ?? true;
-
-                            $this->out("Job completed in " . ($endTime - $startTime) . " seconds");
-                            unset($instance);
-                            continue 2;
-                        } catch (\Exception $e) {
-                            if ($requeue) {
-                                $client->rpush($queueName, $job);
-                                $this->out(
-                                    "Job failed, pushed back to {$queueName}"
-                                );
-                                $this->out("Error: " . $e->getMessage());
-                            } else {
-                                $this->out("Error: " . $e->getMessage());
-                            }
-                        }
+                        $this->out($this->formatOutput('<green>Job completed in ' . ($endTime - $startTime) . ' seconds</green>'));
+                        unset($instance);
+                    }
+                } catch (\Exception $e) {
+                    if ($requeue) {
+                        $client->rpush($queueName, $job);
+                        $this->out($this->formatOutput('<red>Job error (Requeued): ' . $e->getMessage() . '</red>'));
+                    } else {
+                        $this->out($this->formatOutput('<red>Job error: ' . $e->getMessage() . '</red>'));
                     }
                 }
             }
-        });
+        } while ($run);
+    }
 
-        $pool->on("WorkerStop", function ($pool, $workerId) {
-            $this->out("Worker {$workerId} stopped");
-        });
-
-        $pool->set([
-            "daemonize" => false,
-            "enable_coroutine" => true,
-            "max_request" => 1000,
-        ]);
-
-        $pool->start();
+    private function formatOutput(string $message): string
+    {
+        $datetime = date('Y-m-d H:i:s');
+        return "<blue>[{$datetime}]</blue> {$message}";
     }
 }
