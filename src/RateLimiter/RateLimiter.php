@@ -31,7 +31,7 @@ class RateLimiter
             'policy' => $policy,
             'limit' => $limit,
             'rate' => ['interval' => '1 second']
-        ], new CacheStorage($cacheItemPool), $lock);
+        ], new CacheStorage($cacheItemPool));
 
         return $factory->create();
     }
