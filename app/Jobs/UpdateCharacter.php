@@ -8,6 +8,7 @@ use EK\Fetchers\EveWho;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
+use League\Container\Container;
 use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacter extends Jobs
@@ -28,7 +29,7 @@ class UpdateCharacter extends Jobs
         protected \EK\Redis\Redis $redis,
         protected FileLogger $logger,
         protected EveWho $eveWhoFetcher,
-        protected EmitCharacterWS $emitCharacterWS
+        protected Container $container,
     ) {
         parent::__construct($redis);
     }
@@ -145,7 +146,8 @@ class UpdateCharacter extends Jobs
 
         if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
-            $this->emitCharacterWS->enqueue($characterData);
+            $emitCharacterWS = $this->container->get(\EK\Jobs\EmitCharacterWS::class);
+            $emitCharacterWS->enqueue($characterData);
         }
     }
 
