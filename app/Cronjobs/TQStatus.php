@@ -44,6 +44,10 @@ class TQStatus extends Cronjob
                 $this->cache->set('fetcher_paused', 60);
                 break;
             default:
+                $this->cache->set('tq_status', 'online');
+                $this->cache->set('tq_players', $response['players']);
+                $this->cache->set('tq_start_time', $response['start_time']);
+                $this->cache->set('tq_server_version', $response['server_version']);
                 break;
         }
 
