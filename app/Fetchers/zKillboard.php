@@ -2,7 +2,6 @@
 
 namespace EK\Fetchers;
 
-use bandwidthThrottle\tokenBucket\BlockingConsumer;
 use EK\Http\Fetcher;
 
 class zKillboard extends Fetcher

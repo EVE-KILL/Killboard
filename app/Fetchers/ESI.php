@@ -2,32 +2,27 @@
 
 namespace EK\Fetchers;
 
-use bandwidthThrottle\tokenBucket\BlockingConsumer;
 use EK\Cache\Cache;
 use EK\Http\Fetcher;
-use EK\Logger\FileLogger;
 use EK\Models\Proxies;
+use EK\RateLimiter\RateLimiter;
 use EK\Webhooks\Webhooks;
 use Psr\Http\Message\ResponseInterface;
 
 class ESI extends Fetcher
 {
     protected string $baseUri = 'https://esi.evetech.net/latest/';
-    protected string $userAgent = 'EK/1.0';
     protected string $bucketName = 'esi_global';
-    protected bool $useProxy = false;
     protected bool $useThrottle = true;
     protected int $bucketLimit = 50;
-    protected int $timeout = 30;
-    protected BlockingConsumer $throttleBucket;
-    protected FileLogger $logger;
 
     public function __construct(
         protected Cache $cache,
         protected Proxies $proxies,
+        protected RateLimiter $rateLimiter,
         protected Webhooks $webhooks
     ) {
-        parent::__construct($cache, $proxies);
+        parent::__construct($cache, $proxies, $rateLimiter);
     }
 
     public function handle(ResponseInterface $response): ResponseInterface

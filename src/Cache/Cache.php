@@ -1,8 +1,6 @@
 <?php
 namespace EK\Cache;
 
-use EK\Config\Config;
-
 class Cache
 {
     public function generateKey(...$args): string

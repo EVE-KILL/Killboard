@@ -2,15 +2,13 @@
 
 namespace EK\Http;
 
-use bandwidthThrottle\tokenBucket\BlockingConsumer;
-use bandwidthThrottle\tokenBucket\Rate;
-use bandwidthThrottle\tokenBucket\storage\FileStorage;
-use bandwidthThrottle\tokenBucket\TokenBucket;
 use EK\Cache\Cache;
 use EK\Logger\FileLogger;
 use EK\Models\Proxies;
+use EK\RateLimiter\RateLimiter;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
+use Symfony\Component\RateLimiter\LimiterInterface;
 
 class Fetcher
 {
@@ -21,28 +19,25 @@ class Fetcher
     protected bool $useThrottle = false;
     protected int $bucketLimit = 100;
     protected int $timeout = 30;
-    protected BlockingConsumer $throttleBucket;
     protected FileLogger $logger;
+    protected LimiterInterface $limiter;
 
     public function __construct(
         protected Cache $cache,
-        protected Proxies $proxies
+        protected Proxies $proxies,
+        protected RateLimiter $rateLimiter
     ) {
-        $this->throttleBucket = $this->generateBucket();
+        $this->limiter = $rateLimiter->createRateLimiter(
+            $this->bucketName,
+            'token_bucket',
+            $this->bucketLimit,
+            ['interval' => '1 minute']
+        );
+
         $this->logger = new FileLogger(
             BASE_DIR . "/logs/" . $this->bucketName . ".log",
             $this->bucketName . "-logger"
         );
-    }
-
-    private function generateBucket(): BlockingConsumer
-    {
-        $bucketPath = "/tmp/{$this->bucketName}_rate_limit.bucket";
-        $storage = new FileStorage($bucketPath);
-        $rate = new Rate($this->bucketLimit, Rate::SECOND);
-        $bucket = new TokenBucket($this->bucketLimit, $rate, $storage);
-        $bucket->bootstrap($this->bucketLimit);
-        return new BlockingConsumer($bucket);
     }
 
     public function fetch(
@@ -86,9 +81,7 @@ class Fetcher
 
         // If we have a throttle bucket, we consume a token to rate limit ourselves
         if ($this->useThrottle === true) {
-            // Ignore warnings, because the bucket converts float to int
-            // and we don't care about that, convert away!
-            @$this->throttleBucket->consume(1);
+            $this->limiter->reserve(1)->wait();
         }
 
         // Start time for the request
