@@ -50,7 +50,7 @@ class CharacterScrape extends Jobs
 
         $existingCharacter = $this->characters->findOneOrNull([
             "character_id" => $characterId,
-        ])?->toArray();
+        ], [], 0)?->toArray();
 
         if ($existingCharacter !== null) {
             return;
