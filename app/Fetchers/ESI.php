@@ -47,15 +47,6 @@ class ESI extends Fetcher
                 break;
         }
 
-        if ($statusCode >= 400 && $statusCode <= 500) {
-            $this->webhooks->sendToEsiErrors($statusCode . ' Error: ' . $content);
-            sleep($expiresInSeconds > 0 ? $expiresInSeconds : 1);
-        }
-
-        if ($statusCode >= 500 && $statusCode <= 600) {
-            $this->webhooks->sendToEsiErrors($statusCode . ' Error: ' . $content);
-        }
-
         return $response;
     }
 }
