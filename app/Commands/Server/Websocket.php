@@ -3,16 +3,11 @@
 namespace EK\Commands\Server;
 
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Api\Abstracts\Controller;
-use EK\Api\Attributes\RouteAttribute;
 use EK\Logger\Logger;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
 use OpenSwoole\Constant;
-use OpenSwoole\Core\Psr\ServerRequest;
 use OpenSwoole\Table;
-use Slim\Factory\AppFactory;
-use Slim\Psr7\Response;
 
 /**
  * @property $manualPath

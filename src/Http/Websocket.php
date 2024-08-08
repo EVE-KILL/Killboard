@@ -2,7 +2,6 @@
 
 namespace EK\Http;
 
-use EK\Config\Config;
 use OpenSwoole\Table;
 use OpenSwoole\Websocket\Server;
 
