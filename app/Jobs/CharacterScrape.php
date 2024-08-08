@@ -151,10 +151,6 @@ class CharacterScrape extends Jobs
         $characterData['character_id'] = $characterId;
 
         ksort($characterData);
-
-        $this->characters->setData($characterData);
-        $this->characters->save();
-
         return $characterData;
     }
 }
