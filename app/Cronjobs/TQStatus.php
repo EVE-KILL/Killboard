@@ -22,17 +22,29 @@ class TQStatus extends Cronjob
     {
         // Get the status of TQ
         $result = $this->fetcher->fetch('https://esi.evetech.net/latest/status/');
-        $status = json_decode($result['body'], true);
+        $status = $result['status'];
+        $response = json_decode($result['body'], true);
 
-        if (isset($status['error'])) {
-            switch($status['error']) {
+        if (isset($response['error'])) {
+            switch($response['error']) {
                 case 'Timeout contacting tranquility':
+                    $this->cache->set('tq_status', 'offline');
                     $this->cache->set('fetcher_paused', 60);
                     break;
                 default:
+                    $this->cache->set('tq_status', 'unknown');
                     $this->cache->set('fetcher_paused', 300);
                     break;
             }
+        }
+
+        switch($status) {
+            case 503:
+                $this->cache->set('tq_status', 'offline');
+                $this->cache->set('fetcher_paused', 60);
+                break;
+            default:
+                break;
         }
 
         // Else update the player count, and whatnots
