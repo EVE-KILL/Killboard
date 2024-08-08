@@ -25,77 +25,84 @@ class Stats extends Controller
         );
     }
 
-    #[RouteAttribute("/stats/top10characters[/{all_time:[0-1]}]", ["GET"])]
-    public function top10Characters(int $all_time = 0): ResponseInterface
+    #[RouteAttribute("/stats/topcharacters/{count:[0-9]+}/{days:[0-9]+}[/]", ["GET"])]
+    public function top10Characters(int $count = 10, int $days = 7): ResponseInterface
     {
+        $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topCharacters(
-            days: $all_time ? $this->daysSinceEarlyDays : 7,
-            cacheTime: 3600
+            days: $days,
+            cacheTime: 3600,
+            limit: $count
         );
         return $this->json($data, 3600);
     }
 
-    #[RouteAttribute("/stats/top10corporations[/{all_time:[0-1]}]", ["GET"])]
-    public function top10Corporations(int $all_time = 0): ResponseInterface
+    #[RouteAttribute("/stats/topcorporations/{count:[0-9]+}{days:[0-9]+}[/]", ["GET"])]
+    public function top10Corporations(int $count = 10, int $days = 7): ResponseInterface
     {
+        $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topCorporations(
-            days: $all_time ? $this->daysSinceEarlyDays : 7,
-            cacheTime: 3600
+            days: $days,
+            cacheTime: 3600,
+            limit: $count
         );
         return $this->json($data, 3600);
     }
 
-    #[RouteAttribute("/stats/top10alliances[/{all_time:[0-1]}]", ["GET"])]
-    public function top10Alliances(int $all_time = 0): ResponseInterface
+    #[RouteAttribute("/stats/topalliances/{count:[0-9]+}{days:[0-9]+}[/]", ["GET"])]
+    public function top10Alliances(int $count = 10, int $days = 7): ResponseInterface
     {
+        $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topAlliances(
-            days: $all_time ? $this->daysSinceEarlyDays : 7,
-            cacheTime: 3600
+            days: $days,
+            cacheTime: 3600,
+            limit: $count
         );
         return $this->json($data, 3600);
     }
 
-    #[RouteAttribute("/stats/top10solarsystems[/{all_time:[0-1]}]", ["GET"])]
-    public function top10Systems(int $all_time = 0): ResponseInterface
+    #[RouteAttribute("/stats/topsolarsystems/{count:[0-9]+}{days:[0-9]+}[/]", ["GET"])]
+    public function top10Systems(int $count = 10, int $days = 7): ResponseInterface
     {
+        $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topSystems(
-            days: $all_time ? $this->daysSinceEarlyDays : 7,
-            cacheTime: 3600
+            days: $days,
+            cacheTime: 3600,
+            limit: $count
         );
         return $this->json($data, 3600);
     }
 
-    #[RouteAttribute("/stats/top10regions[/{all_time:[0-1]}]", ["GET"])]
-    public function top10Regions(int $all_time = 0): ResponseInterface
+    #[RouteAttribute("/stats/topregions/{count:[0-9]+}{days:[0-9]+}[/]", ["GET"])]
+    public function top10Regions(int $count = 10, int $days = 7): ResponseInterface
     {
+        $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topRegions(
-            days: $all_time ? $this->daysSinceEarlyDays : 7,
-            cacheTime: 3600
+            days: $days,
+            cacheTime: 3600,
+            limit: $count
         );
         return $this->json($data, 3600);
     }
 
-    #[RouteAttribute("/stats/top10ships[/{all_time:[0-1]}]", ["GET"])]
-    public function top10Ships(int $all_time = 0): ResponseInterface
+    #[RouteAttribute("/stats/topships/{count:[0-9]+}{days:[0-9]+}[/]", ["GET"])]
+    public function top10Ships(int $count = 10, int $days = 7): ResponseInterface
     {
+        $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topShips(
-            days: $all_time ? $this->daysSinceEarlyDays : 7,
-            cacheTime: 3600
+            days: $days,
+            cacheTime: 3600,
+            limit: $count
         );
         return $this->json($data, 3600);
     }
 
-    #[
-        RouteAttribute("/stats/mostvaluablekillslast7days[/{limit:[0-9]+}]", [
-            "GET",
-        ])
-    ]
-    public function mostValuableKillsLast7Days(
-        int $limit = 6
-    ): ResponseInterface {
+    #[RouteAttribute("/stats/mostvaluablekills/{days:[0-9]+}[/{limit:[0-9]+}]", ["GET"])]
+    public function mostValuableKillsLast7Days(int $days = 7, int $limit = 6): ResponseInterface {
         $cacheKey = $this->cache->generateKey(
-            "most_valuable_kills_last_7_days",
-            $limit
+            "most_valuable_kills",
+            $limit,
+            $days
         );
 
         if (
@@ -108,9 +115,7 @@ class Stats extends Controller
         $kills = $this->killmails->find(
             [
                 "kill_time" => [
-                    '$gte' => new \MongoDB\BSON\UTCDateTime(
-                        (time() - 604800) * 1000
-                    ),
+                    '$gte' => new \MongoDB\BSON\UTCDateTime((time() - (((60 * 60) * 24) * $days)) * 1000),
                 ],
             ],
             [
@@ -124,10 +129,10 @@ class Stats extends Controller
         return $this->json($kills->toArray(), 300);
     }
 
-    #[RouteAttribute("/stats/sevendaykillcount[/]", ["GET"])]
-    public function sevenDayKillCount(): ResponseInterface
+    #[RouteAttribute("/stats/killcount/{days:[0-9]+}[/]", ["GET"])]
+    public function sevenDayKillCount(int $days = 7): ResponseInterface
     {
-        $cacheKey = $this->cache->generateKey("seven_day_kill_count");
+        $cacheKey = $this->cache->generateKey("kill_count", $days);
 
         if (
             $this->cache->exists($cacheKey) &&
@@ -138,9 +143,7 @@ class Stats extends Controller
 
         $kills = $this->killmails->count([
             "kill_time" => [
-                '$gte' => new \MongoDB\BSON\UTCDateTime(
-                    (time() - 604800) * 1000
-                ),
+                '$gte' => new \MongoDB\BSON\UTCDateTime((time() - (((60 * 60) * 24) * $days)) * 1000),
             ],
         ]);
 
