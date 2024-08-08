@@ -3,6 +3,7 @@
 namespace EK\Commands\Server;
 
 use EK\Api\Abstracts\ConsoleCommand;
+use EK\Config\Config;
 use EK\Logger\Logger;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
@@ -26,6 +27,7 @@ class Websocket extends ConsoleCommand
     public function __construct(
         protected Logger $logger,
         protected Container $container,
+        protected Config $config,
         ?string $name = null
     ) {
         parent::__construct($name);
@@ -127,7 +129,7 @@ class Websocket extends ConsoleCommand
                     break;
 
                 case 'broadcast':
-                    if ($token === 'my-secret') {
+                    if ($token === $this->config->get('ws_token')) {
                         try {
                             if (empty($fdData['endpoint'])) {
                                 $server->push($frame->fd, json_encode(['error' => 'No endpoint provided']));
