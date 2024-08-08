@@ -16,7 +16,7 @@ class Fetcher
     protected string $userAgent = "EK/1.0";
     protected string $bucketName = "global";
     protected bool $useProxy = false;
-    protected int $rateLimit = 100;
+    protected int $rateLimit = 500;
     protected int $timeout = 30;
     protected FileLogger $logger;
     protected LimiterInterface $limiter;
