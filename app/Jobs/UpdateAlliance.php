@@ -8,6 +8,7 @@ use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use EK\Redis\Redis;
 use Illuminate\Support\Collection;
+use League\Container\Container;
 
 class UpdateAlliance extends Jobs
 {
@@ -26,6 +27,7 @@ class UpdateAlliance extends Jobs
         protected UpdateCharacter $updateCharacter,
         protected Redis $redis,
         protected FileLogger $logger,
+        protected Container $container,
     ) {
         parent::__construct($redis);
     }
@@ -37,7 +39,9 @@ class UpdateAlliance extends Jobs
         $allianceData = $this->fetchAllianceData($allianceId);
 
         $this->updateAllianceData($allianceData);
-        $this->updateAllianceCharacters($allianceId);
+
+        $evewhoAllianceJob = $this->container->get(EVEWhoCharactersInAlliance::class);
+        $evewhoAllianceJob->enqueue(["alliance_id" => $allianceId]);
     }
 
     protected function fetchAllianceData($allianceId)
@@ -100,23 +104,5 @@ class UpdateAlliance extends Jobs
             "ticker" => $allianceData["ticker"],
             "type" => "alliance",
         ]);
-    }
-
-    protected function updateAllianceCharacters($allianceId)
-    {
-        $url = "https://evewho.com/api/allilist/{$allianceId}";
-        $request = $this->eveWhoFetcher->fetch($url);
-        $data = $request["body"] ?? "";
-
-        $decoded = json_validate($data) ? json_decode($data, true) : [];
-        $characters = $decoded["characters"] ?? [];
-
-        foreach ($characters as $character) {
-            $this->characters->findOneOrNull([
-                "character_id" => $character["character_id"],
-            ]) ?? $this->updateCharacter->enqueue([
-                "character_id" => $character["character_id"],
-            ]);
-        }
     }
 }

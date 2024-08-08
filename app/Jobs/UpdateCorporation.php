@@ -7,26 +7,38 @@ use EK\Fetchers\EveWho;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
+use EK\Models\Alliances;
+use EK\Models\Corporations;
+use EK\Models\Characters;
+use EK\Models\Stations;
+use EK\Models\Factions;
+use EK\ESI\Alliances as ESIAlliances;
+use EK\ESI\Corporations as ESICorporations;
+use EK\ESI\Characters as ESICharacters;
+use EK\ESI\Stations as ESIStations;
+use EK\Redis\Redis;
+use League\Container\Container;
 
 class UpdateCorporation extends Jobs
 {
     protected string $defaultQueue = "corporation";
 
     public function __construct(
-        protected \EK\Models\Alliances $alliances,
-        protected \EK\Models\Corporations $corporations,
-        protected \EK\Models\Characters $characters,
-        protected \EK\Models\Stations $stations,
-        protected \EK\Models\Factions $factions,
-        protected \EK\ESI\Alliances $esiAlliances,
-        protected \EK\ESI\Corporations $esiCorporations,
-        protected \EK\ESI\Characters $esiCharacters,
-        protected \EK\ESI\Stations $esiStations,
+        protected Alliances $alliances,
+        protected Corporations $corporations,
+        protected Characters $characters,
+        protected Stations $stations,
+        protected Factions $factions,
+        protected ESIAlliances $esiAlliances,
+        protected ESICorporations $esiCorporations,
+        protected ESICharacters $esiCharacters,
+        protected ESIStations $esiStations,
         protected Meilisearch $meilisearch,
         protected EveWho $eveWhoFetcher,
         protected UpdateCharacter $updateCharacter,
-        protected \EK\Redis\Redis $redis,
+        protected Redis $redis,
         protected FileLogger $logger,
+        protected Container $container,
     ) {
         parent::__construct($redis);
     }
@@ -37,7 +49,8 @@ class UpdateCorporation extends Jobs
 
         $corporationData = $this->fetchCorporationData($corporationId);
         $this->updateCorporationData($corporationData);
-        $this->updateCorporationCharacters($corporationId);
+        $evewhoCorporationsJobs = $this->container->get(\EK\Jobs\EVEWhoCharactersInCorporation::class);
+        $evewhoCorporationsJobs->enqueue(["corporation_id" => $corporationId]);
     }
 
     protected function fetchCorporationData($corporationId)
@@ -112,54 +125,5 @@ class UpdateCorporation extends Jobs
             "ticker" => $corporationData["ticker"],
             "type" => "corporation",
         ]);
-    }
-
-    protected function updateCorporationCharacters($corporationId)
-    {
-        $url = "https://evewho.com/api/corplist/{$corporationId}";
-        $request = $this->eveWhoFetcher->fetch($url);
-        $data = $request["body"] ?? "";
-
-        $decoded = json_validate($data) ? json_decode($data, true) : [];
-        $characters = $decoded["characters"] ?? [];
-
-        foreach ($characters as $character) {
-            $characterId = $character["character_id"];
-            $characterData = $this->characters->findOneOrNull(["character_id" => $characterId]);
-
-            if ($characterData && !empty($characterData["deleted"])) {
-                // If the character is marked as deleted, fetch from EVEWho
-                $this->fetchAndUpdateCharacterFromEVEWho($characterId);
-            } elseif (!$characterData) {
-                // Enqueue the character for updating if not found in the database
-                $this->updateCharacter->enqueue(["character_id" => $characterId]);
-            }
-        }
-    }
-
-    protected function fetchAndUpdateCharacterFromEVEWho($characterId)
-    {
-        try {
-            $client = new \GuzzleHttp\Client();
-            $response = $client->get("https://evewho.com/api/character/{$characterId}");
-            $data = json_decode($response->getBody()->getContents(), true);
-
-            $characterData = [
-                "character_id" => $characterId,
-                "name" => $data["name"] ?? "Unknown",
-                "alliance_id" => $data["alliance_id"] ?? 0,
-                "corporation_id" => $data["corporation_id"] ?? 0,
-                "faction_id" => $data["faction_id"] ?? 0,
-                "deleted" => false, // Update the deleted status
-                "last_modified" => new \MongoDB\BSON\UTCDateTime()
-            ];
-
-            $this->characters->setData($characterData);
-            $this->characters->save();
-
-            $this->logger->info("Updated character $characterId from EVEWho");
-        } catch (\Exception $e) {
-            $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
-        }
     }
 }
