@@ -29,7 +29,7 @@ class Queue extends ConsoleCommand
         $client = $this->redis->getClient();
 
         do {
-            list($queueName, $job) = $client->blpop($this->queue, 0.5);
+            list($queueName, $job) = $client->blpop($this->queue, 0.1);
             if ($job !== null) {
                 $startTime = microtime(true);
                 $jobData = json_decode($job, true);
@@ -52,7 +52,6 @@ class Queue extends ConsoleCommand
                         $endTime = microtime(true);
 
                         $this->out($this->formatOutput('<green>Job completed in ' . ($endTime - $startTime) . ' seconds</green>'));
-                        unset($instance);
                     }
                 } catch (\Exception $e) {
                     if ($requeue) {

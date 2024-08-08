@@ -3,6 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Cache\Cache;
 use EK\Fetchers\CharacterScrape as FetchersCharacterScrape;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
@@ -17,7 +18,6 @@ use EK\ESI\Characters as ESICharacters;
 use EK\Fetchers\EveWho;
 use EK\Webhooks\Webhooks;
 use Illuminate\Support\Collection;
-use MongoDB\BSON\UTCDateTime;
 
 class CharacterScrape extends Jobs
 {
@@ -37,7 +37,8 @@ class CharacterScrape extends Jobs
         protected FileLogger $logger,
         protected FetchersCharacterScrape $esiFetcher,
         protected EveWho $eveWhoFetcher,
-        protected Webhooks $webhooks
+        protected Webhooks $webhooks,
+        protected Cache $cache
     ) {
         parent::__construct($redis);
     }
@@ -47,42 +48,12 @@ class CharacterScrape extends Jobs
         $characterId = $data["character_id"];
         $deleted = false;
 
-        $characterData = $this->characters->findOneOrNull([
-            "character_id" => $characterId,
-            "name" => ['$ne' => "Unknown"],
-        ], [
-            'projection' => [
-                'error' => 0
-            ]
-        ])?->toArray();
-
-        if ($characterData === null) {
-            $characterData = $this->esiCharacters->getCharacterInfo($characterId);
-        }
-
-        if ($this->isCharacterDeleted($characterData)) {
-            $this->logger->info("Character $characterId has been deleted, updating database and fetching from EVEWho");
-            $this->updateDeletedCharacter($characterId);
-            $characterData = $this->fetchCharacterDataFromEVEWho($characterId);
-            if ($characterData) {
-                $this->logger->info("Character $characterId found in EVEWho, updating database");
-                $this->updateCharacterData($characterData, true);
-            }
-            return;
-        }
+        $characterData = $this->esiCharacters->getCharacterInfo($characterId);
 
         if ($this->isCharacterFound($characterData)) {
             $this->updateCharacterData($characterData, $deleted);
+            $this->cache->set('largestCharacterId', $characterId, 60 * 60 * 24);
         }
-    }
-
-    protected function isCharacterDeleted(array $characterData): bool
-    {
-        $deleted = isset($characterData["error"]) && $characterData["error"] === "Character has been deleted!";
-        if ($deleted) {
-            $this->logger->info("Character {$characterData['character_id']} has been deleted");
-        }
-        return $deleted;
     }
 
     protected function isCharacterFound(array $characterData): bool
@@ -93,43 +64,6 @@ class CharacterScrape extends Jobs
         }
         // Return the inverse because if $found is true, then the character is not found, meaning the return has to be inverted
         return !$found;
-    }
-
-    protected function updateDeletedCharacter(int $characterId): void
-    {
-        $this->characters->setData([
-            "character_id" => $characterId,
-            "deleted" => true,
-        ]);
-        $this->characters->save();
-    }
-
-    protected function fetchCharacterDataFromEVEWho(int $characterId): ?array
-    {
-        try {
-            $response = $this->eveWhoFetcher->fetch("https://evewho.com/api/character/{$characterId}");
-            $data = json_decode($response['body'], true);
-            $characterInfo = $data["info"][0] ?? [];
-            $characterHistory = $data["history"] ?? [];
-            return [
-                'character_id' => $characterInfo["character_id"] ?? $characterId,
-                'name' => $characterInfo["name"] ?? "Unknown",
-                'corporation_id' => $characterInfo["corporation_id"] ?? 0,
-                'corporation_name' => $this->fetchCorporationData($characterInfo["corporation_id"] ?? 0)["name"] ?? "",
-                'alliance_id' => $characterInfo["alliance_id"] ?? 0,
-                'alliance_name' => $this->fetchAllianceData($characterInfo["alliance_id"] ?? 0)["name"] ?? "",
-                'security_status' => $characterInfo["sec_status"] ?? 0,
-                'history' => array_map(function($history) {
-                    return [
-                        'corporation_id' => $history['corporation_id'],
-                        'start_date' => new UTCDateTime(strtotime($history['start_date']) * 1000)
-                    ];
-                }, $characterHistory),
-            ];
-        } catch (\Exception $e) {
-            $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
-            return null;
-        }
     }
 
     protected function updateCharacterData(array $characterData, bool $deleted): void
