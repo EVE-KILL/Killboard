@@ -36,7 +36,8 @@ class Queue extends ConsoleCommand
             "universe",
             "low",
             "default",
-            "character_scrape"
+            "character_scrape",
+            "evewho"
         ];
 
         // Get how many items are in the queue
