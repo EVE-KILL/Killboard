@@ -28,7 +28,7 @@ class Fetcher
     ) {
         $this->limiter = $rateLimiter->createRateLimiter(
             $this->bucketName,
-            'token_bucket',
+            'sliding_window',
             $this->rateLimit
         );
 

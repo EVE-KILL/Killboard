@@ -21,7 +21,7 @@ class RateLimiter
         $this->client = $redis->getClient();
     }
 
-    public function createRateLimiter(string $id, string $policy = 'token_bucket', int $limit = 10): LimiterInterface
+    public function createRateLimiter(string $id, string $policy = 'sliding_window', int $limit = 10): LimiterInterface
     {
         $cacheItemPool = new RedisAdapter($this->client);
         $store = new RedisStore($this->client);
@@ -30,7 +30,8 @@ class RateLimiter
             'id' => $id,
             'policy' => $policy,
             'limit' => $limit,
-            'rate' => ['interval' => '1 second']
+            'interval' => '1 second',
+            //'rate' => ['interval' => '1 second']
         ], new CacheStorage($cacheItemPool));
 
         return $factory->create();
