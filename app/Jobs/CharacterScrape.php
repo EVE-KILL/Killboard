@@ -48,6 +48,14 @@ class CharacterScrape extends Jobs
         $characterId = $data["character_id"];
         $deleted = false;
 
+        $existingCharacter = $this->characters->findOneOrNull([
+            "character_id" => $characterId,
+        ])?->toArray();
+
+        if ($existingCharacter !== null) {
+            return;
+        }
+
         $characterData = $this->esiCharacters->getCharacterInfo($characterId);
 
         if ($this->isCharacterFound($characterData)) {
