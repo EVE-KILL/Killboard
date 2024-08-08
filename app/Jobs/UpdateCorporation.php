@@ -18,6 +18,7 @@ use EK\ESI\Characters as ESICharacters;
 use EK\ESI\Stations as ESIStations;
 use EK\Redis\Redis;
 use League\Container\Container;
+use MongoDB\BSON\UTCDateTime;
 
 class UpdateCorporation extends Jobs
 {
@@ -55,9 +56,14 @@ class UpdateCorporation extends Jobs
 
     protected function fetchCorporationData($corporationId)
     {
-        return $this->corporations->findOneOrNull([
-                "corporation_id" => $corporationId,
-            ]) ?? $this->esiCorporations->getCorporationInfo($corporationId);
+        $corporation = $this->corporations->findOneOrNull(["corporation_id" => $corporationId]);
+
+        $lastUpdated = $corporation->get('last_updated')->toDateTime() ?? new \DateTime(0);
+        if ($corporation === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
+            $corporation = $this->esiCorporations->getCorporationInfo($corporationId);
+        }
+
+        return $corporation;
     }
 
     protected function updateCorporationData($corporationData)
@@ -69,6 +75,7 @@ class UpdateCorporation extends Jobs
         $corporationData["creator_name"] = $this->fetchCharacterName($corporationData["creator_id"] ?? 0);
         $corporationData["home_station_name"] = $this->fetchStationName($corporationData["home_station_id"] ?? 0);
         $corporationData["faction_name"] = $this->fetchFactionName($corporationData["faction_id"] ?? 0);
+        $corporationData['last_updated'] = new UTCDateTime(time() * 1000);
 
         ksort($corporationData);
 

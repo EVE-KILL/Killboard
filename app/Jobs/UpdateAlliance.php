@@ -9,6 +9,7 @@ use EK\Meilisearch\Meilisearch;
 use EK\Redis\Redis;
 use Illuminate\Support\Collection;
 use League\Container\Container;
+use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliance extends Jobs
 {
@@ -46,8 +47,14 @@ class UpdateAlliance extends Jobs
 
     protected function fetchAllianceData($allianceId)
     {
-        return $this->alliances->findOneOrNull(["alliance_id" => $allianceId]) ??
-               $this->esiAlliances->getAllianceInfo($allianceId);
+        $alliance = $this->alliances->findOneOrNull(["alliance_id" => $allianceId]);
+
+        $lastUpdated = $alliance->get('last_updated')->toDateTime() ?? new \DateTime(0);
+        if ($alliance === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
+            $alliance = $this->esiAlliances->getAllianceInfo($allianceId);
+        }
+
+        return $alliance;
     }
 
     protected function updateAllianceData($allianceData)
@@ -58,6 +65,7 @@ class UpdateAlliance extends Jobs
         $allianceData["executor_corporation_name"] = $this->fetchCorporationName($allianceData["executor_corporation_id"]);
         $allianceData["creator_name"] = $this->fetchCharacterName($allianceData["creator_id"]);
         $allianceData["faction_name"] = $this->fetchFactionName($allianceData["faction_id"] ?? 0);
+        $allianceData["last_updated"] = new UTCDateTime(time() * 1000);
 
         ksort($allianceData);
 

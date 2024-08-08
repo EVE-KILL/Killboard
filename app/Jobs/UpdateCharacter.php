@@ -42,7 +42,8 @@ class UpdateCharacter extends Jobs
             'name' => ['$ne' => 'Unknown'],
         ])?->toArray();
 
-        if ($characterData === null) {
+        $lastUpdated = $characterData['last_updated'] ?? new UTCDateTime(0);
+        if ($characterData === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
         }
 
@@ -134,6 +135,7 @@ class UpdateCharacter extends Jobs
         $characterData["alliance_name"] = $allianceData["name"] ?? "";
         $characterData["corporation_name"] = $corporationData["name"] ?? "";
         $characterData["faction_name"] = $factionData["name"] ?? "";
+        $characterData["last_updated"] = new UTCDateTime(time() * 1000);
 
         ksort($characterData);
 
