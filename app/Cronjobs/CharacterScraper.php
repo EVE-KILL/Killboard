@@ -30,7 +30,7 @@ class CharacterScraper extends Cronjob
         }
 
         // Generate an array of characterIds to scrape (Largest +100)
-        $characterIds = range($largestCharacterId + 1, $largestCharacterId + 40);
+        $characterIds = range($largestCharacterId + 1, $largestCharacterId + 10);
 
         // Enqueue the character update jobs
         $this->characterScrape->massEnqueue(array_map(fn($characterId) => ['character_id' => $characterId], $characterIds));
