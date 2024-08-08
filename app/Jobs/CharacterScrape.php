@@ -17,6 +17,7 @@ use EK\ESI\Characters as ESICharacters;
 use EK\Fetchers\EveWho;
 use EK\Webhooks\Webhooks;
 use Illuminate\Support\Collection;
+use MongoDB\BSON\UTCDateTime;
 
 class CharacterScrape extends Jobs
 {
@@ -87,6 +88,7 @@ class CharacterScrape extends Jobs
         $characterData["alliance_name"] = $allianceData["name"] ?? "";
         $characterData["corporation_name"] = $corporationData["name"] ?? "";
         $characterData["faction_name"] = $factionData["name"] ?? "";
+        $characterData['last_updated'] = new UTCDateTime(time() * 1000);
 
         ksort($characterData);
 
