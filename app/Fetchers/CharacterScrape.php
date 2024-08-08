@@ -7,5 +7,5 @@ use EK\Http\Fetcher;
 class CharacterScrape extends Fetcher
 {
     protected string $bucketName = 'character_scrape';
-    protected int $bucketLimit = 1;
+    protected int $rateLimit = 1;
 }

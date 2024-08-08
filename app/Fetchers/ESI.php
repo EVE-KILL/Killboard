@@ -13,8 +13,7 @@ class ESI extends Fetcher
 {
     protected string $baseUri = 'https://esi.evetech.net/latest/';
     protected string $bucketName = 'esi_global';
-    protected bool $useThrottle = true;
-    protected int $bucketLimit = 50;
+    protected int $rateLimit = 50;
 
     public function __construct(
         protected Cache $cache,
@@ -40,9 +39,10 @@ class ESI extends Fetcher
             case 420:
                 $sleepTime = $expiresInSeconds === 0 ? 60 : $expiresInSeconds;
                 $this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
-                // Consume all tokens to halt all the workers
-                $this->throttleBucket->consume($this->bucketLimit);
-                // Sleep for the time it takes for the error rate to expire
+
+                // Tell the other workers to sleep
+                $this->cache->set('fetcher_paused', $sleepTime, $sleepTime);
+
                 sleep($sleepTime);
                 break;
         }

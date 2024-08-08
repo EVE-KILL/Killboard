@@ -16,8 +16,7 @@ class Fetcher
     protected string $userAgent = "EK/1.0";
     protected string $bucketName = "global";
     protected bool $useProxy = false;
-    protected bool $useThrottle = false;
-    protected int $bucketLimit = 100;
+    protected int $rateLimit = 100;
     protected int $timeout = 30;
     protected FileLogger $logger;
     protected LimiterInterface $limiter;
@@ -30,7 +29,7 @@ class Fetcher
         $this->limiter = $rateLimiter->createRateLimiter(
             $this->bucketName,
             'token_bucket',
-            $this->bucketLimit,
+            $this->rateLimit,
             ['interval' => '1 minute']
         );
 
@@ -79,10 +78,14 @@ class Fetcher
             }
         }
 
-        // If we have a throttle bucket, we consume a token to rate limit ourselves
-        if ($this->useThrottle === true) {
-            $this->limiter->reserve(1)->wait();
+        // If the fetcher is paused, sleep for the paused time
+        $paused = $this->cache->get('fetcher_paused') ?? 0;
+        if ($paused > 0 ) {
+            sleep($paused);
         }
+
+        // Use the rate limiter to prevent spamming the endpoint
+        $this->limiter->reserve(1)->wait();
 
         // Start time for the request
         $startTime = microtime(true);
