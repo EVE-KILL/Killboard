@@ -38,7 +38,8 @@ class CharacterScrape extends Jobs
         protected FetchersCharacterScrape $esiFetcher,
         protected EveWho $eveWhoFetcher,
         protected Webhooks $webhooks,
-        protected Cache $cache
+        protected Cache $cache,
+        protected EmitCharacterWS $emitCharacterWS
     ) {
         parent::__construct($redis);
     }
@@ -99,6 +100,7 @@ class CharacterScrape extends Jobs
         $this->webhooks->sendToNewCharactersFound("{$characterData['name']} / {$characterData['corporation_name']} | <https://eve-kill.com/character/{$characterData['character_id']}>");
         if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
+            $this->emitCharacterWS->enqueue($characterData);
         }
     }
 

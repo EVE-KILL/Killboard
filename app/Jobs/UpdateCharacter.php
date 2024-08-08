@@ -35,7 +35,6 @@ class UpdateCharacter extends Jobs
         protected Meilisearch $meilisearch,
         protected FileLogger $logger,
         protected EveWho $eveWhoFetcher,
-        protected EmitCharacterWS $emitCharacterWS,
         protected Redis $redis,
     ) {
         parent::__construct($redis);
@@ -153,7 +152,6 @@ class UpdateCharacter extends Jobs
 
         if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
-            $this->emitCharacterWS->enqueue($characterData);
         }
     }
 
