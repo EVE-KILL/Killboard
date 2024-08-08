@@ -28,9 +28,8 @@ class Fetcher
     ) {
         $this->limiter = $rateLimiter->createRateLimiter(
             $this->bucketName,
-            'token_bucket',
-            $this->rateLimit,
-            ['interval' => '1 minute']
+            'sliding_window',
+            $this->rateLimit
         );
 
         $this->logger = new FileLogger(
@@ -85,7 +84,8 @@ class Fetcher
         }
 
         // Use the rate limiter to prevent spamming the endpoint
-        $this->limiter->reserve(1)->wait();
+        $limit = $this->limiter->reserve(1);
+        $limit->wait();
 
         // Start time for the request
         $startTime = microtime(true);

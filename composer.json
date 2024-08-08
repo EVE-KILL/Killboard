@@ -48,7 +48,8 @@
     "phrity/websocket": "*",
     "tkhamez/eve-sso": "^5.1",
     "symfony/rate-limiter": "^7.1",
-    "symfony/cache": "^7.1"
+    "symfony/cache": "^7.1",
+    "symfony/lock": "^7.1"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",
