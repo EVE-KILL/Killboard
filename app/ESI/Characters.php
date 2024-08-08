@@ -27,19 +27,8 @@ class Characters
             return [];
         }
 
-        try {
-            $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterID);
-            $characterData = json_validate($characterData['body']) ? json_decode($characterData['body'], true) : [];
-        } catch (\Exception $e) {
-            $characterData = [
-                'name' => 'Unknown',
-                'corporation_id' => 0,
-                'alliance_id' => 0,
-                'faction_id' => 0,
-                'security_status' => 0,
-                'birthday' => '1970-01-01T00:00:00Z',
-            ];
-        }
+        $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterID);
+        $characterData = json_validate($characterData['body']) ? json_decode($characterData['body'], true) : [];
         $characterData['character_id'] = $characterID;
 
         ksort($characterData);
