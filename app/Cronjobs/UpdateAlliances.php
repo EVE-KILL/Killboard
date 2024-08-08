@@ -9,7 +9,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliances extends Cronjob
 {
-    protected string $cronTime = "0 * * * *";
+    protected string $cronTime = "0 0 * * *";
 
     public function __construct(
         protected Alliances $alliances,
@@ -20,17 +20,10 @@ class UpdateAlliances extends Cronjob
 
     public function handle(): void
     {
-        $this->logger->info("Updating alliances that haven't been updated in the last 14 days");
-
-        $fourteenDaysAgo = new UTCDateTime((time() - 14 * 86400) * 1000);
+        $this->logger->info("Updating alliances");
 
         // Find alliances that haven't been updated in the last 14 days
-        $staleAlliances = $this->alliances->find(
-            [
-                "last_modified" => ['$lt' => $fourteenDaysAgo],
-            ],
-            ["limit" => 100]
-        );
+        $staleAlliances = $this->alliances->find([]);
 
         $updates = array_map(function ($alliance) {
             return [
