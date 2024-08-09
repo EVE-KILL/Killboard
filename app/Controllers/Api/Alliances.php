@@ -18,7 +18,7 @@ class Alliances extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/alliances[/]", ["GET"])]
+    #[RouteAttribute("/alliances[/]", ["GET"], 'List all alliances')]
     public function all(): ResponseInterface
     {
         $alliances = $this->alliances
@@ -30,13 +30,13 @@ class Alliances extends Controller
         return $this->json($alliances->toArray(), 300);
     }
 
-    #[RouteAttribute("/alliances/count[/]", ["GET"])]
+    #[RouteAttribute("/alliances/count[/]", ["GET"], 'Return the amount of alliances')]
     public function count(): ResponseInterface
     {
         return $this->json(["count" => $this->alliances->count()], 300);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}[/]", ["GET"], 'Get alliance information')]
     public function alliance(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(
@@ -50,7 +50,7 @@ class Alliances extends Controller
         return $this->json($this->cleanupTimestamps($alliance->toArray()), 300);
     }
 
-    #[RouteAttribute("/alliances[/]", ["POST"])]
+    #[RouteAttribute("/alliances[/]", ["POST"], 'Get information for multiple alliances')]
     public function alliances(): ResponseInterface
     {
         $postData = json_validate($this->getBody())
@@ -82,7 +82,7 @@ class Alliances extends Controller
         );
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/killmails[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/killmails[/]", ["GET"], 'Get killmails for an alliance')]
     public function killmails(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -116,7 +116,7 @@ class Alliances extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/killmails/count[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/killmails/count[/]", ["GET"], 'Get the count of killmails for an alliance')]
     public function killmailsCount(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -139,7 +139,7 @@ class Alliances extends Controller
         );
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/killmails/latest[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/killmails/latest[/]", ["GET"], 'Get the latest killmails for an alliance')]
     public function latestKillmails(int $alliance_id): ResponseInterface
     {
         $limit = (int) $this->getParam("limit", 1000);
@@ -184,7 +184,7 @@ class Alliances extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/members[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/members[/]", ["GET"], 'Get members of an alliance')]
     public function members(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -205,17 +205,13 @@ class Alliances extends Controller
         return $this->json($members->toArray(), 300);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/members/characters[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/members/characters[/]", ["GET"], 'Get characters of an alliance')]
     public function characters(int $alliance_id): ResponseInterface
     {
         return $this->members($alliance_id);
     }
 
-    #[
-        RouteAttribute("/alliances/{alliance_id}/members/corporations[/]", [
-            "GET",
-        ])
-    ]
+    #[RouteAttribute("/alliances/{alliance_id}/members/corporations[/]", ["GET"], 'Get corporations of an alliance')]
     public function corporations(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -236,7 +232,7 @@ class Alliances extends Controller
         return $this->json($members->toArray(), 300);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/top/characters[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/top/characters[/]", ["GET"], 'Get top characters of an alliance')]
     public function topCharacters(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -252,7 +248,7 @@ class Alliances extends Controller
         return $this->json($topCharacters, 300);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/top/corporations[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/top/corporations[/]", ["GET"], 'Get top corporations of an alliance')]
     public function topCorporations(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -268,7 +264,7 @@ class Alliances extends Controller
         return $this->json($topCorporations, 300);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/top/ships[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/top/ships[/]", ["GET"], 'Get top ships of an alliance')]
     public function topShips(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -281,7 +277,7 @@ class Alliances extends Controller
         return $this->json($topShips, 300);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/top/systems[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/top/systems[/]", ["GET"], 'Get top systems of an alliance')]
     public function topSystems(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
@@ -294,7 +290,7 @@ class Alliances extends Controller
         return $this->json($topSystems, 300);
     }
 
-    #[RouteAttribute("/alliances/{alliance_id}/top/regions[/]", ["GET"])]
+    #[RouteAttribute("/alliances/{alliance_id}/top/regions[/]", ["GET"], 'Get top regions of an alliance')]
     public function topRegions(int $alliance_id): ResponseInterface
     {
         $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);

@@ -15,7 +15,7 @@ class UserConfig extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/config/get/{identifier}[/]", ["GET"])]
+    #[RouteAttribute("/config/get/{identifier}[/]", ["GET"], "Get user config by identifier")]
     public function getConfigForIdentifier(string $identifier): ResponseInterface
     {
 

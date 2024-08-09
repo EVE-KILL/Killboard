@@ -7,10 +7,12 @@ use Attribute;
 #[Attribute]
 class RouteAttribute
 {
+    private array $validTypes = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'];
+
     public function __construct(
         protected string $route,
         protected array $type = ['GET'],
-        private array $validTypes = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH']
+        protected string $description = '',
     ) {
         $this->type = array_map(
             function ($t) {
@@ -32,5 +34,10 @@ class RouteAttribute
     public function getRoute(): string
     {
         return $this->route;
+    }
+
+    public function getDescription(): string
+    {
+        return $this->description;
     }
 }

@@ -14,7 +14,7 @@ class Search extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/search/{searchParam}[/]", ["GET"])]
+    #[RouteAttribute("/search/{searchParam}[/]", ["GET"], "Search for a string")]
     public function search(string $searchParam): ResponseInterface
     {
         $results = $this->meilisearch->search($searchParam);
@@ -25,7 +25,7 @@ class Search extends Controller
         ]);
     }
 
-    #[RouteAttribute("/search[/]", ["POST"])]
+    #[RouteAttribute("/search[/]", ["POST"], "Search for multiple strings")]
     public function searchPost(): ResponseInterface
     {
         $postData = json_validate($this->getBody())

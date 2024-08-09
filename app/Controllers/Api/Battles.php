@@ -19,7 +19,7 @@ class Battles extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/battles[/]", ["GET"])]
+    #[RouteAttribute("/battles[/]", ["GET"], "Get all battles")]
     public function all(): ResponseInterface
     {
         $battles = $this->battles
@@ -35,7 +35,7 @@ class Battles extends Controller
         return $this->json($battles);
     }
 
-    #[RouteAttribute("/battles/{id:[a-zA-Z0-9]+}[/]", ["GET"])]
+    #[RouteAttribute("/battles/{id:[a-zA-Z0-9]+}[/]", ["GET"], "Get a battle by ID")]
     public function get(string $id): ResponseInterface
     {
         $battle = $this->battles
@@ -48,7 +48,7 @@ class Battles extends Controller
         return $this->json($this->cleanupTimestamps($battle));
     }
 
-    #[RouteAttribute("/battles/killmail/{killmailId:[0-9]+}[/]")]
+    #[RouteAttribute("/battles/killmail/{killmailId:[0-9]+}[/]", ["GET"], "Check if a killmail is in a battle")]
     public function isKillmailInBattle(int $killmailId): ResponseInterface
     {
         $killmailInBattle = $this->battleHelper->isKillInBattle($killmailId);

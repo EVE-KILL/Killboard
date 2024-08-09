@@ -15,7 +15,7 @@ class Wars extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/wars[/]", ["GET"])]
+    #[RouteAttribute("/wars[/]", ["GET"], "Get all wars")]
     public function wars(): ResponseInterface
     {
         // Fetch all wars, and project only id
@@ -25,7 +25,7 @@ class Wars extends Controller
         return $this->json($wars);
     }
 
-    #[RouteAttribute("/wars/{war_id}[/]", ["GET"])]
+    #[RouteAttribute("/wars/{war_id}[/]", ["GET"], "Get a war by ID")]
     public function war(int $war_id): ResponseInterface
     {
         if ($war_id === 0) {
@@ -53,7 +53,7 @@ class Wars extends Controller
         }
         return $this->json($war);
     }
-    #[RouteAttribute("/wars/{war_id}/killmails[/]", ["GET"])]
+    #[RouteAttribute("/wars/{war_id}/killmails[/]", ["GET"], "Get all killmails for a war")]
     public function killmails(int $war_id): ResponseInterface
     {
         if ($war_id === 0) {

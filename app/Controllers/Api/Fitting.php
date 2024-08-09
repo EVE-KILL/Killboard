@@ -31,7 +31,7 @@ class Fitting extends Controller
     ) {
     }
 
-    #[RouteAttribute("/fitting/top10/{ship_id:[0-9]+}[/]", ["GET"])]
+    #[RouteAttribute("/fitting/top10/{ship_id:[0-9]+}[/]", ["GET"], "Get top 10 ship fits")]
     public function top10ShipFits(int $ship_id): ResponseInterface
     {
         $item = $this->typeIDs->findOneOrNull(['type_id' => $ship_id]);

@@ -54,6 +54,8 @@ class OpenAPI extends ConsoleCommand
                     foreach ($attributes as $attribute) {
                         $apiUrl = $attribute->newInstance();
                         $route = $prepend . $apiUrl->getRoute();
+                        $description = $apiUrl->getDescription();
+                        $shortClassName = $reflection->getShortName();
 
                         // Parse the route
                         $routeParser = new Std();
@@ -99,10 +101,9 @@ class OpenAPI extends ConsoleCommand
                         }
 
                         $openApi['paths'][$route][strtolower($apiUrl->getType()[0])] = [
-                            'summary' => 'Generated API Endpoint',
-                            // Needs to be more unique
+                            'summary' => $description,
                             'operationId' => $className . '::' . $method->getName(),
-                            'tags' => [$prependNamespace],
+                            'tags' => [ucfirst($shortClassName)],
                             'parameters' => $this->generateParameters($required_parameters, $optional_parameters),
                             'responses' => [
                                 '200' => [
@@ -138,7 +139,8 @@ class OpenAPI extends ConsoleCommand
             $parameters[] = [
                 'name' => $parameter,
                 'in' => 'path',
-                'required' => true,
+                'required' => false,
+                'allowEmptyValue' => true,
                 'schema' => [
                     'type' => 'string',
                 ],

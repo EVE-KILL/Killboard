@@ -21,7 +21,7 @@ class Auth extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/auth/eve/getloginurl[/]", ["GET"])]
+    #[RouteAttribute("/auth/eve/getloginurl[/]", ["GET"], "Get the EVE SSO login URL")]
     public function getLoginUrl(): ResponseInterface
     {
         return $this->json([
@@ -29,7 +29,7 @@ class Auth extends Controller
         ]);
     }
 
-    #[RouteAttribute("/auth/eve[/]", ["GET"])]
+    #[RouteAttribute("/auth/eve[/]", ["GET"], "EVE SSO Callback")]
     public function callback(): ResponseInterface
     {
         session_start();
@@ -67,7 +67,7 @@ class Auth extends Controller
         return $this->redirect($baseUriFrontend . '/auth/eve/success?hash=' . $loginHash);
     }
 
-    #[RouteAttribute("/auth/login/{hash}[/]", ["GET"])]
+    #[RouteAttribute("/auth/login/{hash}[/]", ["GET"], "Login with a hash")]
     public function login(string $hash): ResponseInterface
     {
         $character = $this->cache->get($hash);
@@ -87,7 +87,7 @@ class Auth extends Controller
         return $this->json($data);
     }
 
-    #[RouteAttribute("/auth/reauth/{identifier}[/]", ["GET"])]
+    #[RouteAttribute("/auth/reauth/{identifier}[/]", ["GET"], "Reauthenticate with an identifier")]
     public function reauth(string $identifier): ResponseInterface
     {
         $user = $this->users->findOneOrNull(['identifier' => $identifier], ['projection' => [

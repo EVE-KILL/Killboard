@@ -11,7 +11,7 @@ use Psr\Http\Message\ResponseInterface;
 class OpenAPI extends Controller
 {
 
-    #[RouteAttribute("/openapi[/]", ["GET"])]
+    #[RouteAttribute("/openapi[/]", ["GET"], "Get the OpenAPI documentation")]
     public function openapi(): ResponseInterface
     {
         $openApi = [
@@ -44,6 +44,8 @@ class OpenAPI extends Controller
                 foreach ($attributes as $attribute) {
                     $apiUrl = $attribute->newInstance();
                     $route = $prepend . $apiUrl->getRoute();
+                    $description = $apiUrl->getDescription();
+                    $shortClassName = $reflection->getShortName();
 
                     // Parse the route
                     $routeParser = new Std();
@@ -89,10 +91,9 @@ class OpenAPI extends Controller
                     }
 
                     $openApi['paths'][$route][strtolower($apiUrl->getType()[0])] = [
-                        'summary' => 'Generated API Endpoint',
-                        // Needs to be more unique
+                        'summary' => $description,
                         'operationId' => $className . '::' . $method->getName(),
-                        'tags' => [$prependNamespace],
+                        'tags' => [ucfirst($shortClassName)],
                         'parameters' => $this->generateParameters($required_parameters, $optional_parameters),
                         'responses' => [
                             '200' => [

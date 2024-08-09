@@ -17,7 +17,7 @@ class Sitemap extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/sitemap[/]", ["GET"])]
+    #[RouteAttribute("/sitemap[/]", ["GET"], "Get all sitemap files")]
     public function all(): ResponseInterface
     {
         $cacheKey = $this->cache->generateKey('sitemap', 'all');
@@ -46,7 +46,7 @@ class Sitemap extends Controller
         return $this->json();
     }
 
-    #[RouteAttribute("/sitemap/{page:[0-9]+}", ["GET"])]
+    #[RouteAttribute("/sitemap/{page:[0-9]+}", ["GET"], "Get a sitemap file by page")]
     public function page(int $page): ResponseInterface
     {
         $page = $page - 1;

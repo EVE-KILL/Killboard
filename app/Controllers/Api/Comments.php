@@ -17,7 +17,7 @@ class Comments extends Controller
     ) {
     }
 
-    #[RouteAttribute("/comments[/]", ["GET"])]
+    #[RouteAttribute("/comments[/]", ["GET"], "Get all comments")]
     public function getComments(): ResponseInterface
     {
         $comments = $this->comments->find([], [
@@ -29,7 +29,7 @@ class Comments extends Controller
         return $this->json($comments);
     }
 
-    #[RouteAttribute("/comments/url/{url}[/]", ["GET"])]
+    #[RouteAttribute("/comments/url/{url}[/]", ["GET"], "Get comments by URL")]
     public function getCommentsByUrl(string $url): ResponseInterface
     {
         $comments = $this->comments->find(['url' => $url], [
@@ -41,7 +41,7 @@ class Comments extends Controller
         return $this->json($comments);
     }
 
-    #[RouteAttribute("/comments[/]", ["POST"])]
+    #[RouteAttribute("/comments[/]", ["POST"], "Get comments by URL")]
     public function getCommentsForURL(): ResponseInterface
     {
         $url = $this->getBody();
@@ -63,7 +63,7 @@ class Comments extends Controller
         return $this->json($comments);
     }
 
-    #[RouteAttribute("/comments/post[/]", ["POST"])]
+    #[RouteAttribute("/comments/post[/]", ["POST"], "Post a comment")]
     public function postComment(): ResponseInterface
     {
         $postData = json_validate($this->getBody())
@@ -105,7 +105,7 @@ class Comments extends Controller
         return $this->json(['success' => true]);
     }
 
-    #[RouteAttribute("/comments/{commentId:[0-9]+}[/]", ["GET"])]
+    #[RouteAttribute("/comments/{commentId:[0-9]+}[/]", ["GET"], "Get a comment by ID")]
     public function getComment(int $commentId): ResponseInterface
     {
         $comment = $this->comments->findOne(

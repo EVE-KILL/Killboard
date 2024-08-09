@@ -22,7 +22,7 @@ class Characters extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/characters[/]", ["GET"])]
+    #[RouteAttribute("/characters[/]", ["GET"], "Get all characters")]
     public function all(): ResponseInterface
     {
         $cacheKey = "characters.all";
@@ -44,13 +44,13 @@ class Characters extends Controller
         return $this->json($characters->toArray(), 3600);
     }
 
-    #[RouteAttribute("/characters/count[/]", ["GET"])]
+    #[RouteAttribute("/characters/count[/]", ["GET"], "Get the amount of characters")]
     public function count(): ResponseInterface
     {
         return $this->json(["count" => $this->characters->count()], 300);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}[/]", ["GET"], "Get a character by ID")]
     public function character(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne(
@@ -67,7 +67,7 @@ class Characters extends Controller
         );
     }
 
-    #[RouteAttribute("/characters[/]", ["POST"])]
+    #[RouteAttribute("/characters[/]", ["POST"], "Get multiple characters by ID")]
     public function characters(): ResponseInterface
     {
         $postData = json_validate($this->getBody())
@@ -95,7 +95,7 @@ class Characters extends Controller
         return $this->json($characters->toArray(), 300);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"], "Get the corporation history of a character")]
     public function corporationHistory(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -178,7 +178,7 @@ class Characters extends Controller
         return $this->json(array_reverse($corporationHistory));
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails[/]", ["GET"], "Get all killmails of a character")]
     public function killmails(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -214,7 +214,7 @@ class Characters extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails/count[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails/count[/]", ["GET"], "Get the amount of killmails of a character")]
     public function killmailsCount(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -239,7 +239,7 @@ class Characters extends Controller
         );
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails/latest[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails/latest[/]", ["GET"], "Get the latest killmails of a character")]
     public function latestKillmails(int $character_id): ResponseInterface
     {
         $limit = (int) $this->getParam("limit", 1000);
@@ -282,7 +282,7 @@ class Characters extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/ships[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/ships[/]", ["GET"], "Get the top ships of a character")]
     public function topShips(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -297,7 +297,7 @@ class Characters extends Controller
         return $this->json($topShips, 300);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/systems[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/systems[/]", ["GET"], "Get the top systems of a character")]
     public function topSystems(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
@@ -315,7 +315,7 @@ class Characters extends Controller
         return $this->json($topSystems, 300);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/regions[/]", ["GET"])]
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/top/regions[/]", ["GET"], "Get the top regions of a character")]
     public function topRegions(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([

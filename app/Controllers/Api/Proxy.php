@@ -16,14 +16,14 @@ class Proxy extends Controller
     ) {
         parent::__construct();
     }
-    #[RouteAttribute("/proxy/list[/]", ["GET"])]
+    #[RouteAttribute("/proxy/list[/]", ["GET"], "List all proxies")]
     public function listAll(): ResponseInterface
     {
         $proxies = $this->proxiesModel->find();
         return $this->json($proxies->toArray());
     }
 
-    #[RouteAttribute("/proxy/add[/]", ["GET", "POST"])]
+    #[RouteAttribute("/proxy/add[/]", ["GET", "POST"], "Add a proxy")]
     public function add(): ResponseInterface
     {
         if ($this->request->getMethod() === "GET") {
@@ -57,7 +57,7 @@ class Proxy extends Controller
         ]);
     }
 
-    #[RouteAttribute("/proxy/[{proxy_id}]", ["GET"])]
+    #[RouteAttribute("/proxy/[{proxy_id}]", ["GET"], "List a proxy by ID")]
     public function listByName(?string $proxy_id = null): ResponseInterface
     {
         $proxies = $this->proxiesModel->findOne(["proxy_id" => $proxy_id]);

@@ -20,7 +20,7 @@ class Items extends Controller
     ) {
     }
 
-    #[RouteAttribute("/items[/]", ["GET"])]
+    #[RouteAttribute("/items[/]", ["GET"], "Get all items")]
     public function all(): ResponseInterface
     {
         $cacheKey = "items.all";
@@ -55,13 +55,13 @@ class Items extends Controller
         return $this->json($items);
     }
 
-    #[RouteAttribute("/items/count[/]", ["GET"])]
+    #[RouteAttribute("/items/count[/]", ["GET"], "Get the count of all items")]
     public function count(): ResponseInterface
     {
         return $this->json(["count" => $this->typeIDs->count()], 300);
     }
 
-    #[RouteAttribute("/items/{item_id:[0-9]+}[/]", ["GET"])]
+    #[RouteAttribute("/items/{item_id:[0-9]+}[/]", ["GET"], "Get an item by ID")]
     public function item(int $item_id): ResponseInterface
     {
         $cacheKey = "items.{$item_id}";
@@ -86,7 +86,7 @@ class Items extends Controller
         return $this->json($item);
     }
 
-    #[RouteAttribute("/items/{item_id:[0-9]+}/pricing[/{region_id:[0-9]+}[/{days:[0-9]+}]]", ["GET"])]
+    #[RouteAttribute("/items/{item_id:[0-9]+}/pricing[/{region_id:[0-9]+}[/{days:[0-9]+}]]", ["GET"], "Get pricing data for an item")]
     public function pricing(int $item_id, int $days = 7, int $region_id = 10000002): ResponseInterface
     {
         $cacheKey = "items.{$item_id}.pricing.{$days}";
@@ -116,7 +116,7 @@ class Items extends Controller
         return $this->json($pricing);
     }
 
-    #[RouteAttribute("/items/{item_id:\d+}/killmails[/{limit:\d+}]", ["GET"])]
+    #[RouteAttribute("/items/{item_id:\d+}/killmails[/{limit:\d+}]", ["GET"], "Get killmails containing an item")]
     public function killmails(int $item_id, int $limit = 100): ResponseInterface
     {
         $cacheKey = "items.{$item_id}.killmails";

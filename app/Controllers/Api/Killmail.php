@@ -19,7 +19,7 @@ class Killmail extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/killmail/count[/]", ["GET"])]
+    #[RouteAttribute("/killmail/count[/]", ["GET"], "Get the count of all killmails")]
     public function count(): ResponseInterface
     {
         return $this->json([
@@ -27,7 +27,7 @@ class Killmail extends Controller
         ]);
     }
 
-    #[RouteAttribute("/killmail/{killmail_id:[0-9]+}[/]", ["GET"])]
+    #[RouteAttribute("/killmail/{killmail_id:[0-9]+}[/]", ["GET"], "Get a killmail by ID")]
     public function killmail(int $killmail_id): ResponseInterface
     {
         $killmail = $this->killmails->findOneOrNull(
@@ -47,7 +47,7 @@ class Killmail extends Controller
         return $this->json($this->cleanupTimestamps($killmail->toArray()));
     }
 
-    #[RouteAttribute("/killmail/esi/{killmail_id:[0-9]+}[/]", ["GET"])]
+    #[RouteAttribute("/killmail/esi/{killmail_id:[0-9]+}[/]", ["GET"], "Get esi killmail by ID")]
     public function esi(int $killmail_id): ResponseInterface
     {
         $killmail = $this->killmailsESI->findOneOrNull(
@@ -66,7 +66,7 @@ class Killmail extends Controller
         return $this->json($this->cleanupTimestamps($killmail->toArray()));
     }
 
-    #[RouteAttribute("/killmail/{killmail_id:[0-9]+}/inbattle[/]", ["GET"])]
+    #[RouteAttribute("/killmail/{killmail_id:[0-9]+}/inbattle[/]", ["GET"], "Check if a killmail is in a battle")]
     public function inBattle(int $killmail_id): ResponseInterface
     {
         $cacheKey = $this->cache->generateKey("inBattle", $killmail_id);
@@ -91,7 +91,7 @@ class Killmail extends Controller
         return $this->json([true]);
     }
 
-    #[RouteAttribute("/killmail[/]", ["POST"])]
+    #[RouteAttribute("/killmail[/]", ["POST"], "Get multiple killmails by ID")]
     public function killmails(): ResponseInterface
     {
         $postData = json_validate($this->getBody())

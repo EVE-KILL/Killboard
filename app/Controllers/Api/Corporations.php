@@ -17,7 +17,7 @@ class Corporations extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/corporations[/]", ["GET"])]
+    #[RouteAttribute("/corporations[/]", ["GET"], "Get all corporations")]
     public function all(): ResponseInterface
     {
         $corporations = $this->corporations
@@ -29,13 +29,13 @@ class Corporations extends Controller
         return $this->json($corporations->toArray(), 300);
     }
 
-    #[RouteAttribute("/corporations/count[/]", ["GET"])]
+    #[RouteAttribute("/corporations/count[/]", ["GET"], "Get the count of all corporations")]
     public function count(): ResponseInterface
     {
         return $this->json(["count" => $this->corporations->count()], 300);
     }
 
-    #[RouteAttribute("/corporations/{corporation_id}[/]", ["GET"])]
+    #[RouteAttribute("/corporations/{corporation_id}[/]", ["GET"], "Get a corporation by ID")]
     public function corporation(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne(
@@ -52,7 +52,7 @@ class Corporations extends Controller
         );
     }
 
-    #[RouteAttribute("/corporations[/]", ["POST"])]
+    #[RouteAttribute("/corporations[/]", ["POST"], "Get multiple corporations by ID")]
     public function corporations(): ResponseInterface
     {
         $postData = json_validate($this->getBody())
@@ -79,7 +79,7 @@ class Corporations extends Controller
         return $this->json($corporations->toArray(), 300);
     }
 
-    #[RouteAttribute("/corporations/{corporation_id}/killmails[/]", ["GET"])]
+    #[RouteAttribute("/corporations/{corporation_id}/killmails[/]", ["GET"], "Get all killmails for a corporation")]
     public function killmails(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne([
@@ -115,11 +115,7 @@ class Corporations extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[
-        RouteAttribute("/corporations/{corporation_id}/killmails/count[/]", [
-            "GET",
-        ])
-    ]
+    #[RouteAttribute("/corporations/{corporation_id}/killmails/count[/]", ["GET"], "Get the count of killmails for a corporation")]
     public function killmailsCount(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne([
@@ -144,11 +140,7 @@ class Corporations extends Controller
         );
     }
 
-    #[
-        RouteAttribute("/corporations/{corporation_id}/killmails/latest[/]", [
-            "GET",
-        ])
-    ]
+    #[RouteAttribute("/corporations/{corporation_id}/killmails/latest[/]", ["GET"], "Get the latest killmails for a corporation")]
     public function latestKillmails(int $corporation_id): ResponseInterface
     {
         $limit = (int) $this->getParam("limit", 1000);
@@ -191,7 +183,7 @@ class Corporations extends Controller
         return $this->json($killmails, 3600);
     }
 
-    #[RouteAttribute("/corporations/{corporation_id}/members[/]", ["GET"])]
+    #[RouteAttribute("/corporations/{corporation_id}/members[/]", ["GET"], "Get all members of a corporation")]
     public function members(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne([
@@ -214,11 +206,7 @@ class Corporations extends Controller
         return $this->json($members->toArray(), 300);
     }
 
-    #[
-        RouteAttribute("/corporations/{corporation_id}/top/characters[/]", [
-            "GET",
-        ])
-    ]
+    #[RouteAttribute("/corporations/{corporation_id}/top/characters[/]", ["GET"], "Get the top characters of a corporation")]
     public function topCharacters(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne([
@@ -236,7 +224,7 @@ class Corporations extends Controller
         return $this->json($topCharacters, 300);
     }
 
-    #[RouteAttribute("/corporations/{corporation_id}/top/ships[/]", ["GET"])]
+    #[RouteAttribute("/corporations/{corporation_id}/top/ships[/]", ["GET"], "Get the top ships of a corporation")]
     public function topShips(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne([
@@ -254,7 +242,7 @@ class Corporations extends Controller
         return $this->json($topShips, 300);
     }
 
-    #[RouteAttribute("/corporations/{corporation_id}/top/systems[/]", ["GET"])]
+    #[RouteAttribute("/corporations/{corporation_id}/top/systems[/]", ["GET"], "Get the top systems of a corporation")]
     public function topSystems(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne([
@@ -272,7 +260,7 @@ class Corporations extends Controller
         return $this->json($topSystems, 300);
     }
 
-    #[RouteAttribute("/corporations/{corporation_id}/top/regions[/]", ["GET"])]
+    #[RouteAttribute("/corporations/{corporation_id}/top/regions[/]", ["GET"], "Get the top regions of a corporation")]
     public function topRegions(int $corporation_id): ResponseInterface
     {
         $corporation = $this->corporations->findOne([
