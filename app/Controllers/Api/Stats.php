@@ -26,7 +26,7 @@ class Stats extends Controller
     }
 
     #[RouteAttribute("/stats/topcharacters/{count:[0-9]+}[/{days:[0-9]+}]", ["GET"])]
-    public function top10Characters(int $count = 10, int $days = 7): ResponseInterface
+    public function topCharacters(int $count = 10, int $days = 7): ResponseInterface
     {
         $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topCharacters(
@@ -38,7 +38,7 @@ class Stats extends Controller
     }
 
     #[RouteAttribute("/stats/topcorporations/{count:[0-9]+}[/{days:[0-9]+}]", ["GET"])]
-    public function top10Corporations(int $count = 10, int $days = 7): ResponseInterface
+    public function topCorporations(int $count = 10, int $days = 7): ResponseInterface
     {
         $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topCorporations(
@@ -50,7 +50,7 @@ class Stats extends Controller
     }
 
     #[RouteAttribute("/stats/topalliances/{count:[0-9]+}[/{days:[0-9]+}]", ["GET"])]
-    public function top10Alliances(int $count = 10, int $days = 7): ResponseInterface
+    public function topAlliances(int $count = 10, int $days = 7): ResponseInterface
     {
         $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topAlliances(
@@ -62,7 +62,7 @@ class Stats extends Controller
     }
 
     #[RouteAttribute("/stats/topsolarsystems/{count:[0-9]+}[/{days:[0-9]+}]", ["GET"])]
-    public function top10Systems(int $count = 10, int $days = 7): ResponseInterface
+    public function topSystems(int $count = 10, int $days = 7): ResponseInterface
     {
         $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topSystems(
@@ -73,8 +73,20 @@ class Stats extends Controller
         return $this->json($data, 3600);
     }
 
+    #[RouteAttribute("/stats/topconstellations/{count:[0-9]+}[/{days:[0-9]+}]", ["GET"])]
+    public function topConstellations(int $count = 10, int $days = 7): ResponseInterface
+    {
+        $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
+        $data = $this->topLists->topConstellations(
+            days: $days,
+            cacheTime: 3600,
+            limit: $count
+        );
+        return $this->json($data, 3600);
+    }
+
     #[RouteAttribute("/stats/topregions/{count:[0-9]+}[/{days:[0-9]+}]", ["GET"])]
-    public function top10Regions(int $count = 10, int $days = 7): ResponseInterface
+    public function topRegions(int $count = 10, int $days = 7): ResponseInterface
     {
         $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topRegions(
@@ -86,7 +98,7 @@ class Stats extends Controller
     }
 
     #[RouteAttribute("/stats/topships/{count:[0-9]+}[/{days:[0-9]+}]", ["GET"])]
-    public function top10Ships(int $count = 10, int $days = 7): ResponseInterface
+    public function topShips(int $count = 10, int $days = 7): ResponseInterface
     {
         $days = $days === 0 ? $this->daysSinceEarlyDays : $days;
         $data = $this->topLists->topShips(

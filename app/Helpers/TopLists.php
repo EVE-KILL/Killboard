@@ -4,18 +4,26 @@ namespace EK\Helpers;
 
 use EK\Cache\Cache;
 use MongoDB\BSON\UTCDateTime;
+use \EK\Models\Killmails;
+use \EK\Models\Characters;
+use \EK\Models\Corporations;
+use \EK\Models\Alliances;
+use \EK\Models\TypeIDs;
+use \EK\Models\SolarSystems;
+use \EK\Models\Constellations;
+use \EK\Models\Regions;
 
 class TopLists
 {
     public function __construct(
-        protected \EK\Models\Killmails $killmails,
-        protected \EK\Models\Characters $characters,
-        protected \EK\Models\Corporations $corporations,
-        protected \EK\Models\Alliances $alliances,
-        protected \EK\Models\TypeIDs $typeIDs,
-        protected \EK\Models\SolarSystems $solarSystems,
-        protected \EK\Models\Constellations $constellations,
-        protected \EK\Models\Regions $regions,
+        protected Killmails $killmails,
+        protected Characters $characters,
+        protected Corporations $corporations,
+        protected Alliances $alliances,
+        protected TypeIDs $typeIDs,
+        protected SolarSystems $solarSystems,
+        protected Constellations $constellations,
+        protected Regions $regions,
         protected Cache $cache
     ) {
     }
@@ -627,10 +635,206 @@ class TopLists
         return $data->toArray();
     }
 
+public function topConstellations(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+{
+    $cacheKey = $this->cache->generateKey(
+        "top_constellations",
+        $attackerType,
+        $typeId,
+        $limit,
+        $days
+    );
+    if (
+        $this->cache->exists($cacheKey) &&
+        !empty(($cacheResult = $this->cache->get($cacheKey)))
+    ) {
+        return $cacheResult;
+    }
+
+    // Get the constellations with their systems
+    $constellations = $this->constellations->find([])->toArray();
+    $systemsToConstellations = [];
+
+    foreach ($constellations as $constellation) {
+        foreach ($constellation['systems'] as $systemId) {
+            $systemsToConstellations[$systemId] = $constellation['constellation_id'];
+        }
+    }
+
+    $aggregateQuery =
+        $attackerType && $typeId
+            ? [
+                [
+                    '$match' => [
+                        "attackers.{$attackerType}" => $typeId,
+                        "kill_time" => [
+                            '$gte' => new UTCDateTime(
+                                (time() - ($days * 86400)) * 1000
+                            ),
+                        ],
+                    ],
+                ],
+                ['$unwind' => '$attackers'],
+                ['$match' => ["attackers.{$attackerType}" => $typeId]],
+                [
+                    '$group' => [
+                        "_id" => [
+                            'system_id' => '$system_id',
+                            'killmail_id' => '$killmail_id',
+                        ],
+                    ],
+                ],
+                [
+                    '$group' => [
+                        "_id" => '$_id.system_id',
+                        "count" => ['$sum' => 1],
+                    ],
+                ],
+                [
+                    '$addFields' => [
+                        'constellation_id' => [
+                            '$let' => [
+                                'vars' => ['system_id' => '$_id'],
+                                'in' => [
+                                    '$arrayElemAt' => [
+                                        ['$filter' => [
+                                            'input' => array_map(
+                                                fn($systemId) => [
+                                                    '_id' => $systemId,
+                                                    'constellation_id' => $systemsToConstellations[$systemId] ?? null
+                                                ],
+                                                array_keys($systemsToConstellations)
+                                            ),
+                                            'as' => 'item',
+                                            'cond' => [
+                                                '$eq' => ['$$item._id', '$$system_id']
+                                            ]
+                                        ]],
+                                        0
+                                    ],
+                                ]
+                            ],
+                        ]
+                    ],
+                ],
+                [
+                    '$group' => [
+                        "_id" => '$constellation_id.constellation_id',
+                        "count" => ['$sum' => '$count'],
+                    ],
+                ],
+                [
+                    '$project' => [
+                        "_id" => 0,
+                        "count" => '$count',
+                        "id" => '$_id',
+                    ],
+                ],
+                ['$sort' => ["count" => -1]],
+                ['$limit' => $limit],
+            ]
+            : [
+                [
+                    '$match' => [
+                        "kill_time" => [
+                            '$gte' => new UTCDateTime(
+                                (time() - ($days * 86400)) * 1000
+                            ),
+                        ],
+                    ],
+                ],
+                ['$unwind' => '$attackers'],
+                [
+                    '$group' => [
+                        "_id" => [
+                            'system_id' => '$system_id',
+                            'killmail_id' => '$killmail_id',
+                        ],
+                    ],
+                ],
+                [
+                    '$group' => [
+                        "_id" => '$_id.system_id',
+                        "count" => ['$sum' => 1],
+                    ],
+                ],
+                [
+                    '$addFields' => [
+                        'constellation_id' => [
+                            '$let' => [
+                                'vars' => ['system_id' => '$_id'],
+                                'in' => [
+                                    '$arrayElemAt' => [
+                                        ['$filter' => [
+                                            'input' => array_map(
+                                                fn($systemId) => [
+                                                    '_id' => $systemId,
+                                                    'constellation_id' => $systemsToConstellations[$systemId] ?? null
+                                                ],
+                                                array_keys($systemsToConstellations)
+                                            ),
+                                            'as' => 'item',
+                                            'cond' => [
+                                                '$eq' => ['$$item._id', '$$system_id']
+                                            ]
+                                        ]],
+                                        0
+                                    ],
+                                ]
+                            ],
+                        ]
+                    ],
+                ],
+                [
+                    '$group' => [
+                        "_id" => '$constellation_id.constellation_id',
+                        "count" => ['$sum' => '$count'],
+                    ],
+                ],
+                [
+                    '$project' => [
+                        "_id" => 0,
+                        "count" => '$count',
+                        "id" => '$_id',
+                    ],
+                ],
+                ['$sort' => ["count" => -1]],
+                ['$limit' => $limit],
+            ];
+
+    $data = $this->killmails->aggregate($aggregateQuery, [
+        'allowDiskUse' => true,
+        'maxTimeMS' => 30000,
+    ]);
+
+    foreach ($data as $key => $constellation) {
+        $data[$key] = array_merge(
+            ['count' => $constellation['count']],
+            $this->constellations
+                ->findOne(
+                    ['constellation_id' => $constellation['id']],
+                    [
+                        'projection' => [
+                            '_id' => 0,
+                            'last_modified' => 0,
+                            'systems' => 0,
+                            'position' => 0
+                        ],
+                    ]
+                )
+                ->toArray()
+        );
+    }
+
+    $this->cache->set($cacheKey, $data, $cacheTime);
+
+    return $data->toArray();
+}
+
     public function topRegions(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
         $cacheKey = $this->cache->generateKey(
-            "top_regions",
+            'top_regions',
             $attackerType,
             $typeId,
             $limit,
