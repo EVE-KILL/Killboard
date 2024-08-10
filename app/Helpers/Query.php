@@ -8,14 +8,14 @@ use EK\Models\Killmails;
 class Query
 {
     public array $validQueryParams = [
-        'kill_time' => 'datetime', 'system_id' => 'int', 'region_id' => 'int',
-        'ship_value' => 'float', 'fitting_value' => 'float', 'total_value' => 'float', 'is_npc' => 'bool',
+        'system_id' => 'int', 'region_id' => 'int', 'is_npc' => 'bool',
         'is_solo' => 'bool', 'victim.ship_id' => 'int', 'victim.character_id' => 'int',
         'victim.corporation_id' => 'int', 'victim.alliance_id' => 'int', 'victim.faction_id' => 'int',
         'attackers.ship_id' => 'int', 'attackers.weapon_type-id' => 'int', 'attackers.character_id' => 'int',
         'attackers.corporation_id' => 'int', 'attackers.alliance_id' => 'int', 'attackers.faction_id' => 'int',
         'attackers.final_blow' => 'int', 'items.type_id' => 'int', 'items.group_id' => 'int', 'items.category_id' => 'int'
     ];
+
     public array $validSortParams = [
         'page' => 'int', 'limit' => 'int', 'offset' => 'int', 'order' => 'string',
     ];
@@ -34,7 +34,12 @@ class Query
         if (!empty($parameters)) {
             foreach (array_keys($this->validQueryParams) as $arg) {
                 if (isset($parameters[$arg])) {
-                    $dataArray[$arg] = $parameters[$arg];
+                    if (is_array($parameters[$arg])) {
+                        // If the parameter is an array, use $in for MongoDB queries
+                        $dataArray[$arg] = ['$in' => $parameters[$arg]];
+                    } else {
+                        $dataArray[$arg] = $parameters[$arg];
+                    }
                 }
             }
         }
@@ -184,7 +189,7 @@ class Query
         ], $parameters);
     }
 
-    public function getBeforeDate($timestamp, array $parameters = []): array
+    public function getBeforeDate(int $timestamp, array $parameters = []): array
     {
         return $this->executeAggregateQuery([
             'kill_time' => [
