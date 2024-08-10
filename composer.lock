@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d871756247acfc80fb8615db04fecc80",
+    "content-hash": "727e170e3e803901f32360e158348387",
     "packages": [
         {
             "name": "brick/math",
@@ -2802,6 +2802,52 @@
                 "source": "https://github.com/ralouphie/getallheaders/tree/develop"
             },
             "time": "2019-03-08T08:55:37+00:00"
+        },
+        {
+            "name": "redis-ventures/redisvl",
+            "version": "v0.2.3",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/RedisVentures/redis-vector-php.git",
+                "reference": "8dcdc5af25b869b73671aa0a30a0948992ec0a3b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/RedisVentures/redis-vector-php/zipball/8dcdc5af25b869b73671aa0a30a0948992ec0a3b",
+                "reference": "8dcdc5af25b869b73671aa0a30a0948992ec0a3b",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "*",
+                "php": "^8.1",
+                "predis/predis": "^2.2.0"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.6",
+                "phpunit/phpunit": "*"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "RedisVentures\\RedisVl\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "vladvildanov",
+                    "email": "divinez122@outlook.com"
+                }
+            ],
+            "description": "Redis Vector Library (RedisVL) enables Redis as a real-time database for LLM applications, based on Predis PHP client",
+            "support": {
+                "issues": "https://github.com/RedisVentures/redis-vector-php/issues",
+                "source": "https://github.com/RedisVentures/redis-vector-php/tree/v0.2.3"
+            },
+            "time": "2024-02-29T15:33:03+00:00"
         },
         {
             "name": "siriusphp/validation",
