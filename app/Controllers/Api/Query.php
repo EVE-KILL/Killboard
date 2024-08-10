@@ -180,29 +180,29 @@ class Query extends Controller
     }
 
     // AfterDate
-    #[RouteAttribute("/query/after/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}[/{params:.*}]", ["GET"], "Query after date for killmails")]
-    public function queryAfterDate(string $date, string $params): ResponseInterface
+    #[RouteAttribute("/query/after/{unixTime:[0-9]+}[/{params:.*}]", ["GET"], "Query after date for killmails")]
+    public function queryAfterDate(string $unixTime, string $params): ResponseInterface
     {
         $params = $this->validateParams($params);
-        $result = $this->queryHelper->getAfterDate($date, $params);
+        $result = $this->queryHelper->getAfterDate($unixTime, $params);
         return $this->json($result);
     }
 
     // BeforeDate
-    #[RouteAttribute("/query/before/{date:[0-9]{4}-[0-9]{2}-[0-9]{2}}[/{params:.*}]", ["GET"], "Query before date for killmails")]
-    public function queryBeforeDate(string $date, string $params): ResponseInterface
+    #[RouteAttribute("/query/before/{unixTime:[0-9]+}[/{params:.*}]", ["GET"], "Query before date for killmails")]
+    public function queryBeforeDate(string $unixTime, string $params): ResponseInterface
     {
         $params = $this->validateParams($params);
-        $result = $this->queryHelper->getBeforeDate($date, $params);
+        $result = $this->queryHelper->getBeforeDate($unixTime, $params);
         return $this->json($result);
     }
 
     // BetweenDates
-    #[RouteAttribute("/query/between/{date1:[0-9]{4}-[0-9]{2}-[0-9]{2}}/{date2:[0-9]{4}-[0-9]{2}-[0-9]{2}}[/{params:.*}]", ["GET"], "Query between dates for killmails")]
-    public function queryBetweenDates(string $date1, string $date2, string $params): ResponseInterface
+    #[RouteAttribute("/query/between/{unixTimeFrom:[0-9]+}/{unixTimeTill:[0-9]+}[/{params:.*}]", ["GET"], "Query between dates for killmails")]
+    public function queryBetweenDates(string $unixTimeFrom, string $unixTimeTill, string $params): ResponseInterface
     {
         $params = $this->validateParams($params);
-        $result = $this->queryHelper->getBetweenDates($date1, $date2, $params);
+        $result = $this->queryHelper->getBetweenDates($unixTimeFrom, $unixTimeTill, $params);
         return $this->json($result);
     }
 
@@ -225,11 +225,11 @@ class Query extends Controller
     }
 
     // TotalValueBetween
-    #[RouteAttribute("/query/totalValue/between/{value1:[0-9]+}/{value2:[0-9]+}[/{params:.*}]", ["GET"], "Query total value between for killmails")]
-    public function queryTotalValueBetween(float $value1, float $value2, string $params): ResponseInterface
+    #[RouteAttribute("/query/totalValue/between/{valueFrom:[0-9]+}/{valueTill:[0-9]+}[/{params:.*}]", ["GET"], "Query total value between for killmails")]
+    public function queryTotalValueBetween(float $valueFrom, float $valueTill, string $params): ResponseInterface
     {
         $params = $this->validateParams($params);
-        $result = $this->queryHelper->totalValueBetween($value1, $value2, $params);
+        $result = $this->queryHelper->totalValueBetween($valueFrom, $valueTill, $params);
         return $this->json($result);
     }
 
@@ -279,11 +279,11 @@ class Query extends Controller
     }
 
     // PointValueBetween
-    #[RouteAttribute("/query/pointValue/between/{value1:[0-9]+}/{value2:[0-9]+}[/{params:.*}]", ["GET"], "Query point value between for killmails")]
-    public function queryPointValueBetween(float $value1, float $value2, string $params): ResponseInterface
+    #[RouteAttribute("/query/pointValue/between/{valueFrom:[0-9]+}/{valueTill:[0-9]+}[/{params:.*}]", ["GET"], "Query point value between for killmails")]
+    public function queryPointValueBetween(float $valueFrom, float $valueTill, string $params): ResponseInterface
     {
         $params = $this->validateParams($params);
-        $result = $this->queryHelper->pointValueBetween($value1, $value2, $params);
+        $result = $this->queryHelper->pointValueBetween($valueFrom, $valueTill, $params);
         return $this->json($result);
     }
 }

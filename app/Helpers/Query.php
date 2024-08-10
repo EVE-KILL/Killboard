@@ -122,12 +122,12 @@ class Query
         return $this->executeAggregateQuery([$field => ['$gte' => $value]], $parameters);
     }
 
-    public function getBetweenDates(string $startDate, string $endDate, array $parameters = []): array
+    public function getBetweenDates(int $startDate, int $endDate, array $parameters = []): array
     {
         $dateRangeCriteria = [
             'kill_time' => [
-                '$gte' => new \MongoDB\BSON\UTCDateTime(strtotime($startDate) * 1000),
-                '$lte' => new \MongoDB\BSON\UTCDateTime(strtotime($endDate) * 1000)
+                '$gte' => new \MongoDB\BSON\UTCDateTime($startDate * 1000),
+                '$lte' => new \MongoDB\BSON\UTCDateTime($endDate * 1000)
             ]
         ];
 
@@ -175,21 +175,20 @@ class Query
         return $this->getByField('victim.ship_id', $shipId, $parameters);
     }
 
-    // Date range queries
-    public function getAfterDate(string $startDate, array $parameters = []): array
+    public function getAfterDate(int $timestamp, array $parameters = []): array
     {
         return $this->executeAggregateQuery([
             'kill_time' => [
-                '$gte' => new \MongoDB\BSON\UTCDateTime(strtotime($startDate) * 1000)
+                '$gte' => new \MongoDB\BSON\UTCDateTime($timestamp * 1000)
             ]
         ], $parameters);
     }
 
-    public function getBeforeDate(string $endDate, array $parameters = []): array
+    public function getBeforeDate($timestamp, array $parameters = []): array
     {
         return $this->executeAggregateQuery([
             'kill_time' => [
-                '$lte' => new \MongoDB\BSON\UTCDateTime(strtotime($endDate) * 1000)
+                '$lte' => new \MongoDB\BSON\UTCDateTime($timestamp * 1000)
             ]
         ], $parameters);
     }
