@@ -173,6 +173,11 @@ class Collection
         return $this->collection->countDocuments($filter, $options);
     }
 
+    public function aproximateCount(array $filter = [], array $options = []): int
+    {
+        return $this->collection->estimatedDocumentCount($filter, $options);
+    }
+
     public function delete(array $filter = []): DeleteResult
     {
         if (empty($filter)) {
