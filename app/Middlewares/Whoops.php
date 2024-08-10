@@ -3,20 +3,19 @@
 namespace EK\Middlewares;
 
 use EK\Config\Config;
-use EK\Http\Twig\Twig;
 use EK\Logger\ExceptionLogger;
-use Slim\Psr7\Factory\ResponseFactory;
-use Whoops\Run;
-use Whoops\Handler\PlainTextHandler;
-use Whoops\Handler\PrettyPageHandler;
-use Whoops\Handler\XmlResponseHandler;
-use Whoops\Handler\JsonResponseHandler;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
+use Slim\Psr7\Factory\ResponseFactory;
+use Whoops\Run;
+use Whoops\Handler\PlainTextHandler;
+use Whoops\Handler\PrettyPageHandler;
+use Whoops\Handler\XmlResponseHandler;
+use Whoops\Handler\JsonResponseHandler;
 
 class Whoops implements MiddlewareInterface
 {
@@ -34,30 +33,28 @@ class Whoops implements MiddlewareInterface
         } catch (HttpNotFoundException|HttpMethodNotAllowedException $e) {
             return $handler->handle($request);
         } catch (\Throwable $e) {
-            // If we are not in development mode, we should NOT show whoops errors, but a generic error page
             $developmentMode = $this->config->get('development', false);
 
             if ($developmentMode === false) {
+                // Generate a unique exception ID
                 $exceptionId = uniqid('exception_', true);
+
+                // Simplified exception logging
+                $this->logSimplifiedException($e, $exceptionId);
+
+                // Prepare a generic error message for the user
+                $response = $this->responseFactory->createResponse(500);
                 $acceptHeaders = explode(',', $request->getHeader('accept')[0] ?? '');
 
-                $exceptionRender = $this->renderWhoops($e, $acceptHeaders);
-                $this->exceptionLogger->log($exceptionRender, $exceptionId);
-
-                $response = $this->responseFactory->createResponse(500);
-
                 $render = match ($acceptHeaders[0]) {
-                    // Return json
-                    'application/json' => json_encode(['error' => 'There has been an exception, you can tell the developers to look at the following id', 'exceptionId' => $exceptionId]),
-                    // Return XML
-                    'application/xml', 'text/xml' => (new \SimpleXMLElement('<error>There has been an exception, you can tell the developers to look at the following id</error><exceptionId>' . $exceptionId . '</exceptionId>'))->asXML(),
-                    // Reply with plaintext
-                    default => 'There has been an exception, you can tell the developers to look at the following id: ' . $exceptionId,
+                    'application/json' => json_encode(['error' => $e->getMessage(), 'message' => 'An error occurred. Please contact support with the following ID.', 'exceptionId' => $exceptionId]),
+                    'application/xml', 'text/xml' => (new \SimpleXMLElement('<error>' . $e->getMessage() . '</error></message>An error occurred. Please contact support with the following ID.</message><exceptionId>' . $exceptionId . '</exceptionId>'))->asXML(),
+                    default => $e->getMessage() . '<br>An error occurred. Please contact support with the following ID: ' . $exceptionId,
                 };
 
                 $response->getBody()->write($render);
             } else {
-                // Handle the exception with Whoops
+                // Handle the exception with Whoops in development mode
                 $response = $this->responseFactory->createResponse(500);
 
                 $acceptHeaders = explode(',', $request->getHeader('accept')[0] ?? '');
@@ -92,5 +89,21 @@ class Whoops implements MiddlewareInterface
 
         $whoops->prependHandler($handler);
         return $whoops->handleException($e);
+    }
+
+    private function logSimplifiedException(\Throwable $e, string $exceptionId): void
+    {
+        // Create a simplified log message
+        $logMessage = sprintf(
+            "Exception ID: %s\nMessage: %s\nFile: %s\nLine: %d\nTrace: %s\n",
+            $exceptionId,
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine(),
+            implode("\n", array_slice(explode("\n", $e->getTraceAsString()), 0, 5)) // Limit trace to 5 lines
+        );
+
+        // Log the simplified message
+        $this->exceptionLogger->log($logMessage, $exceptionId);
     }
 }

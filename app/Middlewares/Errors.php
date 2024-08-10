@@ -2,14 +2,12 @@
 
 namespace EK\Middlewares;
 
-use EK\Http\Twig\Twig;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Slim\Exception\HttpMethodNotAllowedException;
 use Slim\Exception\HttpNotFoundException;
-use Slim\Factory\Psr17\Psr17Factory;
 use Slim\Psr7\Factory\ResponseFactory;
 
 class Errors implements MiddlewareInterface
