@@ -98,12 +98,12 @@ class Killmail extends Controller
             ? json_decode($this->getBody(), true)
             : [];
         if (empty($postData)) {
-            return $this->json(["error" => "No data provided"], 300);
+            return $this->json(["error" => "No data provided"], 300, 400);
         }
 
         // Error if there are more than 1000 IDs
         if (count($postData) > 1000) {
-            return $this->json(["error" => "Too many IDs provided"], 300);
+            return $this->json(["error" => "Too many IDs provided"], 300, 400);
         }
 
         $killmails = $this->killmails

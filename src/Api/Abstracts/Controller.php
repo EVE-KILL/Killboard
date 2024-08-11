@@ -44,6 +44,11 @@ abstract class Controller
         };
     }
 
+    protected function newValidator(): Validator
+    {
+        return new Validator();
+    }
+
     protected function setRequest(ServerRequestInterface $request): void
     {
         $this->request = $request;
