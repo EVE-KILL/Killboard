@@ -11,84 +11,83 @@ class Query extends Controller
 {
     public function __construct(
         protected HelpersQuery $queryHelper,
-    ) {
-    }
+    ) {}
 
-protected function validateParams(string $params): array
-{
-    // Explode on /, remove trailing /
-    $params = explode("/", rtrim($params, '/'));
-    $validParams = array_merge($this->queryHelper->validQueryParams, $this->queryHelper->validSortParams);
+    protected function validateParams(string $params): array
+    {
+        // Explode on /, remove trailing /
+        $params = explode("/", rtrim($params, '/'));
+        $validParams = array_merge($this->queryHelper->validQueryParams, $this->queryHelper->validSortParams);
 
-    $count = 0;
-    $tempParams = [];
+        $count = 0;
+        $tempParams = [];
 
-    if (count($params) >= 2) {
-        foreach ($params as $param) {
-            if (empty($param)) {
-                continue;
-            }
+        if (count($params) >= 2) {
+            foreach ($params as $param) {
+                if (empty($param)) {
+                    continue;
+                }
 
-            // Get key-value pairs
-            if ($count % 2 == 0) {
-                $key = $param;
-                $value = $params[$count + 1] ?? null;
+                // Get key-value pairs
+                if ($count % 2 == 0) {
+                    $key = $param;
+                    $value = $params[$count + 1] ?? null;
 
-                // Check if the parameter is valid
-                if (isset($validParams[$key])) {
-                    $expectedType = $validParams[$key];
+                    // Check if the parameter is valid
+                    if (isset($validParams[$key])) {
+                        $expectedType = $validParams[$key];
 
-                    // Typecast based on the expected type
-                    $castedValue = $this->castValue($value, $expectedType);
+                        // Typecast based on the expected type
+                        $castedValue = $this->castValue($value, $expectedType);
 
-                    if ($castedValue !== null) {
-                        // If the key already exists, convert it to an array or append to the existing array
-                        if (isset($tempParams[$key])) {
-                            if (!is_array($tempParams[$key])) {
-                                $tempParams[$key] = [$tempParams[$key]];
+                        if ($castedValue !== null) {
+                            // If the key already exists, convert it to an array or append to the existing array
+                            if (isset($tempParams[$key])) {
+                                if (!is_array($tempParams[$key])) {
+                                    $tempParams[$key] = [$tempParams[$key]];
+                                }
+                                $tempParams[$key][] = $castedValue;
+                            } else {
+                                $tempParams[$key] = $castedValue;
                             }
-                            $tempParams[$key][] = $castedValue;
                         } else {
-                            $tempParams[$key] = $castedValue;
+                            throw new \InvalidArgumentException("Invalid type for parameter '$key'. Expected $expectedType.");
                         }
                     } else {
-                        throw new \InvalidArgumentException("Invalid type for parameter '$key'. Expected $expectedType.");
+                        throw new \InvalidArgumentException("Invalid parameter '$key' provided.");
                     }
-                } else {
-                    throw new \InvalidArgumentException("Invalid parameter '$key' provided.");
                 }
+
+                $count++;
             }
-
-            $count++;
         }
+
+        // Apply additional validation for specific parameters
+        $tempParams['page'] = $tempParams['page'] ?? 1;
+        $tempParams['limit'] = $tempParams['limit'] ?? 1000;
+        $tempParams['offset'] = $tempParams['offset'] ?? 0;
+        $tempParams['order'] = $tempParams['order'] ?? 'DESC';
+
+        // Adjust offset based on page and limit
+        if ($tempParams['page'] > 1) {
+            $tempParams['offset'] = $tempParams['limit'] * ($tempParams['page'] - 1);
+        }
+
+        // Enforce limits on 'limit'
+        if ($tempParams['limit'] > 1000) {
+            $tempParams['limit'] = 1000;
+        } elseif ($tempParams['limit'] < 1) {
+            $tempParams['limit'] = 1;
+        }
+
+        // Validate the 'order' parameter
+        $validOrder = ['ASC', 'DESC'];
+        if (!in_array(strtoupper($tempParams['order']), $validOrder, true)) {
+            $tempParams['order'] = 'DESC';
+        }
+
+        return $tempParams;
     }
-
-    // Apply additional validation for specific parameters
-    $tempParams['page'] = $tempParams['page'] ?? 1;
-    $tempParams['limit'] = $tempParams['limit'] ?? 1000;
-    $tempParams['offset'] = $tempParams['offset'] ?? 0;
-    $tempParams['order'] = $tempParams['order'] ?? 'DESC';
-
-    // Adjust offset based on page and limit
-    if ($tempParams['page'] > 1) {
-        $tempParams['offset'] = $tempParams['limit'] * ($tempParams['page'] - 1);
-    }
-
-    // Enforce limits on 'limit'
-    if ($tempParams['limit'] > 1000) {
-        $tempParams['limit'] = 1000;
-    } elseif ($tempParams['limit'] < 1) {
-        $tempParams['limit'] = 1;
-    }
-
-    // Validate the 'order' parameter
-    $validOrder = ['ASC', 'DESC'];
-    if (!in_array(strtoupper($tempParams['order']), $validOrder, true)) {
-        $tempParams['order'] = 'DESC';
-    }
-
-    return $tempParams;
-}
 
     private function castValue($value, string $type): mixed
     {
