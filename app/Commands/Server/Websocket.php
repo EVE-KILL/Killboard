@@ -60,10 +60,10 @@ class Websocket extends ConsoleCommand
             'daemonize' => false,
             'worker_num' => $this->workers,
             'max_request' => 1000000,
-            'dispatch_mode' => 2,
+            'dispatch_mode' => 3,
             'backlog' => -1,
             'enable_coroutine' => true,
-            'buffer_output_size' => 4 * 1024 * 1024, // 4MB
+            'buffer_output_size' => 16 * 1024 * 1024, // 16MB
 
             // Websocket
             'websocket_compression' => true,

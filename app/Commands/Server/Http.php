@@ -54,15 +54,12 @@ class Http extends ConsoleCommand
             'daemonize' => false,
             'worker_num' => $this->workers,
             'max_request' => 1000000,
-            'dispatch_mode' => 2,
+            'dispatch_mode' => 3,
             'backlog' => -1,
             'enable_coroutine' => true,
             'http_compression' => true,
             'http_compression_level' => 1,
             'buffer_output_size' => 4 * 1024 * 1024, // 4MB
-
-            // Websocket
-            'websocket_compression' => true
         ];
 
         // Emit the settings as a table
