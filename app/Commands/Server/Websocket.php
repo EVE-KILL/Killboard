@@ -32,7 +32,7 @@ class Websocket extends ConsoleCommand
     ) {
         parent::__construct($name);
 
-        $this->wsClients = new Table(1024*1024);
+        $this->wsClients = new Table(1024*8);
         $this->wsClients->column('id', Table::TYPE_INT, 4);
         $this->wsClients->column('data', Table::TYPE_STRING, 2048);
         $this->wsClients->column('endpoint', Table::TYPE_STRING, 2048);
