@@ -156,6 +156,16 @@ class Websocket extends ConsoleCommand
             $this->out('Websocket Subscriptions');
             $this->tableOneRow($endpoints);
         });
+
+        // Every 60 seconds, clean up the wsClients table by checking if clients are still connected
+        $server->tick(60000, function () {
+            foreach($this->wsClients as $fd => $client) {
+                if (!$this->wsClients->exists($fd)) {
+                    $this->wsClients->del($fd);
+                }
+            }
+        });
+
         return $server;
     }
 }
