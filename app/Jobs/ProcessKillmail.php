@@ -32,7 +32,7 @@ class ProcessKillmail extends Jobs
         $this->killmails->save();
 
         // Load the killmail from the collection
-        $loadedKillmail = $this->killmails->find(['killmail_id' => $killmail_id]);
+        $loadedKillmail = $this->killmails->find(['killmail_id' => $killmail_id], showHidden: true);
         dump($loadedKillmail->get('emitted'));
         if ($loadedKillmail->get('emitted') === true) {
             return;
