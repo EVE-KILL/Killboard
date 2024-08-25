@@ -218,4 +218,5 @@ class Killmail extends Controller
         ], ['allowDiskUse' => true, 'hint' => 'system_id_x_y_z']);
 
         return $this->json($results);
+    }
 }
