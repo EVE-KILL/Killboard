@@ -6,6 +6,7 @@ use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Jobs\ProcessKillmail;
 use EK\Models\Killmails;
+use GuzzleHttp\Client;
 
 class zkbRedisQ extends ConsoleCommand
 {
@@ -33,8 +34,20 @@ class zkbRedisQ extends ConsoleCommand
         $run = true;
         do {
             try {
-                $kill = json_decode(file_get_contents($queueUrl), true);
-                if ($kill['package'] !== null) {
+                $client = new Client();
+
+                // Set user agent to avoid 403
+                $response = $client->request('GET', $queueUrl, [
+                    'headers' => [
+                        'User-Agent' => 'EVE-KILL'
+                    ]
+                ]);
+
+                $statusCode = $response->getStatusCode();
+                $killmail = $response->getBody()->getContents();
+                $kill = json_validate($killmail) ? json_decode($killmail, true) : null;
+
+                if ($kill !== null && $kill['package'] !== null) {
                     // Check the killmail doesn't already exist
                     if ($this->killmails->findOne(['killmail_id' => $kill['package']['killID']])->isNotEmpty()) {
                         $this->out('Killmail already exists: ' . $kill['package']['killID']);

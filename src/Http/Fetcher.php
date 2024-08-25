@@ -57,7 +57,7 @@ class Fetcher
         $cacheKey = $this->cache->generateKey($path, $query, $headers);
 
         // Check if the data is in the cache
-        if ($this->cache->exists($cacheKey)) {
+        if ($cacheTime > 1 && $this->cache->exists($cacheKey)) {
             $result = $this->getResultFromCache($cacheKey);
             if ($result !== null) {
                 return $result;
@@ -145,7 +145,7 @@ class Fetcher
         $content = $response->getBody()->getContents();
 
         // Store the result in the cache
-        if ($expiresInSeconds > 0 && in_array($statusCode, [200, 304])) {
+        if ($cacheTime > 1 && $expiresInSeconds > 0 && in_array($statusCode, [200, 304])) {
             $theCacheTime = $cacheTime ?? $expiresInSeconds;
             $this->cache->set(
                 $cacheKey,
