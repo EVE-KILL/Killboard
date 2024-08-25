@@ -31,7 +31,19 @@ class ProcessKillmail extends Jobs
         $this->killmails->setData($parsedKillmail);
         $this->killmails->save();
 
-        // Emit the killmail to the websocket server
+        // Load the killmail from the collection
+        $loadedKillmail = $this->killmails->find(['killmail_id' => $killmail_id]);
+        dump($loadedKillmail->get('emitted'));
+        if ($loadedKillmail->get('emitted') === true) {
+            return;
+        }
+
+        // Enqueue the killmail into the websocket emitter
         $this->emitKillmailWS->enqueue($parsedKillmail);
+        // Update the emitted field to ensure we don't emit the killmail again
+        $this->killmails->collection->updateOne(
+            ['killmail_id' => $killmail_id],
+            ['$set' => ['emitted' => true]]
+        );
     }
 }

@@ -16,7 +16,7 @@ class Killmails extends Collection
     public string $indexField = 'killmail_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
-    public array $hiddenFields = [];
+    public array $hiddenFields = ['emitted'];
 
     /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
     public array $required = [];
@@ -27,6 +27,9 @@ class Killmails extends Collection
             ['killmail_id', 'hash']
         ],
         'desc' => [
+            // Websocket emit field
+            'emitted',
+
             // General fields
             'kill_time',
             ['kill_time', 'system_id'],
