@@ -35,9 +35,6 @@ class Http extends ConsoleCommand
 
     final public function handle(): void
     {
-        // Turn on all hooks
-        \OpenSwoole\Runtime::enableCoroutine(true, \OpenSwoole\Runtime::HOOK_ALL);
-
         // Instantiate the server
         $server = new \OpenSwoole\Http\Server($this->host, $this->port, \OpenSwoole\Server::POOL_MODE, Constant::SOCK_TCP);
 
@@ -53,12 +50,12 @@ class Http extends ConsoleCommand
         $serverSettings = [
             'daemonize' => false,
             'worker_num' => $this->workers,
-            'max_request' => 1000000,
+            'max_request' => 10000,
             'dispatch_mode' => 2,
             'backlog' => -1,
             'enable_coroutine' => true,
             'http_compression' => true,
-            'http_compression_level' => 1,
+            'http_compression_level' => 4,
             'buffer_output_size' => 4 * 1024 * 1024, // 4MB
         ];
 
