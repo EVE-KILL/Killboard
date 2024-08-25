@@ -30,6 +30,7 @@ class EmitKillmailWS extends Jobs
             'token' => $this->config->get('ws_token'),
             'data' => $this->cleanupTimestamps($data)
         ]));
+        $client->close();
     }
 
     private function cleanupTimestamps(array $data): array
