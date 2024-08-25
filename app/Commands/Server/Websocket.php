@@ -31,16 +31,16 @@ class Websocket extends ConsoleCommand
         ?string $name = null
     ) {
         parent::__construct($name);
+    }
 
+    final public function handle(): void
+    {
         $this->wsClients = new Table(102400);
         $this->wsClients->column('id', Table::TYPE_INT, 4);
         $this->wsClients->column('data', Table::TYPE_STRING, 2048);
         $this->wsClients->column('endpoint', Table::TYPE_STRING, 2048);
         $this->wsClients->create();
-    }
 
-    final public function handle(): void
-    {
         // Turn on all hooks
         \OpenSwoole\Runtime::enableCoroutine(true, \OpenSwoole\Runtime::HOOK_ALL);
 
@@ -60,7 +60,7 @@ class Websocket extends ConsoleCommand
             'daemonize' => false,
             'worker_num' => $this->workers,
             'max_request' => 1000000,
-            'dispatch_mode' => 3,
+            'dispatch_mode' => 2,
             'backlog' => -1,
             'enable_coroutine' => true,
             'buffer_output_size' => 16 * 1024 * 1024, // 16MB

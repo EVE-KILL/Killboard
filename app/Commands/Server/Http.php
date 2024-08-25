@@ -54,7 +54,7 @@ class Http extends ConsoleCommand
             'daemonize' => false,
             'worker_num' => $this->workers,
             'max_request' => 1000000,
-            'dispatch_mode' => 3,
+            'dispatch_mode' => 2,
             'backlog' => -1,
             'enable_coroutine' => true,
             'http_compression' => true,
