@@ -6,6 +6,7 @@ use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Cache\Cache;
 use EK\Helpers\Battle;
+use EK\Models\Celestials;
 use Psr\Http\Message\ResponseInterface;
 
 class Killmail extends Controller
@@ -13,6 +14,7 @@ class Killmail extends Controller
     public function __construct(
         protected \EK\Models\Killmails $killmails,
         protected \EK\Models\KillmailsESI $killmailsESI,
+        protected Celestials $celestials,
         protected Battle $battleHelper,
         protected Cache $cache
     ) {
@@ -118,4 +120,102 @@ class Killmail extends Controller
 
         return $this->json($killmails->toArray(), 300);
     }
+
+    #[RouteAttribute("/killmail/near/{system_id:[0-9]+}/{distanceInMeters:[0-9]+}/{x}/{y}/{z}[/{days:[0-9]+}]", ["GET"], "Get killmails near coordinates")]
+    public function killmailsNearCoordinates(int $systemId, int $distanceInMeters, float $x, float $y, float $z, int $days = 1): ResponseInterface
+    {
+        $results = $this->killmails->aggregate([
+            [
+                '$match' => [
+                    'system_id' => $systemId,
+                    'x' => ['$gt' => $x - $distanceInMeters, '$lt' => $x + $distanceInMeters],
+                    'y' => ['$gt' => $y - $distanceInMeters, '$lt' => $y + $distanceInMeters],
+                    'z' => ['$gt' => $z - $distanceInMeters, '$lt' => $z + $distanceInMeters],
+                    'kill_time' => ['$gte' => new \MongoDB\BSON\UTCDateTime((time() - ($days * 86400)) * 1000)]
+                ]
+            ],
+            [
+                '$project' => [
+                    'killmail_id' => 1,
+                    'distance' => [
+                        '$sqrt' => [
+                            '$add' => [
+                                ['$pow' => [['$subtract' => ['$x', $x]], 2]],
+                                ['$pow' => [['$subtract' => ['$y', $y]], 2]],
+                                ['$pow' => [['$subtract' => ['$z', $z]], 2]],
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            [
+                '$match' => [
+                    'distance' => ['$lt' => $distanceInMeters]
+                ]
+            ],
+            [
+                '$sort' => ['distance' => -1]
+            ],
+            [
+                '$limit' => 10
+            ]
+        ], ['allowDiskUse' => true, 'hint' => 'system_id_x_y_z']);
+
+        return $this->json($results);
+    }
+
+    #[RouteAttribute("/killmail/near/{celestial_id:[0-9]+}/{distanceInMeters:[0-9]+}[/{days:[0-9]+}]", ["GET"], "Get killmails near a celestial")]
+    public function killmailsNearCelestial(int $celestialId, int $distanceInMeters, int $days = 1): ResponseInterface
+    {
+        $celestial = $this->celestials->findOneOrNull(
+            ['item_id' => $celestialId],
+            ['projection' => ['_id' => 0]]
+        );
+        if ($celestial === null) {
+            return $this->json(
+                [
+                    'error' => 'Celestial not found',
+                ],
+                300
+            );
+        }
+
+        $results = $this->killmails->aggregate([
+            [
+                '$match' => [
+                    'system_id' => $celestial->get('solar_system_id'),
+                    'x' => ['$gt' => $celestial->get('x') - $distanceInMeters, '$lt' => $celestial->get('x') + $distanceInMeters],
+                    'y' => ['$gt' => $celestial->get('y') - $distanceInMeters, '$lt' => $celestial->get('y') + $distanceInMeters],
+                    'z' => ['$gt' => $celestial->get('z') - $distanceInMeters, '$lt' => $celestial->get('z') + $distanceInMeters],
+                    'kill_time' => ['$gte' => new \MongoDB\BSON\UTCDateTime((time() - ($days * 86400)) * 1000)]
+                ]
+            ],
+            [
+                '$project' => [
+                    'killmail_id' => 1,
+                    'distance' => [
+                        '$sqrt' => [
+                            '$add' => [
+                                ['$pow' => [['$subtract' => ['$x', $celestial->get('x')]], 2]],
+                                ['$pow' => [['$subtract' => ['$y', $celestial->get('y')]], 2]],
+                                ['$pow' => [['$subtract' => ['$z', $celestial->get('z')]], 2]],
+                            ]
+                        ]
+                    ]
+                ]
+            ],
+            [
+                '$match' => [
+                    'distance' => ['$lt' => $distanceInMeters]
+                ]
+            ],
+            [
+                '$sort' => ['distance' => -1]
+            ],
+            [
+                '$limit' => 10
+            ]
+        ], ['allowDiskUse' => true, 'hint' => 'system_id_x_y_z']);
+
+        return $this->json($results);
 }
