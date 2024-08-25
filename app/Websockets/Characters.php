@@ -10,8 +10,6 @@ class Characters extends Websocket
 
     public function handle(array $data): void
     {
-        dump($data);
-
         $this->sendAll(json_encode($data));
     }
 }
