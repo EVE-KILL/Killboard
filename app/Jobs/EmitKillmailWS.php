@@ -3,6 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Config\Config;
 use EK\Helpers\Killmails as HelpersKillmails;
 use EK\Models\Killmails;
 use EK\RabbitMQ\RabbitMQ;
@@ -16,6 +17,7 @@ class EmitKillmailWS extends Jobs
         protected Killmails $killmails,
         protected HelpersKillmails $killmailHelper,
         protected RabbitMQ $rabbitMQ,
+        protected Config $config
     ) {
         parent::__construct($rabbitMQ);
     }
