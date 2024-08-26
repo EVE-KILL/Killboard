@@ -24,7 +24,7 @@ class EmitKillmailWS extends Jobs
 
     public function handle(array $data): void
     {
-        $client = new Client('wss://eve-kill.com/kills');
+        $client = new Client('wss://ws.eve-kill.com/kills');
         $client->text(json_encode([
             'type' => 'broadcast',
             'token' => $this->config->get('ws_token'),
