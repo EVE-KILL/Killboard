@@ -4,18 +4,14 @@ namespace EK\Commands\Information;
 
 use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
-use EK\Api\Attributes\RouteAttribute;
 use EK\Redis\Redis;
-use Kcs\ClassFinder\Finder\ComposerFinder;
-use Predis\Client;
-use ReflectionClass;
-use RuntimeException;
+use Redis as PhpRedis;
 
 class Queue extends ConsoleCommand
 {
     public string $signature = "info:queue { --json : Output as JSON }";
     public string $description = "List all the information about the queue";
-    protected Client $redisClient;
+    protected PhpRedis $redisClient;
     public function __construct(
         protected ClassLoader $autoloader,
         protected Redis $redis

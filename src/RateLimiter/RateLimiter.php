@@ -3,7 +3,7 @@
 namespace EK\RateLimiter;
 
 use EK\Redis\Redis;
-use Predis\Client;
+use Redis as PhpRedis;
 use Symfony\Component\Cache\Adapter\RedisAdapter;
 use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Lock\Store\RedisStore;
@@ -13,7 +13,7 @@ use Symfony\Component\RateLimiter\Storage\CacheStorage;
 
 class RateLimiter
 {
-    protected Client $client;
+    protected PhpRedis $client;
 
     public function __construct(
         protected Redis $redis

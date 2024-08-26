@@ -3,33 +3,44 @@
 namespace EK\Redis;
 
 use EK\Config\Config;
-use Predis\Client;
+use \Redis as PhpRedis;
 
 class Redis
 {
-    protected Client $client;
+    protected PhpRedis $client;
 
     public function __construct(
         protected Config $config
     ) {
-        $this->client = new Client([
-            'scheme' => 'tcp',
-            'host' => $this->config->get('redis/host'),
-            'port' => $this->config->get('redis/port'),
-            'password' => $this->config->get('redis/password'),
-            'database' => $this->config->get('redis/database'),
-        ], [
-            'prefix' => 'evekill:',
-            'persistent' => true,
-            'timeout' => 10,
-            'read_write_timeout' => 5,
-            'tcp_keepalive' => 1,
-            'tcp_nodelay' => true,
-            'throw_errors' => true,
-        ]);
+        $this->client = new PhpRedis();
+
+        // Establish a persistent connection to Redis
+        $this->client->pconnect(
+            $this->config->get('redis/host'),
+            $this->config->get('redis/port'),
+            10, // timeout in seconds
+            null, // persistent_id, null by default
+            0, // retry_interval, 0 means no retry
+            0 // read_timeout, 0 means infinite
+        );
+
+        // Set password if provided
+        $password = $this->config->get('redis/password');
+        if ($password) {
+            $this->client->auth($password);
+        }
+
+        // Select the database
+        $this->client->select($this->config->get('redis/database'));
+
+        // Set options
+        $this->client->setOption(PhpRedis::OPT_PREFIX, 'evekill:');
+        $this->client->setOption(PhpRedis::OPT_SERIALIZER, 2);
+        $this->client->setOption(PhpRedis::OPT_READ_TIMEOUT, 30);
+        $this->client->setOption(PhpRedis::OPT_TCP_KEEPALIVE, 1);
     }
 
-    public function getClient(): Client
+    public function getClient(): PhpRedis
     {
         return $this->client;
     }

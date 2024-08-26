@@ -2,11 +2,11 @@
 namespace EK\Cache;
 
 use EK\Redis\Redis;
-use Predis\Client;
+use Redis as PhpRedis;
 
 class Cache
 {
-    protected Client $client;
+    protected PhpRedis $client;
 
     public function __construct(
         protected Redis $redis
