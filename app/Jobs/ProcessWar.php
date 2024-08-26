@@ -4,7 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Models\Wars;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use MongoDB\BSON\UTCDateTime;
 
 class ProcessWar extends Jobs
@@ -14,9 +14,9 @@ class ProcessWar extends Jobs
         protected Wars $warsModel,
         protected \EK\ESI\Wars $esiWars,
         protected ProcessKillmail $killmailJob,
-        protected Redis $redis
+        protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

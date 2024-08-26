@@ -4,7 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Models\KillmailsESI;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use MongoDB\BSON\UTCDateTime;
 
 class ProcessEveRefKillmails extends Jobs
@@ -13,9 +13,9 @@ class ProcessEveRefKillmails extends Jobs
 
     public function __construct(
         protected KillmailsESI $killmailsESI,
-        protected Redis $redis
+        protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

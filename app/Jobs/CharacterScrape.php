@@ -6,7 +6,6 @@ use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\CharacterScrape as FetchersCharacterScrape;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
-use EK\Redis\Redis;
 use EK\Models\Characters;
 use EK\Models\Alliances;
 use EK\Models\Corporations;
@@ -15,6 +14,7 @@ use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
 use EK\Fetchers\EveWho;
+use EK\RabbitMQ\RabbitMQ;
 use EK\Webhooks\Webhooks;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
@@ -33,14 +33,14 @@ class CharacterScrape extends Jobs
         protected ESICorporations $esiCorporations,
         protected ESICharacters $esiCharacters,
         protected Meilisearch $meilisearch,
-        protected Redis $redis,
+        protected RabbitMQ $rabbitMQ,
         protected FileLogger $logger,
         protected FetchersCharacterScrape $esiFetcher,
         protected EveWho $eveWhoFetcher,
         protected Webhooks $webhooks,
         protected EmitCharacterWS $emitCharacterWS
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

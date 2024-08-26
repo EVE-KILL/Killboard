@@ -5,7 +5,7 @@ namespace EK\Jobs;
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\EveWho;
 use EK\Models\Characters;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 
 class EVEWhoCharacter extends Jobs
 {
@@ -13,9 +13,9 @@ class EVEWhoCharacter extends Jobs
     public function __construct(
         protected EveWho $eveWhoFetcher,
         protected Characters $characters,
-        protected Redis $redis
+        protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

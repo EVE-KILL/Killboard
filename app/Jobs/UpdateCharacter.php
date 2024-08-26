@@ -12,11 +12,11 @@ use MongoDB\BSON\UTCDateTime;
 use EK\Models\Characters;
 use EK\Models\Alliances;
 use EK\Models\Corporations;
-use EK\Models\Factions ;
+use EK\Models\Factions;
 use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 
 class UpdateCharacter extends Jobs
 {
@@ -35,9 +35,9 @@ class UpdateCharacter extends Jobs
         protected Meilisearch $meilisearch,
         protected FileLogger $logger,
         protected EveWho $eveWhoFetcher,
-        protected Redis $redis,
+        protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

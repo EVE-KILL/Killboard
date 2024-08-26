@@ -3,9 +3,10 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Config\Config;
 use EK\Fetchers\ESI;
 use EK\Models\Proxies;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use MongoDB\BSON\UTCDateTime;
 
 class ValidateProxy extends Jobs
@@ -22,10 +23,10 @@ class ValidateProxy extends Jobs
 
     public function __construct(
         protected Proxies $proxies,
-        protected Redis $redis,
+        protected RabbitMQ $rabbitMQ,
         protected ESI $esiFetcher
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

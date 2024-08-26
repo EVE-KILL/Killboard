@@ -3,10 +3,9 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Config\Config;
 use EK\Helpers\Killmails as HelpersKillmails;
 use EK\Models\Killmails;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use MongoDB\BSON\UTCDateTime;
 use WebSocket\Client;
 
@@ -16,15 +15,14 @@ class EmitKillmailWS extends Jobs
     public function __construct(
         protected Killmails $killmails,
         protected HelpersKillmails $killmailHelper,
-        protected Config $config,
-        protected Redis $redis
+        protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void
     {
-        $client = new Client('wss://ws.eve-kill.com/kills');
+        $client = new Client('wss://eve-kill.com/kills');
         $client->text(json_encode([
             'type' => 'broadcast',
             'token' => $this->config->get('ws_token'),

@@ -6,7 +6,7 @@ use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\EveWho;
 use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use Illuminate\Support\Collection;
 use League\Container\Container;
 use MongoDB\BSON\UTCDateTime;
@@ -26,11 +26,11 @@ class UpdateAlliance extends Jobs
         protected Meilisearch $meilisearch,
         protected EveWho $eveWhoFetcher,
         protected UpdateCharacter $updateCharacter,
-        protected Redis $redis,
+        protected RabbitMQ $rabbitMQ,
         protected FileLogger $logger,
         protected Container $container,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

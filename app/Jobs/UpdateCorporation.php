@@ -16,7 +16,7 @@ use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
 use EK\ESI\Stations as ESIStations;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use League\Container\Container;
 use MongoDB\BSON\UTCDateTime;
 
@@ -37,11 +37,11 @@ class UpdateCorporation extends Jobs
         protected Meilisearch $meilisearch,
         protected EveWho $eveWhoFetcher,
         protected UpdateCharacter $updateCharacter,
-        protected Redis $redis,
+        protected RabbitMQ $rabbitMQ,
         protected FileLogger $logger,
         protected Container $container,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

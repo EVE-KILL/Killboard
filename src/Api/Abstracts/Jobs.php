@@ -3,34 +3,27 @@
 namespace EK\Api\Abstracts;
 
 use EK\Logger\FileLogger;
-use EK\Redis\Redis;
-use Predis\Client;
+use EK\RabbitMQ\RabbitMQ;
+use PhpAmqpLib\Channel\AMQPChannel;
+use PhpAmqpLib\Message\AMQPMessage;
 
 abstract class Jobs
 {
-    protected array $queues = [
-        'high',
-        'characters',
-        'corporations',
-        'alliances',
-        'universe',
-        'killmails',
-        'low',
-        'default'
-    ];
     protected string $defaultQueue = 'low';
     public bool $requeue = true;
-    protected Client $client;
     protected FileLogger $logger;
+    protected AMQPChannel $channel;
 
     public function __construct(
-        protected Redis $redis
+        protected RabbitMQ $rabbitMQ
     ) {
-        $this->client = $redis->getClient();
+        // Logger setup
         $this->logger = new FileLogger(
             BASE_DIR . '/logs/jobs.log',
             'queue-logger'
         );
+
+        $this->channel = $this->rabbitMQ->getChannel();
     }
 
     /**
@@ -41,33 +34,63 @@ abstract class Jobs
      */
     public function enqueue(array $data = [], ?string $queue = null, int $processAfter = 0): void
     {
+        $queue = $queue ?? $this->defaultQueue;
+
+        // Declare the queue
+        $this->channel->queue_declare($queue, false, true, false, false);
+
+        // Prepare job data
         $jobData = [
             'job' => get_class($this),
             'data' => $data,
             'process_after' => $processAfter,
         ];
 
-        $this->client->rpush($queue ?? $this->defaultQueue, [json_encode($jobData)]);
+        // Create AMQP message
+        $messageBody = json_encode($jobData);
+        $msg = new AMQPMessage($messageBody, ['delivery_mode' => 2]); // Make message persistent
+
+        // Publish to the queue
+        $this->channel->basic_publish($msg, '', $queue);
+
+        $this->logger->info("Job enqueued to {$queue}", $jobData);
     }
 
     public function massEnqueue(array $data = [], ?string $queue = null, int $processAfter = 0): void
     {
-        $jobs = [];
+        $queue = $queue ?? $this->defaultQueue;
+
+        // Declare the queue
+        $this->channel->queue_declare($queue, false, true, false, false);
+
         $thisClass = get_class($this);
+
         foreach ($data as $d) {
-            $jobs[] = json_encode([
+            $jobData = [
                 'job' => $thisClass,
                 'data' => $d,
                 'process_after' => $processAfter,
-            ]);
-        }
+            ];
 
-        $this->client->rpush($queue ?? $this->defaultQueue, $jobs);
+            $messageBody = json_encode($jobData);
+            $msg = new AMQPMessage($messageBody, ['delivery_mode' => 2]); // Persistent message
+
+            // Publish to the queue
+            $this->channel->basic_publish($msg, '', $queue);
+            $this->logger->info("Job enqueued to {$queue}", $jobData);
+        }
     }
 
     public function emptyQueue(?string $queue = null): void
     {
-        $this->client->del($queue ?? $this->defaultQueue);
+        $queue = $queue ?? $this->defaultQueue;
+
+        // Declare the queue
+        $this->channel->queue_declare($queue, false, true, false, false);
+
+        // Purge the queue
+        $this->channel->queue_purge($queue);
+        $this->logger->info("Queue {$queue} purged.");
     }
 
     abstract public function handle(array $data): void;

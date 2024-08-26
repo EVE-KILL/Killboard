@@ -3,8 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Config\Config;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use WebSocket\Client;
 
 class EmitCharacterWS extends Jobs
@@ -12,15 +11,14 @@ class EmitCharacterWS extends Jobs
     protected string $defaultQueue = 'websocket';
 
     public function __construct(
-        protected Config $config,
-        protected Redis $redis
+        protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void
     {
-        $client = new Client('wss://ws.eve-kill.com/characters');
+        $client = new Client('wss://eve-kill.com/characters');
         $client->text(json_encode([
             'type' => 'broadcast',
             'token' => $this->config->get('ws_token'),

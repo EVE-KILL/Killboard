@@ -1,13 +1,13 @@
 version: '3'
 
 status:
-    address: '0.0.0.0:8081' # http://0.0.0.0:8081/health?plugin=http
+    address: '0.0.0.0:9202' # http://0.0.0.0:8081/health?plugin=http
 
 server:
     command: 'php bin/console server:roadrunner'
     relay: pipes
 http:
-    address: '0.0.0.0:8080'
+    address: '0.0.0.0:9201'
     middleware:
         - gzip
     pool:

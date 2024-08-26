@@ -5,7 +5,7 @@ namespace EK\Jobs;
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\EveWho;
 use EK\Models\Characters;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 use League\Container\Container;
 
 class EVEWhoCharactersInCorporation extends Jobs
@@ -14,10 +14,10 @@ class EVEWhoCharactersInCorporation extends Jobs
     public function __construct(
         protected EveWho $eveWhoFetcher,
         protected Characters $characters,
-        protected Redis $redis,
+        protected RabbitMQ $rabbitMQ,
         protected Container $container
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void

@@ -54,7 +54,8 @@
     "spiral/roadrunner-cli": "^2.6",
     "nyholm/psr7": "^1.8",
     "spiral/roadrunner-http": "^3.5",
-    "spiral/roadrunner": "^2024.2"
+    "spiral/roadrunner": "^2024.2",
+    "php-amqplib/php-amqplib": "^3.7"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",

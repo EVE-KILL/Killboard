@@ -4,7 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Models\Killmails;
-use EK\Redis\Redis;
+use EK\RabbitMQ\RabbitMQ;
 
 class ProcessKillmail extends Jobs
 {
@@ -13,9 +13,9 @@ class ProcessKillmail extends Jobs
         protected Killmails $killmails,
         protected \EK\Helpers\Killmails $killmailHelper,
         protected EmitKillmailWS $emitKillmailWS,
-        protected Redis $redis
+        protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($redis);
+        parent::__construct($rabbitMQ);
     }
 
     public function handle(array $data): void
@@ -36,6 +36,7 @@ class ProcessKillmail extends Jobs
         if ($loadedKillmail->get('emitted') === true) {
             return;
         }
+
 
         // Enqueue the killmail into the websocket emitter
         $this->emitKillmailWS->enqueue($parsedKillmail);
