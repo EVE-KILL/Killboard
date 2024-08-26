@@ -1,8 +1,18 @@
 <?php
 namespace EK\Cache;
 
+use EK\Redis\Redis;
+use Predis\Client;
+
 class Cache
 {
+    protected Client $client;
+    public function __construct(
+        protected Redis $redis
+    ) {
+        $this->client = $this->redis->getClient();
+    }
+
     public function generateKey(...$args): string
     {
         // Generate a unique key based on the arguments
@@ -11,33 +21,25 @@ class Cache
 
     public function getTTL(string $key): int
     {
-        $ttl = \apcu_fetch($key . "_ttl");
-        return $ttl !== false ? $ttl - time() : -1;
+        // Get the TTL of the key
+        return $this->client->ttl($key);
     }
 
     public function get(string $key): mixed
     {
-        $result = \apcu_fetch($key);
-        if ($result === false) {
-            return null;
-        }
-
-        return json_decode($result, true);
+        // Get the value of the key
+        return $this->client->get($key);
     }
 
     public function set(string $key, mixed $value, int $ttl = 0): void
     {
-        $encodedValue = json_encode($value);
-        \apcu_store($key, $encodedValue, $ttl);
-
-        if ($ttl > 0) {
-            // Store the expiration time if TTL is set
-            \apcu_store($key . "_ttl", time() + $ttl, $ttl);
-        }
+        // Set the value of the key
+        $this->client->set($key, $value, $ttl);
     }
 
     public function exists(string $key): bool
     {
-        return \apcu_exists($key);
+        // Check if the key exists
+        return $this->client->exists($key);
     }
 }
