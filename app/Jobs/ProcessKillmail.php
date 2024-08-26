@@ -109,6 +109,9 @@ class ProcessKillmail extends Jobs
             }
         }
 
+        // Add the killmail to the all routing key as well
+        $routingKeys[] = 'all';
+
         if (!empty($routingKeys)) {
             // Specify 'topic' as the exchange type for topic-based routing
             $this->enqueue($parsedKillmail, null, 0, $this->exchange, $routingKeys, 'topic');
