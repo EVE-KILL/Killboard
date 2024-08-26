@@ -1,5 +1,8 @@
 version: '3'
 
+status:
+    address: '0.0.0.0:8081' # http://0.0.0.0:8081/health?plugin=http
+
 server:
     command: 'php bin/console server:roadrunner'
     relay: pipes
@@ -8,6 +11,6 @@ http:
     middleware:
         - gzip
     pool:
-        num_workers: 1
+        num_workers: 4
         supervisor:
-            max_worker_memory: 100
+            max_worker_memory: 256
