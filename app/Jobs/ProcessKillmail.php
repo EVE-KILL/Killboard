@@ -9,6 +9,8 @@ use EK\RabbitMQ\RabbitMQ;
 class ProcessKillmail extends Jobs
 {
     protected string $defaultQueue = 'killmail';
+    protected string $exchange = 'killmail_topic_exchange'; // Set a default exchange for topics
+
     public function __construct(
         protected Killmails $killmails,
         protected \EK\Helpers\Killmails $killmailHelper,
@@ -37,13 +39,79 @@ class ProcessKillmail extends Jobs
             return;
         }
 
-
         // Enqueue the killmail into the websocket emitter
         $this->emitKillmailWS->enqueue($parsedKillmail);
+
         // Update the emitted field to ensure we don't emit the killmail again
         $this->killmails->collection->updateOne(
             ['killmail_id' => $killmail_id],
             ['$set' => ['emitted' => true]]
         );
+
+        // Emit the killmail to various topics based on the parsed data
+        $this->emitToTopics($parsedKillmail);
+    }
+
+    protected function emitToTopics(array $parsedKillmail): void
+    {
+        $routingKeys = [];
+
+        // Add routing keys based on the parsed killmail data
+        $systemId = $parsedKillmail['system_id'] ?? null;
+        if ($systemId) {
+            $routingKeys[] = "system.{$systemId}";
+        }
+
+        $regionId = $parsedKillmail['region_id'] ?? null;
+        if ($regionId) {
+            $routingKeys[] = "region.{$regionId}";
+        }
+
+        $characterId = $parsedKillmail['victim']['character_id'] ?? null;
+        if ($characterId) {
+            $routingKeys[] = "character.{$characterId}";
+        }
+
+        $corporationId = $parsedKillmail['victim']['corporation_id'] ?? null;
+        if ($corporationId) {
+            $routingKeys[] = "corporation.{$corporationId}";
+        }
+
+        $allianceId = $parsedKillmail['victim']['alliance_id'] ?? null;
+        if ($allianceId) {
+            $routingKeys[] = "alliance.{$allianceId}";
+        }
+
+        $factionId = $parsedKillmail['victim']['faction_id'] ?? null;
+        if ($factionId) {
+            $routingKeys[] = "faction.{$factionId}";
+        }
+
+        foreach($parsedKillmail['attackers'] as $attacker) {
+            $characterId = $attacker['character_id'] ?? null;
+            if ($characterId) {
+                $routingKeys[] = "character.{$characterId}";
+            }
+
+            $corporationId = $attacker['corporation_id'] ?? null;
+            if ($corporationId) {
+                $routingKeys[] = "corporation.{$corporationId}";
+            }
+
+            $allianceId = $attacker['alliance_id'] ?? null;
+            if ($allianceId) {
+                $routingKeys[] = "alliance.{$allianceId}";
+            }
+
+            $factionId = $attacker['faction_id'] ?? null;
+            if ($factionId) {
+                $routingKeys[] = "faction.{$factionId}";
+            }
+        }
+
+        if (!empty($routingKeys)) {
+            // Specify 'topic' as the exchange type for topic-based routing
+            $this->enqueue($parsedKillmail, null, 0, $this->exchange, $routingKeys, 'topic');
+        }
     }
 }

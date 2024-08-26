@@ -13,6 +13,8 @@ abstract class Jobs
     public bool $requeue = true;
     protected FileLogger $logger;
     protected AMQPChannel $channel;
+    protected string $exchangeType = 'direct'; // Default to direct exchange
+    protected string $defaultExchange = ''; // Default exchange for queues, '' for the default queue behavior
 
     public function __construct(
         protected RabbitMQ $rabbitMQ
@@ -30,14 +32,24 @@ abstract class Jobs
      * @param array $data The data to pass to the job
      * @param null|string $queue The queue to push the job to
      * @param int $processAfter Unix timestamp of when to process the job
+     * @param string|null $exchange The exchange to use, null for default queue
+     * @param array|string|null $routingKeys An array of routing keys or a single routing key for topics/exchanges
+     * @param string|null $exchangeType The exchange type to use (e.g., 'direct', 'topic')
      * @return void
      */
-    public function enqueue(array $data = [], ?string $queue = null, int $processAfter = 0): void
+    public function enqueue(array $data = [], ?string $queue = null, int $processAfter = 0, ?string $exchange = null, array|string $routingKeys = null, ?string $exchangeType = null): void
     {
         $queue = $queue ?? $this->defaultQueue;
+        $exchange = $exchange ?? $this->defaultExchange;
+        $exchangeType = $exchangeType ?? $this->exchangeType;
 
-        // Declare the queue
-        $this->channel->queue_declare($queue, false, true, false, false);
+        if ($exchange) {
+            // Declare the exchange with the specified type
+            $this->channel->exchange_declare($exchange, $exchangeType, false, true, false);
+        } else {
+            // Declare the queue (standard queue)
+            $this->channel->queue_declare($queue, false, true, false, false);
+        }
 
         // Prepare job data
         $jobData = [
@@ -50,18 +62,33 @@ abstract class Jobs
         $messageBody = json_encode($jobData);
         $msg = new AMQPMessage($messageBody, ['delivery_mode' => 2]); // Make message persistent
 
-        // Publish to the queue
-        $this->channel->basic_publish($msg, '', $queue);
-
-        $this->logger->info("Job enqueued to {$queue}", $jobData);
+        if (is_array($routingKeys)) {
+            // If multiple routing keys are provided, publish to each
+            foreach ($routingKeys as $routingKey) {
+                $this->channel->basic_publish($msg, $exchange, $routingKey);
+                $this->logger->info("Job enqueued to {$exchange} with routing key {$routingKey}", $jobData);
+            }
+        } else {
+            // If a single routing key is provided, publish normally
+            $routingKey = $routingKeys ?? $queue; // Use queue name as routing key if not provided
+            $this->channel->basic_publish($msg, $exchange, $routingKey);
+            $this->logger->info("Job enqueued to " . ($exchange ?: $queue) . " with routing key {$routingKey}", $jobData);
+        }
     }
 
-    public function massEnqueue(array $data = [], ?string $queue = null, int $processAfter = 0): void
+    public function massEnqueue(array $data = [], ?string $queue = null, int $processAfter = 0, ?string $exchange = null, array|string $routingKeys = null, ?string $exchangeType = null): void
     {
         $queue = $queue ?? $this->defaultQueue;
+        $exchange = $exchange ?? $this->defaultExchange;
+        $exchangeType = $exchangeType ?? $this->exchangeType;
 
-        // Declare the queue
-        $this->channel->queue_declare($queue, false, true, false, false);
+        if ($exchange) {
+            // Declare the exchange with the specified type
+            $this->channel->exchange_declare($exchange, $exchangeType, false, true, false);
+        } else {
+            // Declare the queue (standard queue)
+            $this->channel->queue_declare($queue, false, true, false, false);
+        }
 
         $thisClass = get_class($this);
 
@@ -75,9 +102,18 @@ abstract class Jobs
             $messageBody = json_encode($jobData);
             $msg = new AMQPMessage($messageBody, ['delivery_mode' => 2]); // Persistent message
 
-            // Publish to the queue
-            $this->channel->basic_publish($msg, '', $queue);
-            $this->logger->info("Job enqueued to {$queue}", $jobData);
+            if (is_array($routingKeys)) {
+                // If multiple routing keys are provided, publish to each
+                foreach ($routingKeys as $routingKey) {
+                    $this->channel->basic_publish($msg, $exchange, $routingKey);
+                    $this->logger->info("Job enqueued to {$exchange} with routing key {$routingKey}", $jobData);
+                }
+            } else {
+                // If a single routing key is provided, publish normally
+                $routingKey = $routingKeys ?? $queue; // Use queue name as routing key if not provided
+                $this->channel->basic_publish($msg, $exchange, $routingKey);
+                $this->logger->info("Job enqueued to " . ($exchange ?: $queue) . " with routing key {$routingKey}", $jobData);
+            }
         }
     }
 
