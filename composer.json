@@ -50,7 +50,11 @@
     "symfony/rate-limiter": "^7.1",
     "symfony/cache": "^7.1",
     "symfony/lock": "^7.1",
-    "redis-ventures/redisvl": "^0.2.3"
+    "redis-ventures/redisvl": "^0.2.3",
+    "spiral/roadrunner-cli": "^2.6",
+    "nyholm/psr7": "^1.8",
+    "spiral/roadrunner-http": "^3.5",
+    "spiral/roadrunner": "^2024.2"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",
