@@ -106,10 +106,9 @@ class UpdateCharacter extends Jobs
             $data = json_decode($response['body'], true);
             $characterInfo = $data["info"][0] ?? [];
             $characterHistory = $data["history"] ?? [];
-            return [
+            $data = [
                 'character_id' => $characterInfo["character_id"] ?? $characterId,
                 'name' => $characterInfo["name"] ?? "Unknown",
-                'birthday' => new UTCDateTime(strtotime($characterInfo["birthday"]) * 1000) ?? new UTCDateTime(time() * 1000),
                 'corporation_id' => $characterInfo["corporation_id"] ?? 0,
                 'corporation_name' => $this->fetchCorporationData($characterInfo["corporation_id"] ?? 0)["name"] ?? "",
                 'alliance_id' => $characterInfo["alliance_id"] ?? 0,
@@ -122,6 +121,21 @@ class UpdateCharacter extends Jobs
                     ];
                 }, $characterHistory),
             ];
+
+            // Set the birthday if the field exists
+            if (isset($characterInfo['birthday'])) {
+                $data['birthday'] = new UTCDateTime(strtotime($characterInfo['birthday']) * 1000);
+            }
+
+            // If the birthday field isn't set but history is,
+            // Birthday can be extracted from history, if history exists - as the element with the lowest start date (Which is in the format: YYYY/MM/DD HH:ii - example: 2006/12/07 21:48)
+            // If no history exists, don't set a birthday field
+            if (!isset($data['birthday']) && count($data['history']) > 0) {
+                $birthday = $data['history'][0]['start_date'];
+                $data['birthday'] = new UTCDateTime(strtotime($birthday) * 1000);
+            }
+
+            return $data;
         } catch (\Exception $e) {
             $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
             return null;
@@ -144,6 +158,7 @@ class UpdateCharacter extends Jobs
         $characterData["corporation_name"] = $corporationData["name"] ?? "";
         $characterData["faction_name"] = $factionData["name"] ?? "";
         $characterData["last_updated"] = new UTCDateTime(time() * 1000);
+        $characterData['birthday'] = new UTCDateTime(strtotime($characterData['birthday']) * 1000);
 
         ksort($characterData);
 
