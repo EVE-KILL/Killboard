@@ -4,6 +4,7 @@ namespace EK\ESI;
 
 use EK\Fetchers\ESI;
 use League\Container\Container;
+use MongoDB\BSON\UTCDateTime;
 
 class Characters
 {
@@ -30,6 +31,9 @@ class Characters
         $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterID);
         $characterData = json_validate($characterData['body']) ? json_decode($characterData['body'], true) : [];
         $characterData['character_id'] = $characterID;
+        if (isset($characterData['birthday'])) {
+            $characterData['birthday'] = new UTCDateTime(strtotime($characterData['birthday']) * 1000);
+        }
 
         ksort($characterData);
 
