@@ -46,7 +46,6 @@ class CharacterScrape extends Jobs
     public function handle(array $data): void
     {
         $characterId = $data["character_id"];
-        $deleted = false;
 
         $existingCharacter = $this->characters->findOneOrNull([
             "character_id" => $characterId,
@@ -58,22 +57,17 @@ class CharacterScrape extends Jobs
 
         $characterData = $this->fetchCharacter($characterId);
 
-        if ($this->isCharacterFound($characterData)) {
-            $this->updateCharacterData($characterData, $deleted);
+        if ($this->isError($characterData) === false) {
+            $this->updateCharacterData($characterData);
         }
     }
 
-    protected function isCharacterFound(array $characterData): bool
+    protected function isError(array $characterData): bool
     {
-        $found = isset($characterData["error"]);
-        if ($found) {
-            $this->logger->info("Character {$characterData['character_id']} not found");
-        }
-        // Return the inverse because if $found is true, then the character is not found, meaning the return has to be inverted
-        return !$found;
+        return isset($characterData["error"]);
     }
 
-    protected function updateCharacterData(array $characterData, bool $deleted): void
+    protected function updateCharacterData(array $characterData): void
     {
         $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
 
@@ -98,10 +92,8 @@ class CharacterScrape extends Jobs
 
         // We found a new character, let the webhooks know
         $this->webhooks->sendToNewCharactersFound("{$characterData['name']} / {$characterData['corporation_name']} | <https://eve-kill.com/character/{$characterData['character_id']}>");
-        if ($deleted === false && isset($characterData['name'])) {
-            $this->indexCharacterInSearch($characterData);
-            $this->emitCharacterWS->enqueue($characterData);
-        }
+        $this->indexCharacterInSearch($characterData);
+        $this->emitCharacterWS->enqueue($characterData);
     }
 
     protected function fetchAllianceData(int $allianceId): array
