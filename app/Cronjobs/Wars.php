@@ -26,7 +26,9 @@ class Wars extends Cronjob
         $warData = $this->esiWars->getWars($latestWarId);
 
         foreach ($warData as $warId) {
-            $this->processWar->enqueue(['war_id' => $warId]);
+            if (is_int($warId)) {
+                $this->processWar->enqueue(['war_id' => $warId]);
+            }
         }
 
         // Now we need to get all the wars that are still active, so we can update them
