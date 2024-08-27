@@ -34,6 +34,7 @@ class Characters extends Collection
             "name",
             "deleted",
             "last_updated",
+            "birthday"
         ],
     ];
 }

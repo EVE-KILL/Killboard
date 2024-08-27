@@ -6,6 +6,7 @@ use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Cache\Cache;
 use EK\Helpers\TopLists;
+use EK\Models\Characters;
 use EK\Models\Killmails;
 use Psr\Http\Message\ResponseInterface;
 
@@ -15,6 +16,7 @@ class Stats extends Controller
     public function __construct(
         protected TopLists $topLists,
         protected Killmails $killmails,
+        protected Characters $characters,
         protected Cache $cache
     ) {
         parent::__construct();
@@ -161,5 +163,111 @@ class Stats extends Controller
 
         $this->cache->set($cacheKey, ["count" => $kills], 300);
         return $this->json(["count" => $kills], 300);
+    }
+
+    #[RouteAttribute('/stats/newcharacters/yearly', ['GET'], 'Get the count of new characters created yearly')]
+    public function countNewCharactersYearly(): ResponseInterface
+    {
+        $countGroupedByYear = $this->characters->aggregate([
+            [
+                '$match' => [
+                    'birthday' => [
+                        '$ne' => null,
+                    ],
+                ],
+            ],
+            [
+                '$group' => [
+                    '_id' => [
+                        '$year' => [
+                            '$toDate' => '$birthday',
+                        ],
+                    ],
+                    'count' => [
+                        '$sum' => 1,
+                    ],
+                ],
+            ],
+            [
+                '$sort' => [
+                    '_id' => 1,
+                ],
+            ],
+        ], [
+            'hint' => [
+                'birthday' => -1,
+            ],
+        ]);
+
+        return $this->json($countGroupedByYear->toArray(), 300);
+    }
+
+    #[RouteAttribute('/stats/newcharacters/monthly', ['GET'], 'Get the count of new characters created grouped by year and month')]
+    public function countNewCharactersYearlyMonthly(): ResponseInterface
+    {
+        // Aggregation pipeline
+        $aggregationResults = $this->characters->aggregate([
+            [
+                '$match' => [
+                    'birthday' => [
+                        '$ne' => null,
+
+                    ],
+                ],
+            ],
+            [
+                '$group' => [
+                    '_id' => [
+                        'year' => [
+                            '$year' => '$birthday',
+                        ],
+                        'month' => [
+                            '$month' => '$birthday',
+                        ],
+                    ],
+                    'count' => [
+                        '$sum' => 1,
+                    ],
+                ],
+            ],
+            [
+                '$sort' => [
+                    '_id.year' => 1,
+                    '_id.month' => 1,
+                ],
+            ],
+        ], [
+            'hint' => [
+                'birthday' => -1,
+            ],
+        ])->toArray();
+
+        // Post-processing the results to fit the desired structure
+        $yearlyData = [];
+
+        foreach ($aggregationResults as $result) {
+            $year = $result['_id']['year'];
+            $month = $result['_id']['month'];
+            $count = $result['count'];
+
+            // If the year doesn't exist yet, initialize it
+            if (!isset($yearlyData[$year])) {
+                $yearlyData[$year] = [
+                    'year' => $year,
+                    'count' => 0,  // Initialize total count for the year
+                    'months' => [],
+                ];
+            }
+
+            // Add the count for the month
+            $yearlyData[$year]['months'][$month] = $count;
+            // Add the count to the year's total
+            $yearlyData[$year]['count'] += $count;
+        }
+
+        // Re-index the array to make it a list of objects, rather than an associative array
+        $yearlyData = array_values($yearlyData);
+
+        return $this->json($yearlyData, 300);
     }
 }

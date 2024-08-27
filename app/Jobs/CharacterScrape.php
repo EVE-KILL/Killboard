@@ -89,6 +89,7 @@ class CharacterScrape extends Jobs
         $characterData["corporation_name"] = $corporationData["name"] ?? "";
         $characterData["faction_name"] = $factionData["name"] ?? "";
         $characterData['last_updated'] = new UTCDateTime(time() * 1000);
+        $characterData['birthday'] = new UTCDateTime(strtotime($characterData['birthday']) * 1000);
 
         ksort($characterData);
 
