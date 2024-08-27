@@ -46,7 +46,8 @@ class Fetcher
         array $headers = [],
         array $options = [],
         ?string $proxy_id = null,
-        ?int $cacheTime = null
+        ?int $cacheTime = null,
+        bool $ignorePause = false
     ): array {
         // Sort the query, headers and options
         ksort($query);
@@ -78,11 +79,13 @@ class Fetcher
         }
 
         // If the fetcher is paused, sleep for the paused time
-        retrySleep:
-        $paused = $this->cache->get('fetcher_paused') ?? 0;
-        if ($paused > 0 ) {
-            sleep($paused);
-            goto retrySleep;
+        if ($ignorePause === false) {
+            retrySleep:
+            $paused = $this->cache->get('fetcher_paused') ?? 0;
+            if ($paused > 0 ) {
+                sleep($paused);
+                goto retrySleep;
+            }
         }
 
         // Use the rate limiter to prevent spamming the endpoint

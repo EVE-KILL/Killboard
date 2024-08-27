@@ -21,7 +21,7 @@ class TQStatus extends Cronjob
     public function handle(): void
     {
         // Get the status of TQ
-        $result = $this->fetcher->fetch('https://esi.evetech.net/latest/status/');
+        $result = $this->fetcher->fetch('https://esi.evetech.net/latest/status/', ignorePause: true);
         $status = $result['status'];
         $response = json_decode($result['body'], true);
 
