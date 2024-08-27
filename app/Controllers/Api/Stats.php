@@ -169,6 +169,15 @@ class Stats extends Controller
     #[RouteAttribute('/stats/newcharacters', ['GET'], 'Get the count of new characters created grouped by year, month, and day')]
     public function countNewCharactersYearlyMonthlyDaily(): ResponseInterface
     {
+        $cacheKey = $this->cache->generateKey('new_characters_count');
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult, 3600);
+        }
+
         // Define the threshold date (January 1, 2003)
         $thresholdDate = new \MongoDB\BSON\UTCDateTime(strtotime('2003-01-01T00:00:00Z') * 1000);
 
@@ -213,7 +222,7 @@ class Stats extends Controller
         ])->toArray();
 
         // Post-processing the results to fit the desired structure
-        $yearlyData = [];
+        $data = [];
 
         foreach ($aggregationResults as $result) {
             $year = $result['_id']['year'];
@@ -222,8 +231,8 @@ class Stats extends Controller
             $count = $result['count'];
 
             // Initialize the year if it doesn't exist
-            if (!isset($yearlyData[$year])) {
-                $yearlyData[$year] = [
+            if (!isset($data[$year])) {
+                $data[$year] = [
                     'year' => $year,
                     'count' => 0,  // Initialize total count for the year
                     'months' => [],
@@ -231,24 +240,26 @@ class Stats extends Controller
             }
 
             // Initialize the month if it doesn't exist
-            if (!isset($yearlyData[$year]['months'][$month])) {
-                $yearlyData[$year]['months'][$month] = [
+            if (!isset($data[$year]['months'][$month])) {
+                $data[$year]['months'][$month] = [
                     'count' => 0,  // Initialize total count for the month
                     'days' => [],
                 ];
             }
 
             // Add the count for the day
-            $yearlyData[$year]['months'][$month]['days'][$day] = $count;
+            $data[$year]['months'][$month]['days'][$day] = $count;
 
             // Update the counts for the month and year
-            $yearlyData[$year]['months'][$month]['count'] += $count;
-            $yearlyData[$year]['count'] += $count;
+            $data[$year]['months'][$month]['count'] += $count;
+            $data[$year]['count'] += $count;
         }
 
         // Re-index the array to make it a list of objects, rather than an associative array
-        $yearlyData = array_values($yearlyData);
+        $data = array_values($data);
 
-        return $this->json($yearlyData, 300);
+        $this->cache->set($cacheKey, $data, 3600);
+
+        return $this->json($data, 3600);
     }
 }
