@@ -75,6 +75,9 @@ class Queue extends ConsoleCommand
             }
         };
 
+        // Set the prefetch count to 1
+        $this->channel->basic_qos(null, 1, null);
+
         // Set up a consumer
         $this->channel->basic_consume($queueName, '', false, false, false, false, $callback);
 
