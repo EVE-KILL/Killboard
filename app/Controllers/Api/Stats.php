@@ -8,6 +8,7 @@ use EK\Cache\Cache;
 use EK\Helpers\TopLists;
 use EK\Models\Characters;
 use EK\Models\Killmails;
+use MongoDB\BSON\UTCDateTime;
 use Psr\Http\Message\ResponseInterface;
 
 class Stats extends Controller
@@ -165,53 +166,18 @@ class Stats extends Controller
         return $this->json(["count" => $kills], 300);
     }
 
-    #[RouteAttribute('/stats/newcharacters/yearly', ['GET'], 'Get the count of new characters created yearly')]
-    public function countNewCharactersYearly(): ResponseInterface
+    #[RouteAttribute('/stats/newcharacters', ['GET'], 'Get the count of new characters created grouped by year, month, and day')]
+    public function countNewCharactersYearlyMonthlyDaily(): ResponseInterface
     {
-        $countGroupedByYear = $this->characters->aggregate([
-            [
-                '$match' => [
-                    'birthday' => [
-                        '$ne' => null,
-                    ],
-                ],
-            ],
-            [
-                '$group' => [
-                    '_id' => [
-                        '$year' => [
-                            '$toDate' => '$birthday',
-                        ],
-                    ],
-                    'count' => [
-                        '$sum' => 1,
-                    ],
-                ],
-            ],
-            [
-                '$sort' => [
-                    '_id' => 1,
-                ],
-            ],
-        ], [
-            'hint' => [
-                'birthday' => -1,
-            ],
-        ]);
+        // Define the threshold date (January 1, 2003)
+        $thresholdDate = new \MongoDB\BSON\UTCDateTime(strtotime('2003-01-01T00:00:00Z') * 1000);
 
-        return $this->json($countGroupedByYear->toArray(), 300);
-    }
-
-    #[RouteAttribute('/stats/newcharacters/monthly', ['GET'], 'Get the count of new characters created grouped by year and month')]
-    public function countNewCharactersYearlyMonthly(): ResponseInterface
-    {
         // Aggregation pipeline
         $aggregationResults = $this->characters->aggregate([
             [
                 '$match' => [
                     'birthday' => [
-                        '$ne' => null,
-
+                        '$gte' => $thresholdDate,  // Only include documents where birthday is on or after January 1, 2003
                     ],
                 ],
             ],
@@ -224,6 +190,9 @@ class Stats extends Controller
                         'month' => [
                             '$month' => '$birthday',
                         ],
+                        'day' => [
+                            '$dayOfMonth' => '$birthday',
+                        ],
                     ],
                     'count' => [
                         '$sum' => 1,
@@ -234,6 +203,7 @@ class Stats extends Controller
                 '$sort' => [
                     '_id.year' => 1,
                     '_id.month' => 1,
+                    '_id.day' => 1,
                 ],
             ],
         ], [
@@ -248,9 +218,10 @@ class Stats extends Controller
         foreach ($aggregationResults as $result) {
             $year = $result['_id']['year'];
             $month = $result['_id']['month'];
+            $day = $result['_id']['day'];
             $count = $result['count'];
 
-            // If the year doesn't exist yet, initialize it
+            // Initialize the year if it doesn't exist
             if (!isset($yearlyData[$year])) {
                 $yearlyData[$year] = [
                     'year' => $year,
@@ -259,9 +230,19 @@ class Stats extends Controller
                 ];
             }
 
-            // Add the count for the month
-            $yearlyData[$year]['months'][$month] = $count;
-            // Add the count to the year's total
+            // Initialize the month if it doesn't exist
+            if (!isset($yearlyData[$year]['months'][$month])) {
+                $yearlyData[$year]['months'][$month] = [
+                    'count' => 0,  // Initialize total count for the month
+                    'days' => [],
+                ];
+            }
+
+            // Add the count for the day
+            $yearlyData[$year]['months'][$month]['days'][$day] = $count;
+
+            // Update the counts for the month and year
+            $yearlyData[$year]['months'][$month]['count'] += $count;
             $yearlyData[$year]['count'] += $count;
         }
 
