@@ -3,6 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Logger\Logger;
 use EK\Models\Killmails;
 use EK\RabbitMQ\RabbitMQ;
 

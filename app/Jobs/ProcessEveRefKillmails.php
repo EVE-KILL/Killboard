@@ -27,7 +27,7 @@ class ProcessEveRefKillmails extends Jobs
 
         // Get the filename from the url
         $fileName = basename($url);
-        $filePath = BASE_DIR . "/cache/{$fileName}";
+        $filePath = "/tmp/{$fileName}";
         $extractPath = '/tmp/' . str_replace('.tar.bz2', '', $fileName);
 
         if (!file_exists($extractPath)) {

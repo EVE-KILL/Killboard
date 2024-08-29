@@ -4,6 +4,7 @@ namespace EK\Fetchers;
 
 use EK\Cache\Cache;
 use EK\Http\Fetcher;
+use EK\Logger\Logger;
 use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use EK\Webhooks\Webhooks;
@@ -19,9 +20,10 @@ class ESI extends Fetcher
         protected Cache $cache,
         protected Proxies $proxies,
         protected RateLimiter $rateLimiter,
-        protected Webhooks $webhooks
+        protected Webhooks $webhooks,
+        protected Logger $logger
     ) {
-        parent::__construct($cache, $proxies, $rateLimiter);
+        parent::__construct($cache, $proxies, $rateLimiter, $logger);
     }
 
     public function handle(ResponseInterface $response): ResponseInterface
