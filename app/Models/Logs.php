@@ -13,7 +13,7 @@ class Logs extends Collection
     public string $databaseName = 'app';
 
     /** @var string Primary index key */
-    public string $indexField = '_id';
+    public string $indexField = 'log_id';
 
     /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
