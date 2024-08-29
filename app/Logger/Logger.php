@@ -19,13 +19,11 @@ class Logger implements LoggerInterface
 
     protected function insertLog(string $message, string $level = 'INFO', array $context = []): void
     {
-        $this->logs->setData([
+        $this->logs->collection->insertOne([
             'message' => $message,
             'level' => $level,
             'context' => $context,
         ]);
-
-        $this->logs->save();
     }
 
     public function emergency(\Stringable|string $message, array $context = []): void
