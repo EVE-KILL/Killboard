@@ -15,7 +15,7 @@ class Connection
     public function getConnectionString(): string
     {
         $mongoDbHosts = $this->config->get('mongodb/hosts');
-        return "mongodb://" . implode(',', $mongoDbHosts);
+        return trim("mongodb://" . implode(',', $mongoDbHosts), ',');
     }
 
     public function getConnection(): Client
