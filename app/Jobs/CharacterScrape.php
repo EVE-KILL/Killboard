@@ -4,7 +4,6 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\CharacterScrape as FetchersCharacterScrape;
-use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use EK\Models\Characters;
 use EK\Models\Alliances;
@@ -14,6 +13,7 @@ use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
 use EK\Fetchers\EveWho;
+use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 use EK\Webhooks\Webhooks;
 use Illuminate\Support\Collection;
@@ -34,13 +34,13 @@ class CharacterScrape extends Jobs
         protected ESICharacters $esiCharacters,
         protected Meilisearch $meilisearch,
         protected RabbitMQ $rabbitMQ,
-        protected FileLogger $logger,
+        protected Logger $logger,
         protected FetchersCharacterScrape $esiFetcher,
         protected EveWho $eveWhoFetcher,
         protected Webhooks $webhooks,
         protected EmitCharacterWS $emitCharacterWS
     ) {
-        parent::__construct($rabbitMQ);
+        parent::__construct($rabbitMQ, $logger);
     }
 
     public function handle(array $data): void

@@ -3,7 +3,7 @@
 namespace EK\Middlewares;
 
 use EK\Config\Config;
-use EK\Logger\ExceptionLogger;
+use EK\Logger\Logger;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
@@ -22,7 +22,7 @@ class Whoops implements MiddlewareInterface
     public function __construct(
         protected ResponseFactory $responseFactory,
         protected Config $config,
-        protected ExceptionLogger $exceptionLogger,
+        protected Logger $logger,
     ) {
     }
 
@@ -104,6 +104,9 @@ class Whoops implements MiddlewareInterface
         );
 
         // Log the simplified message
-        $this->exceptionLogger->log($logMessage, $exceptionId);
+        $this->logger->critical($logMessage, [
+            'exception_id' => $exceptionId,
+            'exception' => $e,
+        ]);
     }
 }

@@ -2,27 +2,16 @@
 
 namespace EK\Logger;
 
-use Monolog\Handler\StreamHandler;
-use Monolog\Level;
-use Monolog\Logger as MonologLogger;
+use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 
-class FileLogger implements LoggerInterface
+class StdOutLogger implements LoggerInterface
 {
-    protected MonologLogger $logger;
+    protected Logger $logger;
 
-    public function __construct(
-        protected string $logFile = BASE_DIR . '/logs/request.log',
-        protected string $loggerName = 'request-logger'
-    )
-    {
-        $this->logger = new MonologLogger($this->loggerName);
-        $this->logger->pushHandler(new StreamHandler($this->logFile, Level::Debug));
-    }
-
-    public function __call($name, $arguments)
-    {
-        return $this->logger->$name(...$arguments);
+    public function __construct() {
+        $this->logger = new Logger('stdout');
+        $this->logger->pushHandler(new \Monolog\Handler\StreamHandler('php://stdout'));
     }
 
     public function emergency(\Stringable|string $message, array $context = []): void

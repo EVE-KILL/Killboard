@@ -5,7 +5,6 @@ namespace EK\Jobs;
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\ESI;
 use EK\Fetchers\EveWho;
-use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
@@ -16,6 +15,7 @@ use EK\Models\Factions;
 use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
+use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 
 class UpdateCharacter extends Jobs
@@ -33,11 +33,11 @@ class UpdateCharacter extends Jobs
         protected ESICharacters $esiCharacters,
         protected ESI $esiFetcher,
         protected Meilisearch $meilisearch,
-        protected FileLogger $logger,
+        protected Logger $logger,
         protected EveWho $eveWhoFetcher,
         protected RabbitMQ $rabbitMQ,
     ) {
-        parent::__construct($rabbitMQ);
+        parent::__construct($rabbitMQ, $logger);
     }
 
     public function handle(array $data): void
@@ -56,11 +56,11 @@ class UpdateCharacter extends Jobs
         }
 
         if ($this->isCharacterDeleted($characterData)) {
-            $this->logger->info("Character $characterId has been deleted, updating database and fetching from EVEWho");
+            $this->logger->info("Character $characterId has been deleted, updating database and fetching from EVEWho", $characterData);
             $this->updateDeletedCharacter($characterId);
             $characterData = $this->fetchCharacterDataFromEVEWho($characterId);
             if ($characterData) {
-                $this->logger->info("Character $characterId found in EVEWho, updating database");
+                $this->logger->info("Character $characterId found in EVEWho, updating database", $characterData);
                 $this->updateCharacterData($characterData, true);
             }
             return;
@@ -75,7 +75,7 @@ class UpdateCharacter extends Jobs
     {
         $deleted = isset($characterData["error"]) && $characterData["error"] === "Character has been deleted!";
         if ($deleted) {
-            $this->logger->info("Character {$characterData['character_id']} has been deleted");
+            $this->logger->info("Character {$characterData['character_id']} has been deleted", $characterData);
         }
         return $deleted;
     }
@@ -84,7 +84,7 @@ class UpdateCharacter extends Jobs
     {
         $found = isset($characterData["error"]);
         if ($found) {
-            $this->logger->info("Character {$characterData['character_id']} not found");
+            $this->logger->info("Character {$characterData['character_id']} not found", $characterData);
         }
         // Return the inverse because if $found is true, then the character is not found, meaning the return has to be inverted
         return !$found;
@@ -137,7 +137,10 @@ class UpdateCharacter extends Jobs
 
             return $data;
         } catch (\Exception $e) {
-            $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
+            $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage(), [
+                'character_id' => $characterId,
+                'exception' => $e,
+            ]);
             return null;
         }
     }

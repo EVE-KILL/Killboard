@@ -16,8 +16,9 @@ class ProcessKillmail extends Jobs
         protected \EK\Helpers\Killmails $killmailHelper,
         protected EmitKillmailWS $emitKillmailWS,
         protected RabbitMQ $rabbitMQ,
+        protected Logger $logger,
     ) {
-        parent::__construct($rabbitMQ);
+        parent::__construct($rabbitMQ, $logger);
     }
 
     public function handle(array $data): void

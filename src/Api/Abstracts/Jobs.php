@@ -2,7 +2,7 @@
 
 namespace EK\Api\Abstracts;
 
-use EK\Logger\FileLogger;
+use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Message\AMQPMessage;
@@ -11,20 +11,14 @@ abstract class Jobs
 {
     protected string $defaultQueue = 'low';
     public bool $requeue = true;
-    protected FileLogger $logger;
     protected AMQPChannel $channel;
     protected string $exchangeType = 'direct'; // Default to direct exchange
     protected string $defaultExchange = ''; // Default exchange for queues, '' for the default queue behavior
 
     public function __construct(
-        protected RabbitMQ $rabbitMQ
+        protected RabbitMQ $rabbitMQ,
+        protected Logger $logger,
     ) {
-        // Logger setup
-        $this->logger = new FileLogger(
-            BASE_DIR . '/logs/jobs.log',
-            'queue-logger'
-        );
-
         $this->channel = $this->rabbitMQ->getChannel();
     }
 

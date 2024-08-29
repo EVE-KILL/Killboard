@@ -4,7 +4,7 @@ namespace EK\Commands\Server;
 
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Config\Config;
-use EK\Logger\Logger;
+use EK\Logger\StdOutLogger;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
 use OpenSwoole\Constant;
@@ -25,7 +25,7 @@ class Websocket extends ConsoleCommand
     protected array $wsEndpoints;
 
     public function __construct(
-        protected Logger $logger,
+        protected StdOutLogger $logger,
         protected Container $container,
         protected Config $config,
         ?string $name = null

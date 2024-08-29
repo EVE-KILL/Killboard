@@ -3,6 +3,7 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\Logger\Logger;
 use EK\Models\KillmailsESI;
 use EK\RabbitMQ\RabbitMQ;
 use MongoDB\BSON\UTCDateTime;
@@ -14,8 +15,9 @@ class ProcessEveRefKillmails extends Jobs
     public function __construct(
         protected KillmailsESI $killmailsESI,
         protected RabbitMQ $rabbitMQ,
+        protected Logger $logger,
     ) {
-        parent::__construct($rabbitMQ);
+        parent::__construct($rabbitMQ, $logger);
     }
 
     public function handle(array $data): void

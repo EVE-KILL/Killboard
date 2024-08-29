@@ -4,7 +4,6 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\EveWho;
-use EK\Logger\FileLogger;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
 use EK\Models\Alliances;
@@ -16,6 +15,7 @@ use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
 use EK\ESI\Stations as ESIStations;
+use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 use League\Container\Container;
 use MongoDB\BSON\UTCDateTime;
@@ -38,10 +38,10 @@ class UpdateCorporation extends Jobs
         protected EveWho $eveWhoFetcher,
         protected UpdateCharacter $updateCharacter,
         protected RabbitMQ $rabbitMQ,
-        protected FileLogger $logger,
+        protected Logger $logger,
         protected Container $container,
     ) {
-        parent::__construct($rabbitMQ);
+        parent::__construct($rabbitMQ, $logger);
     }
 
     public function handle(array $data): void

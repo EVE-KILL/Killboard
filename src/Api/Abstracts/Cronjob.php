@@ -2,16 +2,15 @@
 
 namespace EK\Api\Abstracts;
 
-use EK\Logger\FileLogger;
+use EK\Logger\StdOutLogger;
 
 abstract class Cronjob
 {
     protected string $cronTime = '* * * * *';
-    protected FileLogger $logger;
 
     public function __construct(
+        protected StdOutLogger $logger
     ) {
-        $this->logger = new FileLogger(BASE_DIR . '/logs/cron.log');
     }
 
     public function getCronTime(): string

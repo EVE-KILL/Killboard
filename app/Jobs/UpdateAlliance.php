@@ -4,7 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\EveWho;
-use EK\Logger\FileLogger;
+use EK\Logger\Logger;
 use EK\Meilisearch\Meilisearch;
 use EK\RabbitMQ\RabbitMQ;
 use Illuminate\Support\Collection;
@@ -27,10 +27,10 @@ class UpdateAlliance extends Jobs
         protected EveWho $eveWhoFetcher,
         protected UpdateCharacter $updateCharacter,
         protected RabbitMQ $rabbitMQ,
-        protected FileLogger $logger,
+        protected Logger $logger,
         protected Container $container,
     ) {
-        parent::__construct($rabbitMQ);
+        parent::__construct($rabbitMQ, $logger);
     }
 
     public function handle(array $data): void

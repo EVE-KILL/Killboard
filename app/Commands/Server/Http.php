@@ -5,7 +5,7 @@ namespace EK\Commands\Server;
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Logger\Logger;
+use EK\Logger\StdOutLogger;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
 use OpenSwoole\Constant;
@@ -26,7 +26,7 @@ class Http extends ConsoleCommand
     protected string $description = 'Launch the HTTP server.';
 
     public function __construct(
-        protected Logger $logger,
+        protected StdOutLogger $logger,
         protected Container $container,
         ?string $name = null
     ) {

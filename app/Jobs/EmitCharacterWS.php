@@ -4,6 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Config\Config;
+use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 use WebSocket\Client;
 
@@ -13,9 +14,10 @@ class EmitCharacterWS extends Jobs
 
     public function __construct(
         protected RabbitMQ $rabbitMQ,
+        protected Logger $logger,
         protected Config $config
     ) {
-        parent::__construct($rabbitMQ);
+        parent::__construct($rabbitMQ, $logger);
     }
 
     public function handle(array $data): void

@@ -3,7 +3,7 @@
 namespace EK\Http;
 
 use EK\Cache\Cache;
-use EK\Logger\FileLogger;
+use EK\Logger\Logger;
 use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use GuzzleHttp\Client;
@@ -18,23 +18,18 @@ class Fetcher
     protected bool $useProxy = false;
     protected int $rateLimit = 1000;
     protected int $timeout = 30;
-    protected FileLogger $logger;
     protected LimiterInterface $limiter;
 
     public function __construct(
         protected Cache $cache,
         protected Proxies $proxies,
-        protected RateLimiter $rateLimiter
+        protected RateLimiter $rateLimiter,
+        protected Logger $logger
     ) {
         $this->limiter = $rateLimiter->createRateLimiter(
             $this->bucketName,
             'sliding_window',
             $this->rateLimit
-        );
-
-        $this->logger = new FileLogger(
-            BASE_DIR . "/logs/" . $this->bucketName . ".log",
-            $this->bucketName . "-logger"
         );
     }
 
