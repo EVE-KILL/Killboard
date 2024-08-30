@@ -33,8 +33,8 @@ class Queue extends ConsoleCommand
 
         $this->out($this->formatOutput('<blue>Queue worker started</blue>: <green>' . $queueName . '</green>'));
 
-        // Declare the queue (it should already exist with the correct parameters)
-        $this->channel->queue_declare($queueName, false, true, false, false);
+        // Declare the queue with the correct parameters, including priority
+        $this->channel->queue_declare($queueName, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
 
         $callback = function (AMQPMessage $msg) use ($queueName) {
             $startTime = microtime(true);
