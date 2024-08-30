@@ -25,13 +25,13 @@ abstract class Jobs
     /**
      * @param array $data The data to pass to the job
      * @param null|string $queue The queue to push the job to
-     * @param int $processAfter Unix timestamp of when to process the job
      * @param string|null $exchange The exchange to use, null for default queue
      * @param array|string|null $routingKeys An array of routing keys or a single routing key for topics/exchanges
      * @param string|null $exchangeType The exchange type to use (e.g., 'direct', 'topic')
+     * @param int $priority The priority of the job (0 = low, higher numbers = higher priority)
      * @return void
      */
-    public function enqueue(array $data = [], ?string $queue = null, int $processAfter = 0, ?string $exchange = null, array|string $routingKeys = null, ?string $exchangeType = null): void
+    public function enqueue(array $data = [], ?string $queue = null, ?string $exchange = null, array|string $routingKeys = null, ?string $exchangeType = null, int $priority = 0): void
     {
         $queue = $queue ?? $this->defaultQueue;
         $exchange = $exchange ?? $this->defaultExchange;
@@ -42,19 +42,21 @@ abstract class Jobs
             $this->channel->exchange_declare($exchange, $exchangeType, false, true, false);
         } else {
             // Declare the queue (standard queue)
-            $this->channel->queue_declare($queue, false, true, false, false);
+            $this->channel->queue_declare($queue, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
         }
 
         // Prepare job data
         $jobData = [
             'job' => get_class($this),
-            'data' => $data,
-            'process_after' => $processAfter,
+            'data' => $data
         ];
 
-        // Create AMQP message
+        // Create AMQP message with priority
         $messageBody = json_encode($jobData);
-        $msg = new AMQPMessage($messageBody, ['delivery_mode' => 2]); // Make message persistent
+        $msg = new AMQPMessage($messageBody, [
+            'delivery_mode' => 2, // Make message persistent
+            'priority' => $priority, // Set message priority
+        ]);
 
         if (is_array($routingKeys)) {
             // If multiple routing keys are provided, publish to each
@@ -70,7 +72,7 @@ abstract class Jobs
         }
     }
 
-    public function massEnqueue(array $data = [], ?string $queue = null, int $processAfter = 0, ?string $exchange = null, array|string $routingKeys = null, ?string $exchangeType = null): void
+    public function massEnqueue(array $data = [], ?string $queue = null, ?string $exchange = null, array|string $routingKeys = null, ?string $exchangeType = null, int $priority = 0): void
     {
         $queue = $queue ?? $this->defaultQueue;
         $exchange = $exchange ?? $this->defaultExchange;
@@ -81,7 +83,7 @@ abstract class Jobs
             $this->channel->exchange_declare($exchange, $exchangeType, false, true, false);
         } else {
             // Declare the queue (standard queue)
-            $this->channel->queue_declare($queue, false, true, false, false);
+            $this->channel->queue_declare($queue, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
         }
 
         $thisClass = get_class($this);
@@ -89,12 +91,14 @@ abstract class Jobs
         foreach ($data as $d) {
             $jobData = [
                 'job' => $thisClass,
-                'data' => $d,
-                'process_after' => $processAfter,
+                'data' => $d
             ];
 
             $messageBody = json_encode($jobData);
-            $msg = new AMQPMessage($messageBody, ['delivery_mode' => 2]); // Persistent message
+            $msg = new AMQPMessage($messageBody, [
+                'delivery_mode' => 2, // Persistent message
+                'priority' => $priority, // Set message priority
+            ]);
 
             if (is_array($routingKeys)) {
                 // If multiple routing keys are provided, publish to each
