@@ -3,6 +3,7 @@
 namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
+use EK\Logger\StdOutLogger;
 use EK\Models\Alliances;
 use EK\Models\Characters;
 use EK\Models\Corporations;
@@ -22,9 +23,10 @@ class UpdateSitemap extends Cronjob
         protected TypeIDs $typeIDs,
         protected SolarSystems $solarSystems,
         protected Regions $regions,
-        protected Sitemap $sitemap
+        protected Sitemap $sitemap,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void

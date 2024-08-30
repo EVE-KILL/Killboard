@@ -5,7 +5,7 @@ namespace EK\Cronjobs;
 use EK\Api\Abstracts\Cronjob;
 use EK\Cache\Cache;
 use EK\Http\Fetcher;
-use EK\Models\Prices;
+use EK\Logger\StdOutLogger;
 
 class TQStatus extends Cronjob
 {
@@ -14,8 +14,9 @@ class TQStatus extends Cronjob
     public function __construct(
         protected Fetcher $fetcher,
         protected Cache $cache,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void

@@ -5,6 +5,7 @@ namespace EK\Cronjobs;
 use EK\Api\Abstracts\Cronjob;
 use EK\Cache\Cache;
 use EK\Jobs\CharacterScrape;
+use EK\Logger\StdOutLogger;
 use EK\Models\Characters;
 
 class CharacterScraper extends Cronjob
@@ -14,9 +15,10 @@ class CharacterScraper extends Cronjob
     public function __construct(
         protected Characters $characters,
         protected CharacterScrape $characterScrape,
-        protected Cache $cache
+        protected Cache $cache,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void

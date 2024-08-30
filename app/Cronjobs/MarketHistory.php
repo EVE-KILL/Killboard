@@ -3,6 +3,8 @@
 namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
+use EK\Helpers\MarketHistory as HelpersMarketHistory;
+use EK\Logger\StdOutLogger;
 use EK\Models\Prices;
 
 class MarketHistory extends Cronjob
@@ -11,9 +13,10 @@ class MarketHistory extends Cronjob
 
     public function __construct(
         protected Prices $prices,
-        protected \EK\Helpers\MarketHistory $marketHistory,
+        protected HelpersMarketHistory $marketHistory,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void

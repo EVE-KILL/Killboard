@@ -3,17 +3,22 @@
 namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
+use EK\ESI\Wars as ESIWars;
+use EK\Jobs\ProcessWar;
+use EK\Logger\StdOutLogger;
+use EK\Models\Wars as ModelsWars;
 
 class Wars extends Cronjob
 {
     protected string $cronTime = '0 * * * *';
 
     public function __construct(
-        protected \EK\Models\Wars $warsModel,
-        protected \EK\ESI\Wars $esiWars,
-        protected \EK\Jobs\ProcessWar $processWar
+        protected ModelsWars $warsModel,
+        protected ESIWars $esiWars,
+        protected ProcessWar $processWar,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void

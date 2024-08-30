@@ -3,6 +3,7 @@
 namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
+use EK\Logger\StdOutLogger;
 use EK\Meilisearch\Meilisearch as MeilisearchClient;
 use EK\Models\Alliances;
 use EK\Models\Characters;
@@ -23,8 +24,9 @@ class Meilisearch extends Cronjob
         protected SolarSystems $solarSystems,
         protected Regions $regions,
         protected MeilisearchClient $meilisearch,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void

@@ -4,8 +4,8 @@ namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
 use EK\Jobs\UpdateAlliance;
+use EK\Logger\StdOutLogger;
 use EK\Models\Alliances;
-use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliances extends Cronjob
 {
@@ -13,9 +13,10 @@ class UpdateAlliances extends Cronjob
 
     public function __construct(
         protected Alliances $alliances,
-        protected UpdateAlliance $updateAlliance
+        protected UpdateAlliance $updateAlliance,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void

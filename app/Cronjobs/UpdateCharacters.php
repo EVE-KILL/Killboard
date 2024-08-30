@@ -4,6 +4,7 @@ namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
 use EK\Jobs\UpdateCharacter;
+use EK\Logger\StdOutLogger;
 use EK\Models\Characters;
 use MongoDB\BSON\UTCDateTime;
 
@@ -13,9 +14,10 @@ class UpdateCharacters extends Cronjob
 
     public function __construct(
         protected Characters $characters,
-        protected UpdateCharacter $updateCharacter
+        protected UpdateCharacter $updateCharacter,
+        protected StdOutLogger $logger
     ) {
-        parent::__construct();
+        parent::__construct($logger);
     }
 
     public function handle(): void
