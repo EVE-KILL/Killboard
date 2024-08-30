@@ -7,7 +7,6 @@ use EK\Api\Abstracts\ConsoleCommand;
 use EK\Fetchers\zKillboard;
 use EK\Jobs\ProcessKillmail;
 use EK\Models\Killmails;
-use Illuminate\Support\Collection;
 
 class FetchKillmails extends ConsoleCommand
 {
