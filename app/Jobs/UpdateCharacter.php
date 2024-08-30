@@ -56,11 +56,11 @@ class UpdateCharacter extends Jobs
         }
 
         if ($this->isCharacterDeleted($characterData)) {
-            $this->logger->info("Character $characterId has been deleted, updating database and fetching from EVEWho", $characterData);
+            $this->logger->debug("Character $characterId has been deleted, updating database and fetching from EVEWho", $characterData);
             $this->updateDeletedCharacter($characterId);
             $characterData = $this->fetchCharacterDataFromEVEWho($characterId);
             if ($characterData) {
-                $this->logger->info("Character $characterId found in EVEWho, updating database", $characterData);
+                $this->logger->debug("Character $characterId found in EVEWho, updating database", $characterData);
                 $this->updateCharacterData($characterData, true);
             }
             return;
@@ -75,7 +75,7 @@ class UpdateCharacter extends Jobs
     {
         $deleted = isset($characterData["error"]) && $characterData["error"] === "Character has been deleted!";
         if ($deleted) {
-            $this->logger->info("Character {$characterData['character_id']} has been deleted", $characterData);
+            $this->logger->debug("Character {$characterData['character_id']} has been deleted", $characterData);
         }
         return $deleted;
     }
@@ -84,7 +84,7 @@ class UpdateCharacter extends Jobs
     {
         $found = isset($characterData["error"]);
         if ($found) {
-            $this->logger->info("Character {$characterData['character_id']} not found", $characterData);
+            $this->logger->debug("Character {$characterData['character_id']} not found", $characterData);
         }
         // Return the inverse because if $found is true, then the character is not found, meaning the return has to be inverted
         return !$found;
@@ -137,7 +137,7 @@ class UpdateCharacter extends Jobs
 
             return $data;
         } catch (\Exception $e) {
-            $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage(), [
+            $this->logger->debug("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage(), [
                 'character_id' => $characterId,
                 'exception' => $e,
             ]);

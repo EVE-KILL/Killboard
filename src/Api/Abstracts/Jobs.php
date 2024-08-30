@@ -60,13 +60,13 @@ abstract class Jobs
             // If multiple routing keys are provided, publish to each
             foreach ($routingKeys as $routingKey) {
                 $this->channel->basic_publish($msg, $exchange, $routingKey);
-                $this->logger->info("Job enqueued to {$exchange} with routing key {$routingKey}", $jobData);
+                $this->logger->debug("Job enqueued to {$exchange} with routing key {$routingKey}", $jobData);
             }
         } else {
             // If a single routing key is provided, publish normally
             $routingKey = $routingKeys ?? $queue; // Use queue name as routing key if not provided
             $this->channel->basic_publish($msg, $exchange, $routingKey);
-            $this->logger->info("Job enqueued to " . ($exchange ?: $queue) . " with routing key {$routingKey}", $jobData);
+            $this->logger->debug("Job enqueued to " . ($exchange ?: $queue) . " with routing key {$routingKey}", $jobData);
         }
     }
 
@@ -100,13 +100,13 @@ abstract class Jobs
                 // If multiple routing keys are provided, publish to each
                 foreach ($routingKeys as $routingKey) {
                     $this->channel->basic_publish($msg, $exchange, $routingKey);
-                    $this->logger->info("Job enqueued to {$exchange} with routing key {$routingKey}", $jobData);
+                    $this->logger->debug("Job enqueued to {$exchange} with routing key {$routingKey}", $jobData);
                 }
             } else {
                 // If a single routing key is provided, publish normally
                 $routingKey = $routingKeys ?? $queue; // Use queue name as routing key if not provided
                 $this->channel->basic_publish($msg, $exchange, $routingKey);
-                $this->logger->info("Job enqueued to " . ($exchange ?: $queue) . " with routing key {$routingKey}", $jobData);
+                $this->logger->debug("Job enqueued to " . ($exchange ?: $queue) . " with routing key {$routingKey}", $jobData);
             }
         }
     }
@@ -120,7 +120,7 @@ abstract class Jobs
 
         // Purge the queue
         $this->channel->queue_purge($queue);
-        $this->logger->info("Queue {$queue} purged.");
+        $this->logger->debug("Queue {$queue} purged.");
     }
 
     abstract public function handle(array $data): void;

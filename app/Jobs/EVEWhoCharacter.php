@@ -49,9 +49,9 @@ class EVEWhoCharacter extends Jobs
             $this->characters->setData($characterData);
             $this->characters->save();
 
-            $this->logger->info("Updated character $characterId from EVEWho");
+            $this->logger->debug("Updated character $characterId from EVEWho");
         } catch (\Exception $e) {
-            $this->logger->error("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
+            $this->logger->debug("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage());
         }
     }
 }

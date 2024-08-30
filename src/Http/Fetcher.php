@@ -121,7 +121,7 @@ class Fetcher
         $expiresInSeconds = strtotime($expires) - strtotime($serverTime) ?? 60;
 
         // Log the request
-        $this->logger->info(
+        $this->logger->debug(
             sprintf(
                 "%s %s %s %s",
                 $requestMethod,

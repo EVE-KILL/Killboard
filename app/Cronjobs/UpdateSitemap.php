@@ -72,7 +72,7 @@ class UpdateSitemap extends Cronjob
         $addToSitemap($regionsCursor, '/region', '0.4', 'region_id', 'name', 'https://eve-kill.com/map.png', '');
 
         $sitemapCount = count($sitemapEntries);
-        $this->logger->info('Saving ' . $sitemapCount . ' entries to the database...');
+        $this->logger->debug('Saving ' . $sitemapCount . ' entries to the database...');
 
         // Function to chunk array into smaller arrays
         $chunkArray = function ($array, $size) {
