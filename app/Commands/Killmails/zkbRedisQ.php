@@ -59,7 +59,8 @@ class zkbRedisQ extends ConsoleCommand
                     // Send to the queue
                     $this->processKillmail->enqueue([
                         'killmail_id' => $kill['package']['killID'],
-                        'hash' => $kill['package']['zkb']['hash']
+                        'hash' => $kill['package']['zkb']['hash'],
+                        'priority' => 10
                     ], priority: 10);
                 }
             } catch (\Exception $e) {

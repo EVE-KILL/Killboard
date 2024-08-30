@@ -27,6 +27,7 @@ class ProcessKillmail extends Jobs
         $killmail_id = $data['killmail_id'];
         $hash = $data['hash'];
         $war_id = $data['war_id'] ?? 0;
+        $priority = $data['priority'] ?? 0;
 
         // Parse the killmail
         $parsedKillmail = $this->killmailHelper->parseKillmail($killmail_id, $hash, $war_id);
@@ -42,7 +43,7 @@ class ProcessKillmail extends Jobs
         }
 
         // Enqueue the killmail into the websocket emitter
-        $this->emitKillmailWS->enqueue($parsedKillmail);
+        $this->emitKillmailWS->enqueue($parsedKillmail, priority: $priority);
 
         // Update the emitted field to ensure we don't emit the killmail again
         $this->killmails->collection->updateOne(
