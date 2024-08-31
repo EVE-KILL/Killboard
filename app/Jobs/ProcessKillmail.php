@@ -29,6 +29,10 @@ class ProcessKillmail extends Jobs
         $war_id = $data['war_id'] ?? 0;
         $priority = $data['priority'] ?? 0;
 
+        if (in_array($hash, ['CCP VERIFIED'])) {
+            return;
+        }
+
         // Parse the killmail
         $parsedKillmail = $this->killmailHelper->parseKillmail($killmail_id, $hash, $war_id);
 
