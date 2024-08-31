@@ -57,7 +57,7 @@ class Collection
         $this->data = new IlluminateCollection();
     }
 
-    private function fixTimestamps(array $data): array
+    private function fixTimestamps(array|IlluminateCollection $data): array
     {
         foreach ($data as $key => $value) {
             if (is_array($value) && isset($value['$date'])) {
@@ -65,7 +65,8 @@ class Collection
             }
         }
 
-        return $data;
+        // If the data is an IlluminateCollection, we need to convert it back to an array
+        return $data instanceof IlluminateCollection ? $data->toArray() : $data;
     }
 
     public function find(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
@@ -80,6 +81,8 @@ class Collection
             } else {
                 $result = $this->collection->find($filter, $options)->toArray();
             }
+        } else {
+            $result = $this->collection->find($filter, $options)->toArray();
         }
 
         $result = $this->fixTimestamps($result);
@@ -107,6 +110,8 @@ class Collection
             } else {
                 $result = $this->collection->findOne($filter, $options) ?? [];
             }
+        } else {
+            $result = $this->collection->findOne($filter, $options) ?? [];
         }
 
         $result = $this->fixTimestamps($result);
@@ -134,6 +139,8 @@ class Collection
             } else {
                 $result = $this->collection->findOne($filter, $options) ?? [];
             }
+        } else {
+            $result = $this->collection->findOne($filter, $options) ?? [];
         }
 
         $result = $this->fixTimestamps($result);
