@@ -47,6 +47,9 @@ class UpdateCorporation extends Jobs
     public function handle(array $data): void
     {
         $corporationId = $data["corporation_id"];
+        if ($corporationId === 0) {
+            return;
+        }
 
         $corporationData = $this->fetchCorporationData($corporationId);
         $this->updateCorporationData($corporationData);

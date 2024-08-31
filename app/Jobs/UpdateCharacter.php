@@ -43,6 +43,9 @@ class UpdateCharacter extends Jobs
     public function handle(array $data): void
     {
         $characterId = $data["character_id"];
+        if ($characterId === 0) {
+            return;
+        }
         $deleted = false;
 
         $characterData = $this->characters->findOneOrNull([
