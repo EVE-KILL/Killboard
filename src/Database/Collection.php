@@ -172,6 +172,8 @@ class Collection
             } else {
                 $result = $this->collection->aggregate($pipeline, $options)->toArray();
             }
+        } else {
+            $result = $this->collection->aggregate($pipeline, $options)->toArray();
         }
 
         $result = $this->fixTimestamps($result);
