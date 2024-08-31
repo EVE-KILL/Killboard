@@ -77,7 +77,7 @@ class Fetcher
         if ($ignorePause === false) {
             retrySleep:
             $paused = $this->cache->get('fetcher_paused') ?? 0;
-            if ($paused > 0 ) {
+            if ($paused > 0) {
                 sleep($paused);
                 goto retrySleep;
             }

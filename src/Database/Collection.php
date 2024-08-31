@@ -73,9 +73,14 @@ class Collection
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
-        $result = $cacheTime > 0 && $cacheKeyExists ?
-            $this->cache->get($cacheKey) :
-            $this->collection->find($filter, $options)->toArray();
+        if ($cacheTime > 0 && $cacheKeyExists) {
+            $result = $this->cache->get($cacheKey);
+            if ($result !== null) {
+                $result = collect($result);
+            } else {
+                $result = $this->collection->find($filter, $options)->toArray();
+            }
+        }
 
         $result = $this->fixTimestamps($result);
 
@@ -95,12 +100,13 @@ class Collection
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
-        if ($cacheKeyExists) {
+        if ($cacheTime > 0 && $cacheKeyExists) {
             $result = $this->cache->get($cacheKey);
-        }
-
-        if (!$cacheKeyExists || $result === null) {
-            $result = $this->collection->findOne($filter, $options) ?? [];
+            if ($result !== null) {
+                $result = collect($result);
+            } else {
+                $result = $this->collection->findOne($filter, $options) ?? [];
+            }
         }
 
         $result = $this->fixTimestamps($result);
@@ -121,12 +127,13 @@ class Collection
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
-        if ($cacheKeyExists) {
+        if ($cacheTime > 0 && $cacheKeyExists) {
             $result = $this->cache->get($cacheKey);
-        }
-
-        if (!$cacheKeyExists || $result === null) {
-            $result = $this->collection->findOne($filter, $options) ?? [];
+            if ($result !== null) {
+                $result = collect($result);
+            } else {
+                $result = $this->collection->findOne($filter, $options) ?? [];
+            }
         }
 
         $result = $this->fixTimestamps($result);
@@ -151,12 +158,13 @@ class Collection
         $cacheKey = $this->generateCacheKey($pipeline, $options, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
-        if ($cacheKeyExists) {
+        if ($cacheTime > 0 && $cacheKeyExists) {
             $result = $this->cache->get($cacheKey);
-        }
-
-        if (!$cacheKeyExists || $result === null) {
-            $result = $this->collection->aggregate($pipeline, $options)->toArray();
+            if ($result !== null) {
+                $result = $result;
+            } else {
+                $result = $this->collection->aggregate($pipeline, $options)->toArray();
+            }
         }
 
         $result = $this->fixTimestamps($result);
