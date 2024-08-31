@@ -11,7 +11,7 @@ class ProcessKillmail extends Jobs
 {
     protected string $defaultQueue = 'killmail';
     protected string $exchange = 'killmail_topic_exchange'; // Set a default exchange for topics
-    protected bool $requeue = false;
+    public bool $requeue = false;
 
     public function __construct(
         protected Killmails $killmails,
