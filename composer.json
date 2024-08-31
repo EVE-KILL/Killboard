@@ -55,7 +55,10 @@
     "nyholm/psr7": "^1.8",
     "spiral/roadrunner-http": "^3.5",
     "spiral/roadrunner": "^2024.2",
-    "php-amqplib/php-amqplib": "^3.7"
+    "php-amqplib/php-amqplib": "^3.7",
+    "stomp-php/stomp-php": "^5.1",
+    "textalk/websocket": "^1.5",
+    "jeeinn/php-stomp-frame": "^1.0"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",

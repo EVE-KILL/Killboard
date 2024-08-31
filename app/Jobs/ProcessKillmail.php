@@ -16,7 +16,6 @@ class ProcessKillmail extends Jobs
     public function __construct(
         protected Killmails $killmails,
         protected \EK\Helpers\Killmails $killmailHelper,
-        protected EmitKillmailWS $emitKillmailWS,
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
     ) {
@@ -46,9 +45,6 @@ class ProcessKillmail extends Jobs
         if ($loadedKillmail->get('emitted') === true) {
             return;
         }
-
-        // Enqueue the killmail into the websocket emitter
-        $this->emitKillmailWS->enqueue($parsedKillmail, priority: $priority);
 
         // Update the emitted field to ensure we don't emit the killmail again
         $this->killmails->collection->updateOne(
@@ -95,7 +91,7 @@ class ProcessKillmail extends Jobs
             $routingKeys[] = "faction.{$factionId}";
         }
 
-        foreach($parsedKillmail['attackers'] as $attacker) {
+        foreach ($parsedKillmail['attackers'] as $attacker) {
             $characterId = $attacker['character_id'] ?? null;
             if ($characterId) {
                 $routingKeys[] = "character.{$characterId}";
@@ -120,9 +116,19 @@ class ProcessKillmail extends Jobs
         // Add the killmail to the all routing key as well
         $routingKeys[] = 'all';
 
-        if (!empty($routingKeys)) {
-            // Specify 'topic' as the exchange type for topic-based routing
-            $this->enqueue($parsedKillmail, null, $this->exchange, $routingKeys, 'topic');
+        // Get the RabbitMQ channel
+        $channel = $this->rabbitMQ->getChannel();
+
+        // Publish the message to each routing key
+        foreach ($routingKeys as $routingKey) {
+            $channel->basic_publish(
+                new \PhpAmqpLib\Message\AMQPMessage(json_encode($parsedKillmail), [
+                    'content_type' => 'application/json',
+                    'delivery_mode' => 2, // Persistent messages
+                ]),
+                $this->exchange, // Exchange name
+                $routingKey // Routing key
+            );
         }
     }
 }

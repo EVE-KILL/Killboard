@@ -37,8 +37,7 @@ class CharacterScrape extends Jobs
         protected Logger $logger,
         protected FetchersCharacterScrape $esiFetcher,
         protected EveWho $eveWhoFetcher,
-        protected Webhooks $webhooks,
-        protected EmitCharacterWS $emitCharacterWS
+        protected Webhooks $webhooks
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -93,7 +92,6 @@ class CharacterScrape extends Jobs
         // We found a new character, let the webhooks know
         $this->webhooks->sendToNewCharactersFound("{$characterData['name']} / {$characterData['corporation_name']} | <https://eve-kill.com/character/{$characterData['character_id']}>");
         $this->indexCharacterInSearch($characterData);
-        $this->emitCharacterWS->enqueue($characterData);
     }
 
     protected function fetchAllianceData(int $allianceId): array
