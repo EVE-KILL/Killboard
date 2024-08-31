@@ -26,7 +26,7 @@ class EmitKillmailWS extends Jobs
 
     public function handle(array $data): void
     {
-        $client = new Client('ws://websocket.evekill.svc.cluster.local/kills');
+        $client = new Client('ws://websocket.evekill.svc.cluster.local:9201/kills');
         $client->text(json_encode([
             'type' => 'broadcast',
             'token' => $this->config->get('ws_token'),
