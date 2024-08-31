@@ -45,7 +45,7 @@ class ESI extends Fetcher
                 // Tell the other workers to sleep
                 $this->cache->set('fetcher_paused', $sleepTime, $sleepTime);
 
-                sleep($sleepTime);
+                sleep($sleepTime > 0 ? $sleepTime : 1);
                 break;
         }
 
