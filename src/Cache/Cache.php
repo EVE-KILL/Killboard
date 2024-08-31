@@ -62,6 +62,12 @@ class Cache
         }
     }
 
+    public function remove(string $key): void
+    {
+        // Remove the key
+        $this->client->del($key);
+    }
+
     public function exists(string $key): bool
     {
         // Check if the key exists
