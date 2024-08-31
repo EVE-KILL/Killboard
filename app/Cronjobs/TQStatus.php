@@ -6,6 +6,7 @@ use EK\Api\Abstracts\Cronjob;
 use EK\Cache\Cache;
 use EK\Http\Fetcher;
 use EK\Logger\StdOutLogger;
+use GuzzleHttp\Client;
 
 class TQStatus extends Cronjob
 {
@@ -23,10 +24,14 @@ class TQStatus extends Cronjob
     {
         // Get the status of TQ
         //$result = $this->fetcher->fetch('https://esi.evetech.net/latest/status/', ignorePause: true);
+        //$status = $result['status'];
+        //$response = json_decode($result['body'], true);
+
         $result = file_get_contents('https://esi.evetech.net/latest/status/');
-        $result = json_decode($result, true);
-        $status = $result['status'];
-        $response = json_decode($result['body'], true);
+        $client = new Client();
+        $result = $client->request('GET', 'https://esi.evetech.net/latest/status/');
+        $response = json_decode($result->getBody(), true);
+        $status = $result->getStatusCode();
 
         if (isset($response['error'])) {
             switch($response['error']) {
