@@ -54,6 +54,10 @@ class History
 
         $corporationHistory = [];
         for ($i = 0; $i < count($corpHistoryData); $i++) {
+            if (!isset($corpHistoryData[$i]["corporation_id"])) {
+                continue;
+            }
+
             $history = $corpHistoryData[$i];
             $corpData = $corporationsDataAssoc[$history["corporation_id"]] ?? null;
 

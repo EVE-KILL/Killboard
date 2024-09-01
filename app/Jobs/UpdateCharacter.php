@@ -56,7 +56,7 @@ class UpdateCharacter extends Jobs
         ])?->toArray();
 
         // If the character has been deleted, and is flagged as deleted, we just skip it
-        if ($characterData && $characterData['deleted'] === true) {
+        if ($characterData && isset($characterData['deleted']) && $characterData['deleted'] === true) {
             return;
         }
 
