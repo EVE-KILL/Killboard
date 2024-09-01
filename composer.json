@@ -20,13 +20,11 @@
   "require": {
     "php": "^8.3",
     "ext-apcu": "*",
-    "ext-openswoole": "*",
     "ext-mongodb": "*",
     "ext-redis": "*",
     "ext-pcntl": "*",
     "ext-simplexml": "*",
     "ext-bz2": "*",
-    "openswoole/core": "*",
     "monolog/monolog": "*",
     "league/container": "*",
     "mongodb/mongodb": "*",
@@ -45,24 +43,20 @@
     "cweagans/composer-patches": "*",
     "meilisearch/meilisearch-php": "*",
     "psr/log": "^2",
-    "phrity/websocket": "*",
     "tkhamez/eve-sso": "^5.1",
     "symfony/rate-limiter": "^7.1",
     "symfony/cache": "^7.1",
     "symfony/lock": "^7.1",
-    "redis-ventures/redisvl": "^0.2.3",
     "spiral/roadrunner-cli": "^2.6",
     "nyholm/psr7": "^1.8",
     "spiral/roadrunner-http": "^3.5",
     "spiral/roadrunner": "^2024.2",
     "php-amqplib/php-amqplib": "^3.7",
     "stomp-php/stomp-php": "^5.1",
-    "textalk/websocket": "^1.5",
-    "jeeinn/php-stomp-frame": "^1.0"
+    "textalk/websocket": "^1.5"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",
-    "openswoole/ide-helper": "*",
     "symfony/var-dumper": "*",
     "roave/security-advisories": "dev-latest"
   },
@@ -74,9 +68,6 @@
   },
   "extra": {
     "patches": {
-      "openswoole/core": {
-        "Fixes the 100kB chunking from 100MB to actually 100kB": "patches/swoole_chunk_size.patch"
-      }
     }
   }
 }
