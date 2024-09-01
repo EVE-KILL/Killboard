@@ -5,7 +5,6 @@ namespace EK\Logger;
 use EK\Config\Config;
 use EK\Models\Logs;
 use Psr\Log\LoggerInterface;
-use Stringable;
 
 class Logger implements LoggerInterface
 {
@@ -18,7 +17,8 @@ class Logger implements LoggerInterface
         $this->logLevel = (int) $config->get('logLevel');
     }
 
-    public function log($level, string|Stringable $message, array $context = []) {
+    public function log($level, $message, array $context = []): void
+    {
         $this->insertLog((string) $message, $level, $context);
     }
 

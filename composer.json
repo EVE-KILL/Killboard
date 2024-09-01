@@ -29,7 +29,7 @@
     "league/container": "*",
     "mongodb/mongodb": "*",
     "slim/slim": "*",
-    "slim/psr7": "1.6.1",
+    "slim/psr7": "*",
     "symfony/console": "*",
     "guzzlehttp/guzzle": "*",
     "kcs/class-finder": "*",
@@ -40,20 +40,19 @@
     "siriusphp/validation": "*",
     "league/csv": "*",
     "marcj/topsort": "*",
-    "cweagans/composer-patches": "*",
     "meilisearch/meilisearch-php": "*",
-    "psr/log": "^2",
-    "tkhamez/eve-sso": "^5.1",
-    "symfony/rate-limiter": "^7.1",
-    "symfony/cache": "^7.1",
-    "symfony/lock": "^7.1",
-    "spiral/roadrunner-cli": "^2.6",
-    "nyholm/psr7": "^1.8",
-    "spiral/roadrunner-http": "^3.5",
-    "spiral/roadrunner": "^2024.2",
-    "php-amqplib/php-amqplib": "^3.7",
-    "stomp-php/stomp-php": "^5.1",
-    "textalk/websocket": "^1.5"
+    "psr/log": "*",
+    "tkhamez/eve-sso": "*",
+    "symfony/rate-limiter": "*",
+    "symfony/cache": "*",
+    "symfony/lock": "*",
+    "spiral/roadrunner-cli": "*",
+    "nyholm/psr7": "*",
+    "spiral/roadrunner-http": "*",
+    "spiral/roadrunner": "*",
+    "php-amqplib/php-amqplib": "*",
+    "stomp-php/stomp-php": "*",
+    "textalk/websocket": "*"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",
@@ -62,12 +61,7 @@
   },
   "config": {
     "allow-plugins": {
-      "cweagans/composer-patches": true,
       "php-http/discovery": true
-    }
-  },
-  "extra": {
-    "patches": {
     }
   }
 }
