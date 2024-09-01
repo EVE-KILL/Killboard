@@ -4,20 +4,21 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Fetchers\CorporationHistory;
+use EK\Cache\Cache;
+use EK\Helpers\History;
+use EK\Helpers\TopLists;
+use EK\Models\Characters as ModelsCharacters;
+use EK\Models\Killmails;
 use Psr\Http\Message\ResponseInterface;
 
 class Characters extends Controller
 {
     public function __construct(
-        protected \EK\Models\Characters $characters,
-        protected \EK\Models\Corporations $corporations,
-        protected \EK\Jobs\UpdateCorporation $updateCorporation,
-        protected \EK\ESI\Corporations $corporationESI,
-        protected \EK\Helpers\TopLists $topLists,
-        protected \EK\Cache\Cache $cache,
-        protected \EK\Models\Killmails $killmails,
-        protected CorporationHistory $corporationHistoryFetcher
+        protected ModelsCharacters $characters,
+        protected Killmails $killmails,
+        protected TopLists $topLists,
+        protected Cache $cache,
+        protected History $history
     ) {
         parent::__construct();
     }
@@ -95,71 +96,26 @@ class Characters extends Controller
         return $this->json($characters->toArray(), 300);
     }
 
-#[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"], "Get the corporation history of a character")]
-public function corporationHistory(int $character_id): ResponseInterface
-{
-    // Find the character in the database
-    $character = $this->characters->findOne([
-        "character_id" => $character_id,
-    ]);
-
-    // If the character is not found, return an error response
-    if ($character->isEmpty()) {
-        return $this->json(["error" => "Character not found"], 300);
-    }
-
-    // Get the corporation history from the character's record in the database
-    $history = $this->characters->findOne(
-        ["character_id" => $character_id],
-        ["projection" => ["history" => 1]]
-    )["history"];
-
-    // If history is empty or not set, return an empty response
-    if (empty($history)) {
-        return $this->json([], 300);
-    }
-
-    // Prepare the corporation history array
-    $corporationHistory = [];
-    for ($i = 0; $i < count($history); $i++) {
-        $corpHistory = $history[$i];
-
-        // Fetch corporation data
-        $corporationId = $corpHistory["corporation_id"];
-        $corpData = $corporationId
-            ? $this->corporations->findOne(
-                ['corporation_id' => $corporationId],
-                ['projection' => ['name' => 1]]
-            )
-            : null;
-
-        $corporationName = $corpData['name'] ?? "";
-
-        $joinDate = new \DateTime($corpHistory["join_date"]);
-
-        // Prepare the data for the current entry
-        $data = [
-            "corporation_id" => $corporationId,
-            "name" => $corporationName,
-            "join_date" => $joinDate->format("Y-m-d H:i:s"),
-        ];
-
-        // If there is a next element, set the leave_date to the join_date of the next element
-        if (isset($history[$i + 1])) {
-            $nextHistory = $history[$i + 1];
-            $nextJoinDate = new \DateTime($nextHistory["join_date"]);
-            $data["leave_date"] = $nextJoinDate->format("Y-m-d H:i:s");
-        } else {
-            // No next element, so no leave date
-            $data["leave_date"] = null;
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"], "Get the corporation history of a character")]
+    public function corporationHistory(int $character_id): ResponseInterface
+    {
+        $character = $this->characters->findOne([
+            "character_id" => $character_id,
+        ]);
+        if ($character->isEmpty()) {
+            return $this->json(["error" => "Character not found"], 300);
         }
 
-        $corporationHistory[] = $this->cleanupTimestamps($data);
+        $corporationHistory = $this->history->generateCorporationHistory($character_id);
+
+        $this->characters->collection->updateOne(
+            ["character_id" => $character_id],
+            ['$set' => ["history" => $corporationHistory]]
+        );
+
+        return $this->json($corporationHistory, 3600);
     }
 
-    // Return the corporation history as a JSON response
-    return $this->json(array_reverse($corporationHistory), 300);
-}
 
     #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails[/]", ["GET"], "Get all killmails of a character")]
     public function killmails(int $character_id): ResponseInterface

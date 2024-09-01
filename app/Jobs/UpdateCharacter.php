@@ -3,7 +3,6 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Fetchers\ESI;
 use EK\Fetchers\EveWho;
 use EK\Meilisearch\Meilisearch;
 use Illuminate\Support\Collection;
@@ -16,6 +15,7 @@ use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
 use EK\Fetchers\CorporationHistory;
+use EK\Helpers\History;
 use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 
@@ -37,6 +37,7 @@ class UpdateCharacter extends Jobs
         protected Logger $logger,
         protected EveWho $eveWhoFetcher,
         protected RabbitMQ $rabbitMQ,
+        protected History $history
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -186,15 +187,8 @@ class UpdateCharacter extends Jobs
 
     protected function fetchCorporationHistory(int $characterId): array
     {
-        $history = $this->corporationHistoryFetcher->fetch('/latest/characters/' . $characterId . '/corporationhistory');
-        $history = json_validate($history['body']) ? json_decode($history['body'], true) : [];
-
-        // If history has an error, we return an empty array
-        if (isset($history['error'])) {
-            return [];
-        }
-
-        return $history ?? [];
+        $history = $this->history->generateCorporationHistory($characterId);
+        return $history;
     }
 
     protected function fetchAllianceData(int $allianceId): array
