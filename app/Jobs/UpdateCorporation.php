@@ -15,6 +15,7 @@ use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
 use EK\ESI\Stations as ESIStations;
+use EK\Fetchers\ESI;
 use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 use League\Container\Container;
@@ -39,6 +40,7 @@ class UpdateCorporation extends Jobs
         protected UpdateCharacter $updateCharacter,
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
+        protected ESI $esi,
         protected Container $container,
     ) {
         parent::__construct($rabbitMQ, $logger);
@@ -79,6 +81,7 @@ class UpdateCorporation extends Jobs
         $corporationData["home_station_name"] = $this->fetchStationName($corporationData["home_station_id"] ?? 0);
         $corporationData["faction_name"] = $this->fetchFactionName($corporationData["faction_id"] ?? 0);
         $corporationData['last_updated'] = new UTCDateTime(time() * 1000);
+        $corporationData['history'] = $this->fetchAllianceHistory($corporationData["corporation_id"]);
 
         ksort($corporationData);
 
@@ -86,6 +89,19 @@ class UpdateCorporation extends Jobs
         $this->corporations->save();
 
         $this->indexCorporationInSearch($corporationData);
+    }
+
+    protected function fetchAllianceHistory(int $corporationId): array
+    {
+        $history = $this->esi->fetch('/latest/corporations/' . $corporationId . '/alliancehistory');
+        $history = json_validate($history['body']) ? json_decode($history['body'], true) : [];
+
+        // If history has an error, we return an empty array
+        if (isset($history['error'])) {
+            return [];
+        }
+
+        return $history ?? [];
     }
 
     protected function fetchAllianceName($allianceId)
