@@ -60,6 +60,8 @@ class ProcessKillmail extends Jobs
     {
         $routingKeys = [];
 
+        $parsedKillmail = $this->cleanupTimestamps($parsedKillmail);
+
         // Add routing keys based on the parsed killmail data
         $systemId = $parsedKillmail['system_id'] ?? null;
         if ($systemId) {
@@ -130,5 +132,28 @@ class ProcessKillmail extends Jobs
                 $routingKey // Routing key
             );
         }
+    }
+
+    protected function cleanupTimestamps(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            // Check if the value is an instance of UTCDateTime
+            if ($value instanceof UTCDateTime) {
+                $data[$key] = $value->toDateTime()->format('Y-m-d H:i:s');
+            }
+
+            // Check if the value is an array
+            if (is_array($value)) {
+                // If the array has the structure containing $date and $numberLong
+                if (isset($value['$date']['$numberLong'])) {
+                    $data[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->format('Y-m-d H:i:s');
+                } else {
+                    // Recursively process nested arrays
+                    $data[$key] = $this->cleanupTimestamps($value);
+                }
+            }
+        }
+
+        return $data;
     }
 }

@@ -269,30 +269,6 @@ abstract class Controller
     }
 
     /**
-     * Renders a twig template
-     *
-     * @param string $template
-     * @param array|Collection $data
-     * @param int $cacheTime
-     * @param int $status
-     * @param string $contentType
-     *
-     * @return ResponseInterface
-     */
-    protected function render(
-        string           $template,
-        array|Collection $data = [],
-        int              $cacheTime = 0,
-        int              $status = 200,
-        string           $contentType = 'text/html'
-    ): ResponseInterface {
-        $render = $this->twig->render($template, $data);
-        $response = $this->generateResponse($status, $contentType, $cacheTime);
-        $response->getBody()->write($render);
-
-        return $response;
-    }
-    /**
      * Generates the response for the output types, render, json, xml and html
      *
      * @param int $status
