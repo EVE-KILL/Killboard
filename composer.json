@@ -42,7 +42,7 @@
     "marcj/topsort": "*",
     "cweagans/composer-patches": "*",
     "meilisearch/meilisearch-php": "*",
-    "psr/log": "^2",
+    "psr/log": "^3",
     "tkhamez/eve-sso": "^5.1",
     "symfony/rate-limiter": "^7.1",
     "symfony/cache": "^7.1",
