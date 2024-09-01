@@ -54,6 +54,11 @@ class UpdateCharacter extends Jobs
             'name' => ['$ne' => 'Unknown'],
         ])?->toArray();
 
+        // If the character has been deleted, and is flagged as deleted, we just skip it
+        if ($characterData && $characterData['deleted'] === true) {
+            return;
+        }
+
         $lastUpdated = $characterData['last_updated']?->toDateTime() ?? new \DateTime();
         if ($characterData === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
