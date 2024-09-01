@@ -167,7 +167,7 @@ class Stats extends Controller
                     '$gte' => new \MongoDB\BSON\UTCDateTime((time() - (((60 * 60) * 24) * $days)) * 1000),
                 ],
                 'victim.ship_group_id' => ['$in' => [
-                    1657, 1406, 1404, 1408
+                    1657, 1406, 1404, 1408, 2017, 2016
                 ]]
             ],
             [
