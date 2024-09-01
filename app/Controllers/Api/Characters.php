@@ -135,7 +135,7 @@ public function corporationHistory(int $character_id): ResponseInterface
 
         $corporationName = $corpData['name'] ?? "";
 
-        $joinDate = new \DateTime($corpHistory["start_date"]);
+        $joinDate = new \DateTime($corpHistory["join_date"]);
 
         // Prepare the data for the current entry
         $data = [
@@ -147,7 +147,7 @@ public function corporationHistory(int $character_id): ResponseInterface
         // If there is a next element, set the leave_date to the join_date of the next element
         if (isset($history[$i + 1])) {
             $nextHistory = $history[$i + 1];
-            $nextJoinDate = new \DateTime($nextHistory["start_date"]);
+            $nextJoinDate = new \DateTime($nextHistory["join_date"]);
             $data["leave_date"] = $nextJoinDate->format("Y-m-d H:i:s");
         } else {
             // No next element, so no leave date
