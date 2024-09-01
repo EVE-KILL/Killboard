@@ -99,15 +99,18 @@ class History
         $allianceHistoryData = json_validate($response["body"])
             ? json_decode($response["body"], true)
             : [];
+        $allianceHistoryData = array_reverse($allianceHistoryData);
 
         $alliances = [];
-        foreach ($allianceHistoryData as $allianceHistory) {
+        for ($i = 0; $i < count($allianceHistoryData); $i++) {
+            $history = $allianceHistoryData[$i];
+
             // Skip entries without an alliance_id, indicating the corporation wasn't in an alliance
-            if (!isset($allianceHistory["alliance_id"])) {
+            if (!isset($history["alliance_id"])) {
                 continue;
             }
 
-            $allianceData = $this->alliances->findOne(['alliance_id' => $allianceHistory["alliance_id"]], [
+            $allianceData = $this->alliances->findOne(['alliance_id' => $history["alliance_id"]], [
                 "projection" => [
                     "_id" => 0,
                     "alliance_id" => 1,
@@ -115,22 +118,30 @@ class History
                 ]
             ])->toArray();
 
-            if ($allianceData) {
-                $allianceEntry = [
-                    "alliance_id" => $allianceData["alliance_id"],
-                    "name" => $allianceData["name"],
-                    "start_date" => (new \DateTime($allianceHistory["start_date"]))->format("Y-m-d H:i:s"),
+            if ($allianceData === null) {
+                $allianceData = [
+                    "alliance_id" => $history["alliance_id"],
+                    "name" => "Unknown Alliance"
                 ];
-
-                if (isset($allianceHistory["end_date"])) {
-                    $allianceEntry["end_date"] = (new \DateTime($allianceHistory["end_date"]))->format("Y-m-d H:i:s");
-                }
-
-                $alliances[] = $allianceEntry;
             }
+
+            $joinDate = new \DateTime($history["start_date"]);
+            $leaveDate = isset($allianceHistoryData[$i + 1]) ? new \DateTime($allianceHistoryData[$i + 1]["start_date"]) : null;
+
+            $allianceEntry = [
+                "alliance_id" => $allianceData["alliance_id"],
+                "name" => $allianceData["name"],
+                "join_date" => $joinDate->format("Y-m-d H:i:s"),
+            ];
+
+            if ($leaveDate) {
+                $allianceEntry["leave_date"] = $leaveDate->format("Y-m-d H:i:s");
+            }
+
+            $alliances[] = $allianceEntry;
         }
 
-        return $alliances;
+        return array_reverse($alliances);
     }
 
     /**
