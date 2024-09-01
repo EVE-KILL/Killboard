@@ -21,7 +21,7 @@ class ExportCharacters extends ConsoleCommand
     final public function handle(): void
     {
         $this->out('Exporting characters..');
-        $characterCount = $this->characters->count();
+        $characterCount = $this->characters->aproximateCount();
         $this->out('Total characters to export: ' . $characterCount);
 
         $path = $this->path;

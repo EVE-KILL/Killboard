@@ -58,7 +58,7 @@ class Items extends Controller
     #[RouteAttribute("/items/count[/]", ["GET"], "Get the count of all items")]
     public function count(): ResponseInterface
     {
-        return $this->json(["count" => $this->typeIDs->count()], 300);
+        return $this->json(["count" => $this->typeIDs->aproximateCount()], 300);
     }
 
     #[RouteAttribute("/items/{item_id:[0-9]+}[/]", ["GET"], "Get an item by ID")]

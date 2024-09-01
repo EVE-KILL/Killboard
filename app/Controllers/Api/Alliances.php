@@ -33,7 +33,7 @@ class Alliances extends Controller
     #[RouteAttribute("/alliances/count[/]", ["GET"], 'Return the amount of alliances')]
     public function count(): ResponseInterface
     {
-        return $this->json(["count" => $this->alliances->count()], 300);
+        return $this->json(["count" => $this->alliances->aproximateCount()], 300);
     }
 
     #[RouteAttribute("/alliances/{alliance_id}[/]", ["GET"], 'Get alliance information')]

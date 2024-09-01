@@ -18,7 +18,7 @@ class Celestials extends Controller
     public function count(): ResponseInterface
     {
         return $this->json([
-            'count' => $this->celestials->count(),
+            'count' => $this->celestials->aproximateCount(),
         ]);
     }
 

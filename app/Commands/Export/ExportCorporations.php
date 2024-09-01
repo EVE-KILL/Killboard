@@ -21,7 +21,7 @@ class ExportCorporations extends ConsoleCommand
     final public function handle(): void
     {
         $this->out('Exporting corporations..');
-        $corporationCount = $this->corporations->count();
+        $corporationCount = $this->corporations->aproximateCount();
         $this->out('Total corporations to export: ' . $corporationCount);
 
         $path = $this->path;

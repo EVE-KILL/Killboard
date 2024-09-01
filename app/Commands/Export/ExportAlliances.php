@@ -21,7 +21,7 @@ class ExportAlliances extends ConsoleCommand
     final public function handle(): void
     {
         $this->out('Exporting alliances..');
-        $allianceCount = $this->alliances->count();
+        $allianceCount = $this->alliances->aproximateCount();
         $this->out('Total alliances to export: ' . $allianceCount);
 
         $path = $this->path;

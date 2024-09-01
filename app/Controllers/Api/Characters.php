@@ -47,7 +47,7 @@ class Characters extends Controller
     #[RouteAttribute("/characters/count[/]", ["GET"], "Get the amount of characters")]
     public function count(): ResponseInterface
     {
-        return $this->json(["count" => $this->characters->count()], 300);
+        return $this->json(["count" => $this->characters->aproximateCount()], 300);
     }
 
     #[RouteAttribute("/characters/{character_id:[0-9]+}[/]", ["GET"], "Get a character by ID")]

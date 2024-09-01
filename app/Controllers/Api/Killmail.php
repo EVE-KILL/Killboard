@@ -25,7 +25,7 @@ class Killmail extends Controller
     public function count(): ResponseInterface
     {
         return $this->json([
-            "count" => $this->killmails->count(),
+            "count" => $this->killmails->aproximateCount(),
         ]);
     }
 

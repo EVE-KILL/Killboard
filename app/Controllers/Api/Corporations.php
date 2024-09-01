@@ -32,7 +32,7 @@ class Corporations extends Controller
     #[RouteAttribute("/corporations/count[/]", ["GET"], "Get the count of all corporations")]
     public function count(): ResponseInterface
     {
-        return $this->json(["count" => $this->corporations->count()], 300);
+        return $this->json(["count" => $this->corporations->aproximateCount()], 300);
     }
 
     #[RouteAttribute("/corporations/{corporation_id}[/]", ["GET"], "Get a corporation by ID")]
