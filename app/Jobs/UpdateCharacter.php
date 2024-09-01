@@ -15,6 +15,7 @@ use EK\Models\Factions;
 use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
+use EK\Fetchers\CorporationHistory;
 use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 
@@ -31,7 +32,7 @@ class UpdateCharacter extends Jobs
         protected ESIAlliances $esiAlliances,
         protected ESICorporations $esiCorporations,
         protected ESICharacters $esiCharacters,
-        protected ESI $esiFetcher,
+        protected CorporationHistory $corporationHistoryFetcher,
         protected Meilisearch $meilisearch,
         protected Logger $logger,
         protected EveWho $eveWhoFetcher,
@@ -57,6 +58,7 @@ class UpdateCharacter extends Jobs
         if ($characterData === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
         }
+
 
         if ($this->isCharacterDeleted($characterData)) {
             $this->logger->debug("Character $characterId has been deleted, updating database and fetching from EVEWho", $characterData);
@@ -165,6 +167,7 @@ class UpdateCharacter extends Jobs
         $characterData["faction_name"] = $factionData["name"] ?? "";
         $characterData["last_updated"] = new UTCDateTime(time() * 1000);
         $characterData['birthday'] = new UTCDateTime(strtotime($characterData['birthday']) * 1000);
+        $characterData['history'] = $this->fetchCorporationHistory($characterData['character_id']);
 
         ksort($characterData);
 
@@ -174,6 +177,19 @@ class UpdateCharacter extends Jobs
         if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
         }
+    }
+
+    protected function fetchCorporationHistory(int $characterId): array
+    {
+        $history = $this->corporationHistoryFetcher->fetch('/latest/characters/' . $characterId . '/corporationhistory');
+        $history = json_validate($history['body']) ? json_decode($history['body'], true) : [];
+
+        // If history has an error, we return an empty array
+        if (isset($history['error'])) {
+            return [];
+        }
+
+        return $history ?? [];
     }
 
     protected function fetchAllianceData(int $allianceId): array
