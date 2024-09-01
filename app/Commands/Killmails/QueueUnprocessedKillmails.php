@@ -1,27 +1,28 @@
 <?php
 
-namespace EK\Cronjobs;
+namespace EK\Commands\Killmails;
 
-use EK\Api\Abstracts\Cronjob;
+use Composer\Autoload\ClassLoader;
+use EK\Api\Abstracts\ConsoleCommand;
 use EK\Jobs\ProcessKillmail;
-use EK\Logger\StdOutLogger;
 use EK\Models\Killmails;
 use EK\RabbitMQ\RabbitMQ;
 
-class QueueUnprocessedKillmails extends Cronjob
+class QueueUnprocessedKillmails extends ConsoleCommand
 {
-    protected string $cronTime = '* * * * *';
+    public string $signature = 'queue:unprocessed-killmails';
+    public string $description = 'Queue all unprocessed killmails for parsing';
 
     public function __construct(
-        protected Killmails $killmails,
-        protected ProcessKillmail $processKillmail,
-        protected RabbitMQ $rabbitMQ,
-        protected StdOutLogger $logger
+        protected ClassLoader $autoloader,
+        protected killmails $killmails,
+        protected ProcessKillmail $parseKillmailJob,
+        protected RabbitMQ $rabbitMQ
     ) {
-        parent::__construct($logger);
+        parent::__construct();
     }
 
-    public function handle(): void
+    final public function handle(): void
     {
         // Use the $this->rabbitMQ->channel to check how big the killmail queue is, if it's empty we can queue more
         $queueInfo = $this->rabbitMQ->getChannel()->queue_declare('killmail', passive: true);
@@ -36,8 +37,7 @@ class QueueUnprocessedKillmails extends Cronjob
         $unprocessedKillmails = $this->killmails->find(
             ['attackers' => ['$exists' => false]],
             [
-                'projection' => ['_id' => 0, 'killmail_id' => 1, 'hash' => 1],
-                'limit' => 1000000
+                'projection' => ['_id' => 0, 'killmail_id' => 1, 'hash' => 1]
             ]
         );
 
