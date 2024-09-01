@@ -123,17 +123,10 @@ class UpdateCharacter extends Jobs
                 'security_status' => $characterInfo["sec_status"] ?? 0
             ];
 
+
             // Set the birthday if the field exists
             if (isset($characterInfo['birthday'])) {
                 $data['birthday'] = new UTCDateTime(strtotime($characterInfo['birthday']) * 1000);
-            }
-
-            // If the birthday field isn't set but history is,
-            // Birthday can be extracted from history, if history exists - as the element with the lowest start date (Which is in the format: YYYY/MM/DD HH:ii - example: 2006/12/07 21:48)
-            // If no history exists, don't set a birthday field
-            if (!isset($data['birthday']) && count($data['history']) > 0) {
-                $birthday = $data['history'][0]['start_date'];
-                $data['birthday'] = new UTCDateTime(strtotime($birthday) * 1000);
             }
 
             return $data;
