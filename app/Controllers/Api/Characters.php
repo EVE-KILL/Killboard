@@ -95,88 +95,71 @@ class Characters extends Controller
         return $this->json($characters->toArray(), 300);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"], "Get the corporation history of a character")]
-    public function corporationHistory(int $character_id): ResponseInterface
-    {
-        $character = $this->characters->findOne([
-            "character_id" => $character_id,
-        ]);
-        if ($character->isEmpty()) {
-            return $this->json(["error" => "Character not found"], 300);
-        }
+#[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"], "Get the corporation history of a character")]
+public function corporationHistory(int $character_id): ResponseInterface
+{
+    // Find the character in the database
+    $character = $this->characters->findOne([
+        "character_id" => $character_id,
+    ]);
 
-        $response = $this->corporationHistoryFetcher->fetch(
-            "/latest/characters/" . $character_id . "/corporationhistory",
-            cacheTime: 60 * 60 * 24 * 7
-        );
-        $corpHistoryData = json_validate($response["body"])
-            ? json_decode($response["body"], true)
-            : [];
-        $corpHistoryData = array_reverse($corpHistoryData);
-
-        // Extract all corporation ids
-        $corporationIds = array_column($corpHistoryData, "corporation_id");
-
-        // Fetch all corporation data at once
-        $corporationsData = $this->corporations
-            ->find(
-                ["corporation_id" => ['$in' => $corporationIds]],
-                [
-                    "projection" => [
-                        "_id" => 0,
-                        "corporation_id" => 1,
-                        "name" => 1,
-                    ],
-                ],
-                300
-            )
-            ->toArray();
-
-        // Convert to associative array
-        $corporationsDataAssoc = [];
-        foreach ($corporationsData as $corporationData) {
-            $corporationsDataAssoc[
-                $corporationData["corporation_id"]
-            ] = $corporationData;
-        }
-
-        $corporationHistory = [];
-        for ($i = 0; $i < count($corpHistoryData); $i++) {
-            $history = $corpHistoryData[$i];
-            $corpData =
-                $corporationsDataAssoc[$history["corporation_id"]] ?? null;
-            if ($corpData === null) {
-                $corpData = $this->corporationESI->getCorporationInfo(
-                    $history["corporation_id"]
-                );
-            }
-            $joinDate = new \DateTime($history["start_date"]);
-
-            $data = [
-                "corporation_id" => $history["corporation_id"],
-                "join_date" => $joinDate->format("Y-m-d H:i:s"),
-            ];
-
-            // If there is a next element, set the leave_date to the join_date of the next element
-            if (isset($corpHistoryData[$i + 1])) {
-                $nextHistory = $corpHistoryData[$i + 1];
-                $nextJoinDate = new \DateTime($nextHistory["start_date"]);
-                $data["leave_date"] = $nextJoinDate->format("Y-m-d H:i:s");
-            }
-
-            $corporationHistory[] = $this->cleanupTimestamps(
-                array_merge($data, $corpData)
-            );
-        }
-
-        // Lets update the character with the latest corporation history
-        $this->characters->collection->updateOne(
-            ["character_id" => $character_id],
-            ['$set' => ["history" => $corporationHistory]]
-        );
-
-        return $this->json(array_reverse($corporationHistory));
+    // If the character is not found, return an error response
+    if ($character->isEmpty()) {
+        return $this->json(["error" => "Character not found"], 300);
     }
+
+    // Get the corporation history from the character's record in the database
+    $history = $this->characters->findOne(
+        ["character_id" => $character_id],
+        ["projection" => ["history" => 1]]
+    )["history"];
+
+    // If history is empty or not set, return an empty response
+    if (empty($history)) {
+        return $this->json([], 300);
+    }
+
+    // Prepare the corporation history array
+    $corporationHistory = [];
+    for ($i = 0; $i < count($history); $i++) {
+        $corpHistory = $history[$i];
+
+        // Fetch corporation data
+        $corporationId = $corpHistory["corporation_id"];
+        $corpData = $corporationId
+            ? $this->corporations->findOne(
+                ['corporation_id' => $corporationId],
+                ['projection' => ['name' => 1]]
+            )
+            : null;
+
+        $corporationName = $corpData['name'] ?? "";
+
+        $joinDate = new \DateTime($corpHistory["start_date"]);
+
+        // Prepare the data for the current entry
+        $data = [
+            "corporation_id" => $corporationId,
+            "name" => $corporationName,
+            "join_date" => $joinDate->format("Y-m-d H:i:s"),
+        ];
+
+        // If there is a next element, set the leave_date to the join_date of the next element
+        if (isset($history[$i + 1])) {
+            $nextHistory = $history[$i + 1];
+            $nextJoinDate = new \DateTime($nextHistory["start_date"]);
+            $data["leave_date"] = $nextJoinDate->format("Y-m-d H:i:s");
+        } else {
+            // No next element, so no leave date
+            $data["leave_date"] = null;
+        }
+
+        $corporationHistory[] = $this->cleanupTimestamps($data);
+    }
+
+    // Return the corporation history as a JSON response
+    return $this->json(array_reverse($corporationHistory), 300);
+}
 
     #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails[/]", ["GET"], "Get all killmails of a character")]
     public function killmails(int $character_id): ResponseInterface

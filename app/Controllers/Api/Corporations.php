@@ -4,15 +4,21 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Helpers\TopLists;
+use EK\Models\Alliances;
+use EK\Models\Characters;
+use EK\Models\Corporations as ModelsCorporations;
+use EK\Models\Killmails;
 use Psr\Http\Message\ResponseInterface;
 
 class Corporations extends Controller
 {
     public function __construct(
-        protected \EK\Models\Corporations $corporations,
-        protected \EK\Models\Characters $characters,
-        protected \EK\Helpers\TopLists $topLists,
-        protected \EK\Models\Killmails $killmails
+        protected Alliances $alliances,
+        protected ModelsCorporations $corporations,
+        protected Characters $characters,
+        protected TopLists $topLists,
+        protected Killmails $killmails
     ) {
         parent::__construct();
     }
@@ -78,6 +84,86 @@ class Corporations extends Controller
 
         return $this->json($corporations->toArray(), 300);
     }
+
+#[RouteAttribute("/corporations/{corporation_id:[0-9]+}/alliancehistory[/]", ["GET"], "Get the alliance history of a corporation")]
+public function allianceHistory(int $corporation_id): ResponseInterface
+{
+    // Find the corporation in the database
+    $corporation = $this->corporations->findOne([
+        "corporation_id" => $corporation_id,
+    ]);
+
+    // If the corporation is not found, return an error response
+    if ($corporation->isEmpty()) {
+        return $this->json(["error" => "Corporation not found"], 300);
+    }
+
+    // Get the alliance history from the corporation's record in the database
+    $history = $this->corporations->findOne(
+        ["corporation_id" => $corporation_id],
+        ["projection" => ["history" => 1]]
+    )["history"];
+
+    // If history is empty or not set, return an empty response
+    if (empty($history)) {
+        return $this->json([], 300);
+    }
+
+    // Ensure the history is ordered by start_date
+    usort($history, function ($a, $b) {
+        return strtotime($a['start_date']) - strtotime($b['start_date']);
+    });
+
+    // Prepare the alliance history array
+    $allianceHistory = [];
+    for ($i = 0; $i < count($history); $i++) {
+        $alliance = $history[$i];
+
+        // Handle the case where alliance_id is empty or not set
+        $allianceId = $alliance["alliance_id"] ?? 0;
+        $allianceData = $allianceId
+            ? $this->alliances->findOne(
+                ['alliance_id' => $allianceId],
+                ['projection' => ['name' => 1]]
+            )
+            : null;
+
+        // Set the name to an empty string if alliance_id is empty or not found
+        $allianceName = $allianceData['name'] ?? "";
+
+        $joinDate = new \DateTime($alliance["start_date"]);
+
+        // Prepare the data for the current entry
+        $data = [
+            "alliance_id" => $allianceId,
+            "name" => $allianceName,
+            "join_date" => $joinDate->format("Y-m-d H:i:s"),
+        ];
+
+        // Check if there is a next element
+        if (isset($history[$i + 1])) {
+            $nextHistory = $history[$i + 1];
+            $nextJoinDate = new \DateTime($nextHistory["start_date"]);
+
+            // Ensure the leave_date is after the join_date
+            if ($nextJoinDate > $joinDate) {
+                $data["leave_date"] = $nextJoinDate->format("Y-m-d H:i:s");
+            } else {
+                // If the next join date is not after the current join date, we ignore it
+                $data["leave_date"] = null;
+            }
+        } else {
+            // No next element, so no leave date
+            $data["leave_date"] = null;
+        }
+
+        $allianceHistory[] = $this->cleanupTimestamps($data);
+    }
+
+    // Return the alliance history as a JSON response
+    return $this->json(array_reverse($allianceHistory), 300);
+}
+
 
     #[RouteAttribute("/corporations/{corporation_id}/killmails[/]", ["GET"], "Get all killmails for a corporation")]
     public function killmails(int $corporation_id): ResponseInterface
