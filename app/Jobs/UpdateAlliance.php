@@ -50,12 +50,7 @@ class UpdateAlliance extends Jobs
 
     protected function fetchAllianceData($allianceId)
     {
-        $alliance = $this->alliances->findOneOrNull(["alliance_id" => $allianceId]);
-
-        $lastUpdated = $alliance->get('last_updated')?->toDateTime() ?? new \DateTime();
-        if ($alliance === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
-            $alliance = $this->esiAlliances->getAllianceInfo($allianceId);
-        }
+        $alliance = $this->esiAlliances->getAllianceInfo($allianceId);
 
         return $alliance;
     }

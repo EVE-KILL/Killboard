@@ -61,13 +61,7 @@ class UpdateCorporation extends Jobs
 
     protected function fetchCorporationData($corporationId)
     {
-        $corporation = $this->corporations->findOneOrNull(["corporation_id" => $corporationId]);
-
-        $lastUpdated = $corporation->get('last_updated')?->toDateTime() ?? new \DateTime();
-        if ($corporation === null || $lastUpdated < (new \DateTime())->modify('-14 day')) {
-            $corporation = $this->esiCorporations->getCorporationInfo($corporationId);
-        }
-
+        $corporation = $this->esiCorporations->getCorporationInfo($corporationId);
         return $corporation;
     }
 
