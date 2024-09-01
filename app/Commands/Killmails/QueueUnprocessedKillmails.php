@@ -43,7 +43,7 @@ class QueueUnprocessedKillmails extends ConsoleCommand
 
             // Periodically enqueue to prevent memory exhaustion
             if (count($mailsToQueue) >= 10000) {
-                $this->logger->info('Queueing batch of ' . count($mailsToQueue) . ' killmails');
+                $this->out('Queueing batch of ' . count($mailsToQueue) . ' killmails');
                 $this->processKillmail->massEnqueue($mailsToQueue);
                 $mailsToQueue = []; // Reset the array
             }
@@ -51,7 +51,7 @@ class QueueUnprocessedKillmails extends ConsoleCommand
 
         // Enqueue any remaining killmails
         if (count($mailsToQueue) > 0) {
-            $this->logger->info('Queueing final batch of ' . count($mailsToQueue) . ' killmails');
+            $this->out('Queueing final batch of ' . count($mailsToQueue) . ' killmails');
             $this->processKillmail->massEnqueue($mailsToQueue);
         }
     }
