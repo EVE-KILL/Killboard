@@ -113,7 +113,8 @@ class Stats extends Controller
     }
 
     #[RouteAttribute("/stats/mostvaluablekills/{days:[0-9]+}[/{limit:[0-9]+}]", ["GET"], "Get most valuable kills")]
-    public function mostValuableKillsLast7Days(int $days = 7, int $limit = 6): ResponseInterface {
+    public function mostValuableKills(int $days = 7, int $limit = 10): ResponseInterface
+    {
         $cacheKey = $this->cache->generateKey(
             "most_valuable_kills",
             $limit,
@@ -132,6 +133,78 @@ class Stats extends Controller
                 "kill_time" => [
                     '$gte' => new \MongoDB\BSON\UTCDateTime((time() - (((60 * 60) * 24) * $days)) * 1000),
                 ],
+            ],
+            [
+                "projection" => ["_id" => 0],
+                "sort" => ["total_value" => -1],
+                "limit" => $limit,
+            ]
+        );
+
+        $this->cache->set($cacheKey, $kills->toArray(), 300);
+        return $this->json($kills->toArray(), 300);
+    }
+
+    #[RouteAttribute("/stats/mostvaluablestructures/{days:[0-9]+}[/{limit:[0-9]+}]", ["GET"], "Get most valuable structure kills")]
+    public function mostValuableStructures(int $days = 7, int $limit = 10): ResponseInterface
+    {
+        $cacheKey = $this->cache->generateKey(
+            "most_valuable_structure_kills",
+            $limit,
+            $days
+        );
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult, 300);
+        }
+
+        $kills = $this->killmails->find(
+            [
+                "kill_time" => [
+                    '$gte' => new \MongoDB\BSON\UTCDateTime((time() - (((60 * 60) * 24) * $days)) * 1000),
+                ],
+                'victim.ship_group_id' => ['$in' => [
+                    1657, 1406, 1404, 1408
+                ]]
+            ],
+            [
+                "projection" => ["_id" => 0],
+                "sort" => ["total_value" => -1],
+                "limit" => $limit,
+            ]
+        );
+
+        $this->cache->set($cacheKey, $kills->toArray(), 300);
+        return $this->json($kills->toArray(), 300);
+    }
+
+    #[RouteAttribute("/stats/mostvaluableships/{days:[0-9]+}[/{limit:[0-9]+}]", ["GET"], "Get most valuable ship kills")]
+    public function mostValuableShips(int $days = 7, int $limit = 10): ResponseInterface
+    {
+        $cacheKey = $this->cache->generateKey(
+            "most_valuable_ship_kills",
+            $limit,
+            $days
+        );
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult, 300);
+        }
+
+        $kills = $this->killmails->find(
+            [
+                "kill_time" => [
+                    '$gte' => new \MongoDB\BSON\UTCDateTime((time() - (((60 * 60) * 24) * $days)) * 1000),
+                ],
+                'victim.ship_group_id' => ['$in' => [
+                    547,485,513,902,941,30,659,419,27,29,26,420,25,28,463,237,31,324,898,906,540,830,893,543,541,833,358,894,831,832,900,834,380,963,1305
+                ]],
             ],
             [
                 "projection" => ["_id" => 0],

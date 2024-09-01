@@ -303,7 +303,7 @@ class KillList
 
         return $this->fetchData(
             [
-                'victim.ship_group_id' => ['$in' => [1657]]
+                'victim.ship_group_id' => ['$in' => [1657, 1406, 1404, 1408]]
             ],
             [
                 "hint" => "victim.ship_group_id_kill_time",
