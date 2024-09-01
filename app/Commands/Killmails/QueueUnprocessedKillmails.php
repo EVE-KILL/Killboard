@@ -6,7 +6,6 @@ use Composer\Autoload\ClassLoader;
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Jobs\ProcessKillmail;
 use EK\Models\Killmails;
-use EK\RabbitMQ\RabbitMQ;
 
 class QueueUnprocessedKillmails extends ConsoleCommand
 {
@@ -16,23 +15,13 @@ class QueueUnprocessedKillmails extends ConsoleCommand
     public function __construct(
         protected ClassLoader $autoloader,
         protected Killmails $killmails,
-        protected ProcessKillmail $parseKillmailJob,
-        protected RabbitMQ $rabbitMQ
+        protected ProcessKillmail $parseKillmailJob
     ) {
         parent::__construct();
     }
 
     final public function handle(): void
     {
-        // Use the $this->rabbitMQ->channel to check how big the killmail queue is, if it's empty we can queue more
-        $queueInfo = $this->rabbitMQ->getChannel()->queue_declare('killmail', passive: true);
-        $queueSize = $queueInfo[1] ?? 0;
-
-        if ($queueSize > 0) {
-            $this->logger->info('Killmail queue is not empty, skipping');
-            return;
-        }
-
         // Get the MongoDB collection from the $killmails model
         $collection = $this->killmails->collection;
 
