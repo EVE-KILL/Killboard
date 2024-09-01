@@ -15,7 +15,7 @@ class QueueUnprocessedKillmails extends ConsoleCommand
 
     public function __construct(
         protected ClassLoader $autoloader,
-        protected killmails $killmails,
+        protected Killmails $killmails,
         protected ProcessKillmail $parseKillmailJob,
         protected RabbitMQ $rabbitMQ
     ) {
@@ -33,24 +33,37 @@ class QueueUnprocessedKillmails extends ConsoleCommand
             return;
         }
 
-        // Find killmails that haven't been processed, meaning no $attackers or $victim array
-        $unprocessedKillmails = $this->killmails->find(
+        // Get the MongoDB collection from the $killmails model
+        $collection = $this->killmails->collection;
+
+        // Use a cursor to iterate over unprocessed killmails
+        $cursor = $collection->find(
             ['attackers' => ['$exists' => false]],
             [
-                'projection' => ['_id' => 0, 'killmail_id' => 1, 'hash' => 1]
+                'projection' => ['_id' => 0, 'killmail_id' => 1, 'hash' => 1],
+                'noCursorTimeout' => true, // Prevent cursor timeout if processing takes a long time
             ]
         );
 
         $mailsToQueue = [];
-        foreach($unprocessedKillmails as $killmail) {
+        foreach ($cursor as $killmail) {
             $mailsToQueue[] = [
                 'killmail_id' => $killmail['killmail_id'],
                 'hash' => $killmail['hash']
             ];
+
+            // Periodically enqueue to prevent memory exhaustion
+            if (count($mailsToQueue) >= 10000) {
+                $this->logger->info('Queueing batch of ' . count($mailsToQueue) . ' killmails');
+                $this->processKillmail->massEnqueue($mailsToQueue);
+                $mailsToQueue = []; // Reset the array
+            }
         }
 
-        $this->logger->info('Queueing ' . count($mailsToQueue) . ' unprocessed killmails');
-
-        $this->processKillmail->massEnqueue($mailsToQueue);
+        // Enqueue any remaining killmails
+        if (count($mailsToQueue) > 0) {
+            $this->logger->info('Queueing final batch of ' . count($mailsToQueue) . ' killmails');
+            $this->processKillmail->massEnqueue($mailsToQueue);
+        }
     }
 }
