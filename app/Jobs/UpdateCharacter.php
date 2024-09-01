@@ -14,8 +14,6 @@ use EK\Models\Factions;
 use EK\ESI\Alliances as ESIAlliances;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Characters as ESICharacters;
-use EK\Fetchers\CorporationHistory;
-use EK\Helpers\History;
 use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 
@@ -32,12 +30,10 @@ class UpdateCharacter extends Jobs
         protected ESIAlliances $esiAlliances,
         protected ESICorporations $esiCorporations,
         protected ESICharacters $esiCharacters,
-        protected CorporationHistory $corporationHistoryFetcher,
         protected Meilisearch $meilisearch,
         protected Logger $logger,
         protected EveWho $eveWhoFetcher,
         protected RabbitMQ $rabbitMQ,
-        protected History $history
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -124,13 +120,7 @@ class UpdateCharacter extends Jobs
                 'corporation_name' => $this->fetchCorporationData($characterInfo["corporation_id"] ?? 0)["name"] ?? "",
                 'alliance_id' => $characterInfo["alliance_id"] ?? 0,
                 'alliance_name' => $this->fetchAllianceData($characterInfo["alliance_id"] ?? 0)["name"] ?? "",
-                'security_status' => $characterInfo["sec_status"] ?? 0,
-                'history' => array_map(function($history) {
-                    return [
-                        'corporation_id' => $history['corporation_id'],
-                        'start_date' => new UTCDateTime(strtotime($history['start_date']) * 1000)
-                    ];
-                }, $characterHistory),
+                'security_status' => $characterInfo["sec_status"] ?? 0
             ];
 
             // Set the birthday if the field exists
@@ -173,7 +163,6 @@ class UpdateCharacter extends Jobs
         $characterData["faction_name"] = $factionData["name"] ?? "";
         $characterData["last_updated"] = new UTCDateTime(time() * 1000);
         $characterData['birthday'] = new UTCDateTime(strtotime($characterData['birthday']) * 1000);
-        $characterData['history'] = $this->fetchCorporationHistory($characterData['character_id']);
 
         ksort($characterData);
 
@@ -183,12 +172,6 @@ class UpdateCharacter extends Jobs
         if ($deleted === false && isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
         }
-    }
-
-    protected function fetchCorporationHistory(int $characterId): array
-    {
-        $history = $this->history->generateCorporationHistory($characterId);
-        return $history;
     }
 
     protected function fetchAllianceData(int $allianceId): array
