@@ -15,22 +15,18 @@ class QueueUnprocessedKillmails extends ConsoleCommand
     public function __construct(
         protected ClassLoader $autoloader,
         protected Killmails $killmails,
-        protected ProcessKillmail $parseKillmailJob
+        protected ProcessKillmail $processKillmail
     ) {
         parent::__construct();
     }
 
     final public function handle(): void
     {
-        // Get the MongoDB collection from the $killmails model
-        $collection = $this->killmails->collection;
-
-        // Use a cursor to iterate over unprocessed killmails
-        $cursor = $collection->find(
+        $cursor = $this->killmails->collection->find(
             ['attackers' => ['$exists' => false]],
             [
                 'projection' => ['_id' => 0, 'killmail_id' => 1, 'hash' => 1],
-                'noCursorTimeout' => true, // Prevent cursor timeout if processing takes a long time
+                'noCursorTimeout' => true, // Prevent cursor timeout
             ]
         );
 
@@ -45,7 +41,7 @@ class QueueUnprocessedKillmails extends ConsoleCommand
             if (count($mailsToQueue) >= 10000) {
                 $this->out('Queueing batch of ' . count($mailsToQueue) . ' killmails');
                 $this->processKillmail->massEnqueue($mailsToQueue);
-                $mailsToQueue = []; // Reset the array
+                $mailsToQueue = [];
             }
         }
 
