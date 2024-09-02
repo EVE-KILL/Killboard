@@ -25,14 +25,6 @@ abstract class Controller
 
     public function __invoke(string $actionName = 'handle'): \Closure
     {
-        // Start a transaction with a context for the controller action
-        $transactionContext = new \Sentry\Tracing\TransactionContext();
-        $transactionContext->setName($actionName);
-        $transactionContext->setOp('http.server');
-
-        $transaction = \Sentry\startTransaction($transactionContext);
-        \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
-
         $controller = $this;
 
         return function (
@@ -41,9 +33,16 @@ abstract class Controller
             array $args
         ) use (
             $controller,
-            $actionName,
-            $transaction
+            $actionName
         ) {
+            // Start a transaction with a context for the controller action
+            $transactionContext = new \Sentry\Tracing\TransactionContext();
+            $transactionContext->setName($actionName);
+            $transactionContext->setOp('http.server');
+
+            $transaction = \Sentry\startTransaction($transactionContext);
+            \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+
             // Start a span for the controller operation
             $spanContext = new \Sentry\Tracing\SpanContext();
             $spanContext->setOp('http.request');
