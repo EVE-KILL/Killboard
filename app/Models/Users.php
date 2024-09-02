@@ -34,7 +34,7 @@ class Users extends Collection
     public function getUser(int $characterId): array
     {
         $currentTime = time();
-        $user = $this->findOne(['character_id' => $characterId]);
+        $user = $this->findOne(['character_id' => $characterId])->toArray();
 
         if ($user === null) {
             throw new RuntimeException('User not found');
