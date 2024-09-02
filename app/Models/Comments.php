@@ -26,6 +26,10 @@ class Comments extends Collection
         'desc' => [
             'character.character_id',
             'character.character_name',
+            'created_at_desc'
+        ],
+        'asc' => [
+            'created_at_asc'
         ],
     ];
 }

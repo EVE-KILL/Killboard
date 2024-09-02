@@ -23,8 +23,21 @@ class Comments extends Controller
     #[RouteAttribute("/comments/{identifier}[/]", ["GET"], "Get all comments for a particular identifier")]
     public function getComments(string $identifier): ResponseInterface
     {
-        $comments = $this->comments->find(["identifier" => $identifier], ["projection" => ["_id" => 0]]);
-        return $this->json($comments->toArray(), 300);
+        $comments = $this->comments->find(
+            [
+                "identifier" => $identifier
+            ],
+            [
+                "sort" => ['created_at' => -1],
+                "projection" => ["_id" => 0, "last_modified" => 0]
+            ],
+            cacheTime: 0
+        );
+        foreach($comments as $key => $comment) {
+            $comments[$key] = $this->cleanupTimestamps($comment);
+        }
+
+        return $this->json($comments, 0);
     }
 
     #[RouteAttribute("/comments/{identifier}[/]", ["POST"], "Add a comment to a particular identifier")]
@@ -44,7 +57,15 @@ class Comments extends Controller
         }
 
         $user = $this->users->getUserByIdentifier($postData['identifier']);
+        if (empty($user)) {
+            return $this->json(['error' => 'User not found'], 300);
+        }
+
         $comment = $postData['comment'];
+        if (strlen($comment) > 500) {
+            return $this->json(['error' => 'Comment is too long'], 300);
+        }
+
         $characterData = $this->characters->findOne(['character_id' => $user['character_id']])->toArray();
 
         $commentObject = [
@@ -64,6 +85,6 @@ class Comments extends Controller
         $this->comments->setData($commentObject);
         $result = $this->comments->save();
 
-        return $this->json([$commentObject, $result], 300);
+        return $this->json($commentObject, 0);
     }
 }
