@@ -44,6 +44,7 @@ class Queue extends ConsoleCommand
 
             $className = $jobData["job"] ?? null;
             $data = $jobData["data"] ?? [];
+            $md5 = $jobData["md5"] ?? null;
             $sentryTrace = $jobData["sentry_trace"] ?? null;
             $baggage = $jobData["baggage"] ?? [];
             $runSentry = $sentryTrace !== null;
@@ -59,7 +60,7 @@ class Queue extends ConsoleCommand
                     $baggage
                 )
                     ->setOp('queue.process')
-                    ->setName($className);
+                    ->setName($md5);
 
                 $transaction = \Sentry\startTransaction($context);
                 \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
@@ -100,8 +101,10 @@ class Queue extends ConsoleCommand
                     $msg->nack(false);
                     $this->out($this->formatOutput('<red>Job error: ' . $e->getMessage() . '</red>'));
                 }
-
-                $transaction->setStatus(\Sentry\Tracing\SpanStatus::internalError());
+                if ($runSentry) {
+                    $transaction->setStatus(\Sentry\Tracing\SpanStatus::internalError());
+                    \Sentry\SentrySdk::getCurrentHub()->captureException($e);
+                }
             } finally {
                 // Finish the span
                 if ($runSentry) {
