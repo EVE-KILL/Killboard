@@ -56,7 +56,7 @@ class UpdateCharacter extends Jobs
             return;
         }
 
-        $lastUpdated = $characterData['last_updated']?->toDateTime() ?? new \DateTime();
+        $lastUpdated = isset($characterData['last_updated']) ? $characterData['last_updated']?->toDateTime() ?? new \DateTime() : new \DateTime();
         if ($characterData === null || $lastUpdated < (new \DateTime())->modify('-7 day')) {
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
         }
