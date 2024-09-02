@@ -126,8 +126,7 @@ abstract class Jobs
                     'job' => $thisClass,
                     'data' => $d,
                     'sentry_trace' => \Sentry\getTraceparent(),
-                    'baggage' => \Sentry\getBaggage(),
-                    'md5' => md5(json_encode($d)),
+                    'baggage' => \Sentry\getBaggage()
                 ];
 
                 $messageBody = json_encode($jobData);

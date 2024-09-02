@@ -10,6 +10,7 @@ use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 use Sentry\SentrySdk;
 use Sentry\Tracing\SpanContext;
+use Sentry\Tracing\TransactionContext;
 
 class Queue extends ConsoleCommand
 {
@@ -44,7 +45,6 @@ class Queue extends ConsoleCommand
 
             $className = $jobData["job"] ?? null;
             $data = $jobData["data"] ?? [];
-            $md5 = $jobData["md5"] ?? null;
             $sentryTrace = $jobData["sentry_trace"] ?? null;
             $baggage = $jobData["baggage"] ?? [];
             $runSentry = $sentryTrace !== null;
@@ -55,14 +55,15 @@ class Queue extends ConsoleCommand
             }
 
             if ($runSentry) {
-                $context = \Sentry\continueTrace(
-                    $sentryTrace,
-                    $baggage
-                )
-                    ->setOp('queue.process')
-                    ->setName($md5 ?? $className);
+                $transactionContext = new TransactionContext();
+                $transactionContext->setName($className);
+                $transactionContext->setOp('queue.process');
+                $transactionContext->setData([
+                    'sentry_trace' => $sentryTrace,
+                    'baggage' => $baggage
+                ]);
 
-                $transaction = \Sentry\startTransaction($context);
+                $transaction = \Sentry\startTransaction($transactionContext);
                 \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
             }
 
@@ -84,7 +85,7 @@ class Queue extends ConsoleCommand
                     $transaction->setData([
                         'messaging.destination.name' => $queueName,
                         'messaging.message.body.size' => strlen($msg->getBody()),
-                        'messaging.message.receive.latency' => ($endTime - $startTime) * 1000,
+                        'messaging.message.receive.latency' => ($endTime - $startTime) * 1000
                     ]);
                 }
 
