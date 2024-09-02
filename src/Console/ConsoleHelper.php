@@ -440,9 +440,14 @@ class ConsoleHelper extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $this->input = $input;
-        $this->output = $output;
-        $this->handle();
-        exit(0);
+        try {
+            $this->input = $input;
+            $this->output = $output;
+            $this->handle();
+            exit(0);
+        } catch (\Exception $e) {
+            \Sentry\captureException($e);
+            throw $e;
+        }
     }
 }

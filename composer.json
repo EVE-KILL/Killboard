@@ -52,7 +52,8 @@
     "spiral/roadrunner": "*",
     "php-amqplib/php-amqplib": "*",
     "stomp-php/stomp-php": "*",
-    "textalk/websocket": "*"
+    "textalk/websocket": "*",
+    "sentry/sentry": "*"
   },
   "require-dev": {
     "zeuxisoo/slim-whoops": "*",

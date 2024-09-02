@@ -9,6 +9,16 @@ if (!file_exists($autoloaderPath)) {
 
 $autoloader = require_once $autoloaderPath;
 
+// Load Sentry
+$sentryDsn = getenv('SENTRY_DSN', false);
+if ($sentryDsn !== false) {
+    \Sentry\init([
+        'dsn' => getenv('SENTRY_DSN'),
+        'traces_sample_rate' => 1.0,
+        'profiles_sample_rate' => 1.0,
+    ]);
+}
+
 // Add a global var to tell where the base dir is
 if (!defined('BASE_DIR')) {
     define('BASE_DIR', dirname(__DIR__, 1));
