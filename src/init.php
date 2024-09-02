@@ -14,7 +14,11 @@ $sentryDsn = getenv('SENTRY_DSN', false);
 if ($sentryDsn !== false) {
     \Sentry\init([
         'dsn' => getenv('SENTRY_DSN'),
-        'traces_sample_rate' => 1.0,
+        'traces_sample_rate' => 0.2,
+        'traces_sampler' => function (\Sentry\Tracing\SamplingContext $context): float {
+            // Return a random number between 0 and 1
+            return mt_rand() / mt_getrandmax();
+        },
         'profiles_sample_rate' => 1.0,
     ]);
 }
