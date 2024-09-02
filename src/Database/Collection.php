@@ -12,6 +12,7 @@ use MongoDB\GridFS\Bucket;
 use MongoDB\UpdateResult;
 use Sentry\SentrySdk;
 use Sentry\Tracing\SpanContext;
+use Sentry\Tracing\TransactionContext;
 
 class Collection
 {
@@ -591,12 +592,26 @@ class Collection
 
     protected function startSpan(string $operation, string $description, array $data = []): \Sentry\Tracing\Span
     {
-        $spanContext = new SpanContext();
-        $spanContext->setOp($operation);
-        $spanContext->setDescription($description);
-        $spanContext->setData($data);
+        $hub = SentrySdk::getCurrentHub();
+        $span = $hub->getSpan();
 
-        $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
-        return $span ?: SentrySdk::getCurrentHub()->getTransaction()->startChild($spanContext);
+        if ($span === null) {
+            // No active span, start a new transaction
+            $transactionContext = new TransactionContext();
+            $transactionContext->setName('db');
+            $transactionContext->setOp('db');
+            $transactionContext->setDescription($description);
+            $transaction = $hub->startTransaction($transactionContext);
+            $hub->setSpan($transaction);
+
+            $span = $transaction->startChild(new SpanContext());
+        } else {
+            $span = $span->startChild(new SpanContext());
+        }
+
+        $span->setOp($operation);
+        $span->setData($data);
+
+        return $span;
     }
 }
