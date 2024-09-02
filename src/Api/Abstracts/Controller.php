@@ -47,6 +47,7 @@ abstract class Controller
             // Start a span for the controller operation
             $spanContext = new \Sentry\Tracing\SpanContext();
             $spanContext->setOp('controller');
+            $spanContext->setData(['url' => $request->getUri()->getPath(), 'method' => $request->getMethod(), 'args' => $args]);
             $span = $transaction->startChild($spanContext);
             \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
 
