@@ -8,6 +8,8 @@ use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
+use Sentry\SentrySdk;
+use Sentry\Tracing\SpanContext;
 use Symfony\Component\RateLimiter\LimiterInterface;
 
 class Fetcher
@@ -44,7 +46,10 @@ class Fetcher
         ?int $cacheTime = null,
         bool $ignorePause = false
     ): array {
-        // Sort the query, headers and options
+        // Start a Sentry span for the fetch operation
+        $span = $this->startSpan('http.fetch', compact('path', 'requestMethod', 'query'));
+
+        // Sort the query, headers, and options
         ksort($query);
         ksort($headers);
         ksort($options);
@@ -56,9 +61,13 @@ class Fetcher
         if ($cacheTime > 1 && $this->cache->exists($cacheKey)) {
             $result = $this->getResultFromCache($cacheKey);
             if ($result !== null) {
+                $span->setData(['cache.hit' => true]);
+                $span->finish();
                 return $result;
             }
         }
+
+        $span->setData(['cache.hit' => false]);
 
         // If Proxy usage is enabled, and proxy_id isn't null, we need to fetch a proxy to use
         $proxy = null;
@@ -155,6 +164,9 @@ class Fetcher
             );
         }
 
+        // Finish the span
+        $span->finish();
+
         // Return the result
         return [
             "status" => $statusCode,
@@ -170,15 +182,21 @@ class Fetcher
 
     protected function getClient(?array $proxy = []): Client
     {
+        $span = $this->startSpan('http.getClient', ['useProxy' => $this->useProxy]);
+
         if ($this->useProxy === true) {
             if (!isset($proxy["url"])) {
                 throw new \Exception("Proxy URL not set");
             }
 
+            $span->finish();
+
             return new Client([
                 "base_uri" => $proxy["url"],
             ]);
         }
+
+        $span->finish();
 
         return new Client([
             "base_uri" => $this->baseUri,
@@ -187,8 +205,12 @@ class Fetcher
 
     protected function getResultFromCache(string $cacheKey): ?array
     {
+        $span = $this->startSpan('http.getResultFromCache', ['cacheKey' => $cacheKey]);
+
         $result = $this->cache->get($cacheKey);
         if ($result === null || $result === false) {
+            $span->setData(['cache.hit' => false]);
+            $span->finish();
             return null;
         }
 
@@ -198,6 +220,9 @@ class Fetcher
         $expireTimeGMT = new \DateTime("now", new \DateTimeZone("GMT"));
         $expireTimeGMT->setTimestamp($expirationTime);
         $currentTimeGMT = new \DateTime("now", new \DateTimeZone("GMT"));
+
+        $span->setData(['cache.hit' => true]);
+        $span->finish();
 
         return [
             "status" => 304,
@@ -210,5 +235,15 @@ class Fetcher
             ]),
             "body" => $result["body"],
         ];
+    }
+
+    protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
+    {
+        $spanContext = new SpanContext();
+        $spanContext->setOp($operation);
+        $spanContext->setData($data);
+
+        $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
+        return $span ?: SentrySdk::getCurrentHub()->getTransaction()->startChild($spanContext);
     }
 }

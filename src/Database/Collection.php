@@ -11,33 +11,25 @@ use MongoDB\DeleteResult;
 use MongoDB\Driver\BulkWrite;
 use MongoDB\GridFS\Bucket;
 use MongoDB\UpdateResult;
+use Sentry\SentrySdk;
+use Sentry\Tracing\SpanContext;
 
 class Collection
 {
-    /** @var string Name of collection in database */
     public string $collectionName = '';
-    /** @var string Name of database that the collection is stored in */
     public string $databaseName = 'esi';
-    /** @var \MongoDB\Collection MongoDB CollectionInterface */
     public \MongoDB\Collection $collection;
-    /** @var Bucket MongoDB GridFS Bucket for storing files */
     public Bucket $bucket;
-    /** @var string Primary index key */
     public string $indexField = '';
-    /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
-    /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
     public array $required = [];
-    /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
         'unique' => [],
         'desc' => [],
         'asc' => [],
         'text' => []
     ];
-    /** @var IlluminateCollection Data collection when storing data */
     protected IlluminateCollection $data;
-    /** @var Client MongoDB client connection */
     private Client $client;
 
     public function __construct(
@@ -65,12 +57,13 @@ class Collection
             }
         }
 
-        // If the data is an IlluminateCollection, we need to convert it back to an array
         return $data instanceof IlluminateCollection ? $data->toArray() : $data;
     }
 
     public function find(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
+        $span = $this->startSpan('database.find', compact('filter', 'options'));
+
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
@@ -91,6 +84,8 @@ class Collection
             $this->cache->set($cacheKey, $result, $cacheTime);
         }
 
+        $span->finish();
+
         if ($showHidden) {
             return collect($result);
         }
@@ -100,6 +95,8 @@ class Collection
 
     public function findOne(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
+        $span = $this->startSpan('database.findOne', compact('filter', 'options'));
+
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
@@ -119,6 +116,8 @@ class Collection
         if ($cacheTime > 0 && !$cacheKeyExists && !empty($result)) {
             $this->cache->set($cacheKey, $result, $cacheTime);
         }
+
+        $span->finish();
 
         if ($showHidden) {
             return collect($result);
@@ -129,6 +128,8 @@ class Collection
 
     public function findOneOrNull(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): ?IlluminateCollection
     {
+        $span = $this->startSpan('database.findOneOrNull', compact('filter', 'options'));
+
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
@@ -148,6 +149,8 @@ class Collection
         if ($cacheTime > 0 && !$cacheKeyExists && !empty($result)) {
             $this->cache->set($cacheKey, $result, $cacheTime);
         }
+
+        $span->finish();
 
         if (empty($result)) {
             return null;
@@ -162,6 +165,8 @@ class Collection
 
     public function aggregate(array $pipeline = [], array $options = [], int $cacheTime = 60): IlluminateCollection
     {
+        $span = $this->startSpan('database.aggregate', compact('pipeline', 'options'));
+
         $cacheKey = $this->generateCacheKey($pipeline, $options, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
 
@@ -182,17 +187,31 @@ class Collection
             $this->cache->set($cacheKey, $result, $cacheTime);
         }
 
+        $span->finish();
+
         return collect($result);
     }
 
     public function count(array $filter = [], array $options = []): int
     {
-        return $this->collection->countDocuments($filter, $options);
+        $span = $this->startSpan('database.count', compact('filter', 'options'));
+
+        $count = $this->collection->countDocuments($filter, $options);
+
+        $span->finish();
+
+        return $count;
     }
 
-    public function aproximateCount(array $filter = [], array $options = []): int
+    public function approximateCount(array $filter = [], array $options = []): int
     {
-        return $this->collection->estimatedDocumentCount($filter, $options);
+        $span = $this->startSpan('database.approximateCount', compact('filter', 'options'));
+
+        $count = $this->collection->estimatedDocumentCount($filter, $options);
+
+        $span->finish();
+
+        return $count;
     }
 
     public function delete(array $filter = []): DeleteResult
@@ -201,7 +220,13 @@ class Collection
             throw new \Exception('Filter cannot be empty');
         }
 
-        return $this->collection->deleteOne($filter);
+        $span = $this->startSpan('database.delete', compact('filter'));
+
+        $result = $this->collection->deleteOne($filter);
+
+        $span->finish();
+
+        return $result;
     }
 
     public function update(array $filter = [], array $update = [], array $options = []): UpdateResult
@@ -210,42 +235,41 @@ class Collection
             throw new \Exception('Filter cannot be empty');
         }
 
-        return $this->collection->updateOne($filter, $update, $options);
+        $span = $this->startSpan('database.update', compact('filter', 'update', 'options'));
+
+        $result = $this->collection->updateOne($filter, $update, $options);
+
+        $span->finish();
+
+        return $result;
     }
 
     public function truncate(): void
     {
+        $span = $this->startSpan('database.truncate');
+
         try {
             $this->collection->drop();
         } catch (\Exception $e) {
             throw new \Exception('Error truncating collection: ' . $e->getMessage());
         }
-    }
 
-    public function setData(array $data = []): void
-    {
-        $this->data = collect($data);
-    }
-
-    public function getData(): IlluminateCollection
-    {
-        return $this->data;
+        $span->finish();
     }
 
     public function saveMany(): int
     {
+        $span = $this->startSpan('database.saveMany');
+
         $bulkWrites = [];
 
         foreach($this->data->all() as $document) {
-            // Does it have the required fields?
             $this->hasRequired($document instanceof IlluminateCollection ? $document->all() : $document);
 
-            // Do we have an indexField? Otherwise throw an exception
             if (empty($this->indexField)) {
                 throw new Exception('Error: indexField is empty. Cannot save data in class ' . get_class($this) . ' without an indexField.');
             }
 
-            // Create match array for unique fields
             $match = [];
             if (isset($this->indexes['unique'])) {
                 foreach ($this->indexes['unique'] as $uniqueField) {
@@ -265,12 +289,10 @@ class Collection
                 $match[$this->indexField] = $this->data->get($this->indexField);
             }
 
-            // Ensure the document doesn't contain last_modified or _id
             unset($document['last_modified']);
             unset($document['_id']);
 
             $bulkWrites[] = ['updateOne' => [
-                    // Use the unique index fields to match the document
                     $match,
                     [
                         '$set' => $document,
@@ -284,21 +306,23 @@ class Collection
         }
 
         $result = $this->collection->bulkWrite($bulkWrites);
+
+        $span->finish();
+
         return $result->getUpsertedCount() + $result->getInsertedCount() + $result->getModifiedCount();
     }
 
     public function save(): int
     {
+        $span = $this->startSpan('database.save');
+
         $document = $this->data->all();
-        // Does it have the required fields?
         $this->hasRequired($document);
 
-        // Do we have an indexField? Otherwise throw an exception
         if (empty($this->indexField)) {
             throw new Exception('Error: indexField is empty. Cannot save data in class ' . get_class($this) . ' without an indexField.');
         }
 
-        // Create match array for unique fields
         $match = [];
         if (isset($this->indexes['unique'])) {
             foreach ($this->indexes['unique'] as $uniqueField) {
@@ -318,7 +342,6 @@ class Collection
             $match[$this->indexField] = $document[$this->indexField];
         }
 
-        // Ensure the document doesn't contain last_modified or _id
         unset($document['last_modified']);
         unset($document['_id']);
 
@@ -332,6 +355,8 @@ class Collection
                 'upsert' => true
             ]
         );
+
+        $span->finish();
 
         return $result->getUpsertedCount() + $result->getModifiedCount();
     }
@@ -347,10 +372,11 @@ class Collection
 
     public function ensureIndexes(): void
     {
+        $span = $this->startSpan('database.ensureIndexes');
+
         $existingIndexes = $this->listIndexes();
         $indexNames = [];
 
-        // Add a last_modified index to all collections if it doesn't exist, as desc
         foreach($this->indexes as $indexType => $indexes) {
             if ($indexType === 'desc') {
                 if (!in_array('last_modified', $indexes)) {
@@ -371,14 +397,12 @@ class Collection
             }
         }
 
-        // Drop indexes that shouldn't exist
         foreach ($existingIndexes as $index) {
             if (!in_array($index['name'], $indexNames)) {
                 $this->dropIndex([$index['name']]);
             }
         }
 
-        // Create indexes that should exist
         foreach ($this->indexes as $indexType => $indexes) {
             if ($indexType === 'text' && count($indexes) > 1) {
                 throw new Exception('Error: There can only be one text index in a collection, refer to https://www.mongodb.com/docs/manual/core/indexes/index-types/index-text/');
@@ -388,7 +412,6 @@ class Collection
                 if (is_array($index)) {
                     $name = implode('_', $index);
 
-                    // Set the direction of the index
                     $direction = match($indexType) {
                         'desc', 'unique' => -1,
                         'asc' => 1,
@@ -396,36 +419,27 @@ class Collection
                         default => null
                     };
 
-                    // If the direction is ascending (asc) we need to add -1 to the end of the name
                     if ($direction === 1) {
                         $name .= '_1';
                     }
 
-                    // Set the options of the index
                     $options = match($indexType) {
                         'unique' => ['unique' => true],
                         default => ['sparse' => true]
                     };
 
-                    // Add the name to the options
                     $options['name'] = $name;
-
-                    // Create the index in the background
                     $options['background'] = true;
 
-                    // Modify the index to add the direction
                     $modifiedIndex = [];
                     foreach ($index as $key) {
                         $modifiedIndex[$key] = $direction;
                     }
 
-                    // Create the index
                     $this->createIndex($modifiedIndex, $options);
                 } else {
-                    // Give the index a name
                     $name = $index . (($indexType === 'text') ? '_text' : '');
 
-                    // Set the direction of the index
                     $direction = match($indexType) {
                         'desc', 'unique' => -1,
                         'asc' => 1,
@@ -433,51 +447,77 @@ class Collection
                         default => null
                     };
 
-                    // Set the options of the index
                     $options = match($indexType) {
                         'unique' => ['unique' => true],
                         default => ['sparse' => true]
                     };
 
-                    // Add the name to the options
                     $options['name'] = $name;
 
-                    // Create the index
                     $this->createIndex([$index => $direction], $options);
                 }
             }
         }
+
+        $span->finish();
     }
 
     public function createIndex(array $keys = [], array $options = []): void
     {
+        $span = $this->startSpan('database.createIndex', compact('keys', 'options'));
+
         $this->collection->createIndex($keys, $options);
+
+        $span->finish();
     }
 
     public function dropIndex(array $keys = [], array $options = []): void
     {
+        $span = $this->startSpan('database.dropIndex', compact('keys', 'options'));
+
         foreach ($keys as $key) {
             $this->collection->dropIndex($key, $options);
         }
+
+        $span->finish();
     }
 
     public function dropIndexes(): void
     {
+        $span = $this->startSpan('database.dropIndexes');
+
         $this->collection->dropIndexes();
+
+        $span->finish();
     }
 
     public function listIndexes(): array
     {
+        $span = $this->startSpan('database.listIndexes');
+
         $indexes = $this->collection->listIndexes();
 
-        // We need to filter out the _id_ index
-        return collect($indexes)->filter(function ($index) {
+        $filteredIndexes = collect($indexes)->filter(function ($index) {
             return $index['name'] !== '_id_';
         })->toArray();
+
+        $span->finish();
+
+        return $filteredIndexes;
     }
 
     public function generateCacheKey(...$args): string
     {
         return md5(serialize($args));
+    }
+
+    protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
+    {
+        $spanContext = new SpanContext();
+        $spanContext->setOp($operation);
+        $spanContext->setData($data);
+
+        $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
+        return $span ?: SentrySdk::getCurrentHub()->getTransaction()->startChild($spanContext);
     }
 }
