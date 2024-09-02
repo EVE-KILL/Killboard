@@ -7,6 +7,7 @@ use EK\Api\Abstracts\Cronjob;
 use Kcs\ClassFinder\Finder\ComposerFinder;
 use League\Container\Container;
 use Poliander\Cron\CronExpression;
+use Sentry\CheckInStatus;
 
 class Cron extends ConsoleCommand
 {
@@ -30,8 +31,10 @@ class Cron extends ConsoleCommand
 
             if ($shouldRun === true) {
                 try {
+                    $sentryCheckinId = \Sentry\captureCheckIn(slug: $cronjob['className'], status: CheckInStatus::inProgress());
                     $this->out('Running cronjob: ' . $cronjob['className']);
                     $cronjob['instance']->handle();
+                    \Sentry\captureCheckIn(slug: $cronjob['className'], status: CheckInStatus::ok(), checkInId: $sentryCheckinId);
                 } catch (\Exception $e) {
                     $this->out("Error while running cron job {$cronjob['className']}: {$e->getMessage()}");
                 }
