@@ -440,11 +440,24 @@ class ConsoleHelper extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $transactionContext = \Sentry\Tracing\TransactionContext::make()
+            ->setName(get_class($this) . '::' . $this->getName())
+            ->setOp(get_class($this));
+        $transaction = \Sentry\startTransaction($transactionContext);
+        \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+        $spanContext = \Sentry\Tracing\SpanContext::make()->setOp(get_class($this));
+        $span = $transaction->startChild($spanContext);
+        \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
+
         try {
             $this->input = $input;
             $this->output = $output;
             $this->handle();
             exit(0);
+
+            $span->finish();
+            \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+            $transaction->finish();
         } catch (\Exception $e) {
             \Sentry\captureException($e);
             throw $e;
