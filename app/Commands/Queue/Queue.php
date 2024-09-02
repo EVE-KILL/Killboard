@@ -79,9 +79,6 @@ class Queue extends ConsoleCommand
                 $endTime = microtime(true);
                 $this->out($this->formatOutput('<green>Job completed in ' . ($endTime - $startTime) . ' seconds</green>'));
 
-                // Acknowledge the message
-                $msg->ack();
-
                 if ($runSentry) {
                     $transaction->setData([
                         'messaging.destination.name' => $queueName,
@@ -90,6 +87,9 @@ class Queue extends ConsoleCommand
                         'messaging.message.retry.count' => $msg->get('application_headers')['x-death'][0]['count'] ?? 0,
                     ]);
                 }
+
+                // Acknowledge the message
+                $msg->ack();
             } catch (\Exception $e) {
                 if ($requeue) {
                     // Reject the message and requeue it
