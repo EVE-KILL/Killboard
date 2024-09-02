@@ -25,9 +25,18 @@ abstract class Controller
 
     public function __invoke(string $actionName = 'handle'): \Closure
     {
+        $transactionContext = \Sentry\Tracing\TransactionContext::make()
+            ->setName($actionName)
+            ->setOp('controller');
+        $transaction = \Sentry\startTransaction($transactionContext);
+        \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+        $spanContext = \Sentry\Tracing\SpanContext::make()->setOp('controller');
+        $span = $transaction->startChild($spanContext);
+        \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
+
         $controller = $this;
 
-        return function (
+        $result = function (
             ServerRequestInterface $request,
             ResponseInterface $response,
             array $args
@@ -42,6 +51,12 @@ abstract class Controller
 
             return call_user_func_array([$controller, $actionName], $args);
         };
+
+        $span->finish();
+        \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+        $transaction->finish();
+
+        return $result;
     }
 
     protected function newValidator(): Validator
