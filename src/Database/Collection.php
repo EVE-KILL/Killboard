@@ -8,7 +8,6 @@ use Illuminate\Support\Collection as IlluminateCollection;
 use MongoDB\BSON\UTCDateTime;
 use MongoDB\Client;
 use MongoDB\DeleteResult;
-use MongoDB\Driver\BulkWrite;
 use MongoDB\GridFS\Bucket;
 use MongoDB\UpdateResult;
 use Sentry\SentrySdk;

@@ -80,7 +80,6 @@ class Queue extends ConsoleCommand
 
                     if ($runSentry) {
                         $transaction->setData([
-                            'messaging.message.id' => $msg->get('message_id'),
                             'messaging.destination.name' => $queueName,
                             'messaging.message.body.size' => strlen($msg->getBody()),
                             'messaging.message.receive.latency' => ($endTime - $startTime) * 1000,

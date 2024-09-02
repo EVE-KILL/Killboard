@@ -84,7 +84,6 @@ abstract class Jobs
             }
 
             $span->setData([
-                'messaging.message.id' => $msg->get('message_id'),
                 'messaging.destination.name' => $exchange ?: $queue,
                 'messaging.message.body.size' => strlen($messageBody),
             ]);
@@ -150,7 +149,6 @@ abstract class Jobs
                 }
 
                 $span->setData([
-                    'messaging.message.id' => $msg->get('message_id'),
                     'messaging.destination.name' => $exchange ?: $queue,
                     'messaging.message.body.size' => strlen($messageBody),
                 ])->finish();
