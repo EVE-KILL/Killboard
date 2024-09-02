@@ -16,20 +16,30 @@ use Sentry\Tracing\SpanContext;
 
 class Collection
 {
+    /** @var string Name of collection in database */
     public string $collectionName = '';
+    /** @var string Name of database that the collection is stored in */
     public string $databaseName = 'esi';
+    /** @var \MongoDB\Collection MongoDB CollectionInterface */
     public \MongoDB\Collection $collection;
+    /** @var Bucket MongoDB GridFS Bucket for storing files */
     public Bucket $bucket;
+    /** @var string Primary index key */
     public string $indexField = '';
+    /** @var string[] $hiddenFields Fields to hide from output (ie. Password hash, email etc.) */
     public array $hiddenFields = [];
+    /** @var string[] $required Fields required to insert data to model (ie. email, password hash, etc.) */
     public array $required = [];
+    /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
         'unique' => [],
         'desc' => [],
         'asc' => [],
         'text' => []
     ];
+    /** @var IlluminateCollection Data collection when storing data */
     protected IlluminateCollection $data;
+    /** @var Client MongoDB client connection */
     private Client $client;
 
     public function __construct(
@@ -57,6 +67,7 @@ class Collection
             }
         }
 
+        // If the data is an IlluminateCollection, we need to convert it back to an array
         return $data instanceof IlluminateCollection ? $data->toArray() : $data;
     }
 
@@ -203,9 +214,9 @@ class Collection
         return $count;
     }
 
-    public function approximateCount(array $filter = [], array $options = []): int
+    public function aproximateCount(array $filter = [], array $options = []): int
     {
-        $span = $this->startSpan('database.approximateCount', compact('filter', 'options'));
+        $span = $this->startSpan('database.aproximateCount', compact('filter', 'options'));
 
         $count = $this->collection->estimatedDocumentCount($filter, $options);
 
@@ -257,13 +268,23 @@ class Collection
         $span->finish();
     }
 
+    public function setData(array $data = []): void
+    {
+        $this->data = collect($data);
+    }
+
+    public function getData(): IlluminateCollection
+    {
+        return $this->data;
+    }
+
     public function saveMany(): int
     {
         $span = $this->startSpan('database.saveMany');
 
         $bulkWrites = [];
 
-        foreach($this->data->all() as $document) {
+        foreach ($this->data->all() as $document) {
             $this->hasRequired($document instanceof IlluminateCollection ? $document->all() : $document);
 
             if (empty($this->indexField)) {

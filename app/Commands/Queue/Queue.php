@@ -8,6 +8,8 @@ use League\Container\Container;
 use PhpAmqpLib\Channel\AMQPChannel;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
+use Sentry\SentrySdk;
+use Sentry\Tracing\SpanContext;
 
 class Queue extends ConsoleCommand
 {
@@ -37,6 +39,9 @@ class Queue extends ConsoleCommand
         $this->channel->queue_declare($queueName, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
 
         $callback = function (AMQPMessage $msg) use ($queueName) {
+            // Start a Sentry span for job processing
+            $span = $this->startSpan('queue.processJob', ['queue' => $queueName]);
+
             $startTime = microtime(true);
             $jobData = json_decode($msg->getBody(), true);
             $requeue = true;
@@ -63,6 +68,7 @@ class Queue extends ConsoleCommand
                     $msg->ack();
                 }
             } catch (\Exception $e) {
+                $span->setData(['error' => $e->getMessage()]);
                 if ($requeue) {
                     // Reject the message and requeue it
                     $msg->nack(true);
@@ -72,6 +78,9 @@ class Queue extends ConsoleCommand
                     $msg->nack(false);
                     $this->out($this->formatOutput('<red>Job error: ' . $e->getMessage() . '</red>'));
                 }
+            } finally {
+                // Finish the span
+                $span->finish();
             }
         };
 
@@ -97,5 +106,15 @@ class Queue extends ConsoleCommand
     {
         $this->channel->close();
         $this->connection->close();
+    }
+
+    protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
+    {
+        $spanContext = new SpanContext();
+        $spanContext->setOp($operation);
+        $spanContext->setData($data);
+
+        $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
+        return $span ?: SentrySdk::getCurrentHub()->getTransaction()->startChild($spanContext);
     }
 }
