@@ -49,14 +49,14 @@ class Cache
             return null;
         }
 
-        $span->setData(['cache.hit' => true]);
+        $span->setData(['cache.hit' => true, 'cache.item_size' => strlen($value)]);
         $span->finish();
         return $decodedValue;
     }
 
     public function set(string $key, mixed $value, int $ttl = 0): void
     {
-        $span = $this->startSpan('cache.set', ['key' => $key, 'ttl' => $ttl]);
+        $span = $this->startSpan('cache.put', ['key' => $key, 'ttl' => $ttl]);
 
         $encodedValue = json_encode($value);
         if (json_last_error() !== JSON_ERROR_NONE) {

@@ -32,24 +32,35 @@ class Queue extends ConsoleCommand
     final public function handle(): void
     {
         $queueName = $this->queue;
-
         $this->out($this->formatOutput('<blue>Queue worker started</blue>: <green>' . $queueName . '</green>'));
 
         // Declare the queue with the correct parameters, including priority
         $this->channel->queue_declare($queueName, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
 
         $callback = function (AMQPMessage $msg) use ($queueName) {
-            // Start a Sentry span for job processing
-            $span = $this->startSpan('queue.processJob', ['queue' => $queueName]);
-
             $startTime = microtime(true);
             $jobData = json_decode($msg->getBody(), true);
             $requeue = true;
 
-            try {
-                $className = $jobData["job"] ?? null;
-                $data = $jobData["data"] ?? [];
+            $className = $jobData["job"] ?? null;
+            $data = $jobData["data"] ?? [];
+            $sentryTrace = $jobData["sentry_trace"] ?? null;
+            $baggage = $jobData["baggage"] ?? [];
+            $runSentry = $sentryTrace !== null;
 
+            if ($runSentry) {
+                $context = \Sentry\continueTrace(
+                    $sentryTrace,
+                    $baggage
+                )
+                    ->setOp('queue.process')
+                    ->setName($className);
+
+                $transaction = \Sentry\startTransaction($context);
+                \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+            }
+
+            try {
                 if ($className !== null) {
                     $this->out($this->formatOutput('<yellow>Processing job: ' . $className . '</yellow>'));
                     $this->out($this->formatOutput('<yellow>Job data: ' . json_encode($data) . '</yellow>'));
@@ -66,9 +77,19 @@ class Queue extends ConsoleCommand
 
                     // Acknowledge the message
                     $msg->ack();
+
+                    if ($runSentry) {
+                        $transaction->setData([
+                            'messaging.message.id' => $msg->get('message_id'),
+                            'messaging.destination.name' => $queueName,
+                            'messaging.message.body.size' => strlen($msg->getBody()),
+                            'messaging.message.receive.latency' => ($endTime - $startTime) * 1000,
+                            'messaging.message.retry.count' => $msg->get('application_headers')['x-death'][0]['count'] ?? 0,
+                        ]);
+                    }
                 }
             } catch (\Exception $e) {
-                $span->setData(['error' => $e->getMessage()]);
+                $transaction->setStatus(\Sentry\Tracing\SpanStatus::internalError());
                 if ($requeue) {
                     // Reject the message and requeue it
                     $msg->nack(true);
@@ -80,7 +101,9 @@ class Queue extends ConsoleCommand
                 }
             } finally {
                 // Finish the span
-                $span->finish();
+                if ($runSentry) {
+                    $transaction->finish();
+                }
             }
         };
 
@@ -106,15 +129,5 @@ class Queue extends ConsoleCommand
     {
         $this->channel->close();
         $this->connection->close();
-    }
-
-    protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
-    {
-        $spanContext = new SpanContext();
-        $spanContext->setOp($operation);
-        $spanContext->setData($data);
-
-        $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
-        return $span ?: SentrySdk::getCurrentHub()->getTransaction()->startChild($spanContext);
     }
 }

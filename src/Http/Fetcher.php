@@ -47,7 +47,7 @@ class Fetcher
         bool $ignorePause = false
     ): array {
         // Start a Sentry span for the fetch operation
-        $span = $this->startSpan('http.fetch', compact('path', 'requestMethod', 'query'));
+        $span = $this->startSpan('http.client', compact('path', 'requestMethod', 'query'));
 
         // Sort the query, headers, and options
         ksort($query);
@@ -61,13 +61,9 @@ class Fetcher
         if ($cacheTime > 1 && $this->cache->exists($cacheKey)) {
             $result = $this->getResultFromCache($cacheKey);
             if ($result !== null) {
-                $span->setData(['cache.hit' => true]);
-                $span->finish();
                 return $result;
             }
         }
-
-        $span->setData(['cache.hit' => false]);
 
         // If Proxy usage is enabled, and proxy_id isn't null, we need to fetch a proxy to use
         $proxy = null;
@@ -113,6 +109,15 @@ class Fetcher
             "timeout" => $this->timeout,
             "http_errors" => false,
         ]);
+
+        $span
+            ->setDescription("$requestMethod $path")
+            ->setStatus(\Sentry\Tracing\SpanStatus::createFromHttpStatusCode($response->getStatusCode()))
+            ->setData([
+                'http.request.method' => $requestMethod,
+                'http.response.body.size' => $response->getBody()->getSize(),
+                'http.response.status_code' => $response->getStatusCode(),
+            ]);
 
         // Finish time for the request
         $endTime = microtime(true);
