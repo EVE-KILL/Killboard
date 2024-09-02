@@ -48,6 +48,11 @@ class Queue extends ConsoleCommand
             $baggage = $jobData["baggage"] ?? [];
             $runSentry = $sentryTrace !== null;
 
+            if ($className === null) {
+                $this->out($this->formatOutput('<red>Job error: Invalid job data</red>'));
+                return;
+            }
+
             if ($runSentry) {
                 $context = \Sentry\continueTrace(
                     $sentryTrace,
@@ -61,34 +66,31 @@ class Queue extends ConsoleCommand
             }
 
             try {
-                if ($className !== null) {
-                    $this->out($this->formatOutput('<yellow>Processing job: ' . $className . '</yellow>'));
-                    $this->out($this->formatOutput('<yellow>Job data: ' . json_encode($data) . '</yellow>'));
+                $this->out($this->formatOutput('<yellow>Processing job: ' . $className . '</yellow>'));
+                $this->out($this->formatOutput('<yellow>Job data: ' . json_encode($data) . '</yellow>'));
 
-                    // Load the instance and check if it should be requeued
-                    $instance = $this->container->get($className);
-                    $requeue = $instance->requeue ?? true;
+                // Load the instance and check if it should be requeued
+                $instance = $this->container->get($className);
+                $requeue = $instance->requeue ?? true;
 
-                    // Handle the job
-                    $instance->handle($data);
+                // Handle the job
+                $instance->handle($data);
 
-                    $endTime = microtime(true);
-                    $this->out($this->formatOutput('<green>Job completed in ' . ($endTime - $startTime) . ' seconds</green>'));
+                $endTime = microtime(true);
+                $this->out($this->formatOutput('<green>Job completed in ' . ($endTime - $startTime) . ' seconds</green>'));
 
-                    // Acknowledge the message
-                    $msg->ack();
+                // Acknowledge the message
+                $msg->ack();
 
-                    if ($runSentry) {
-                        $transaction->setData([
-                            'messaging.destination.name' => $queueName,
-                            'messaging.message.body.size' => strlen($msg->getBody()),
-                            'messaging.message.receive.latency' => ($endTime - $startTime) * 1000,
-                            'messaging.message.retry.count' => $msg->get('application_headers')['x-death'][0]['count'] ?? 0,
-                        ]);
-                    }
+                if ($runSentry) {
+                    $transaction->setData([
+                        'messaging.destination.name' => $queueName,
+                        'messaging.message.body.size' => strlen($msg->getBody()),
+                        'messaging.message.receive.latency' => ($endTime - $startTime) * 1000,
+                        'messaging.message.retry.count' => $msg->get('application_headers')['x-death'][0]['count'] ?? 0,
+                    ]);
                 }
             } catch (\Exception $e) {
-                $transaction->setStatus(\Sentry\Tracing\SpanStatus::internalError());
                 if ($requeue) {
                     // Reject the message and requeue it
                     $msg->nack(true);
@@ -98,6 +100,8 @@ class Queue extends ConsoleCommand
                     $msg->nack(false);
                     $this->out($this->formatOutput('<red>Job error: ' . $e->getMessage() . '</red>'));
                 }
+
+                $transaction->setStatus(\Sentry\Tracing\SpanStatus::internalError());
             } finally {
                 // Finish the span
                 if ($runSentry) {
