@@ -35,10 +35,17 @@ class Queue extends ConsoleCommand
         $queueName = $this->queue;
         $this->out($this->formatOutput('<blue>Queue worker started</blue>: <green>' . $queueName . '</green>'));
 
+        $transactionContext = new TransactionContext();
+        $transactionContext->setName($queueName);
+        $transactionContext->setOp('queue.worker');
+
+        $transaction = \Sentry\startTransaction($transactionContext);
+        \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+
         // Declare the queue with the correct parameters, including priority
         $this->channel->queue_declare($queueName, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
 
-        $callback = function (AMQPMessage $msg) use ($queueName) {
+        $callback = function (AMQPMessage $msg) use ($queueName, $transaction) {
             $startTime = microtime(true);
             $jobData = json_decode($msg->getBody(), true);
             $requeue = true;
@@ -55,16 +62,11 @@ class Queue extends ConsoleCommand
             }
 
             if ($runSentry) {
-                $transactionContext = new TransactionContext();
-                $transactionContext->setName($className);
-                $transactionContext->setOp('queue.process');
-                $transactionContext->setData([
-                    'sentry_trace' => $sentryTrace,
-                    'baggage' => $baggage
-                ]);
-
-                $transaction = \Sentry\startTransaction($transactionContext);
-                \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+                $spanContext = new SpanContext();
+                $spanContext->setOp('queue.process');
+                $spanContext->setDescription($className);
+                $span = $transaction->startChild($spanContext);
+                \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
             }
 
             try {
@@ -82,7 +84,7 @@ class Queue extends ConsoleCommand
                 $this->out($this->formatOutput('<green>Job completed in ' . ($endTime - $startTime) . ' seconds</green>'));
 
                 if ($runSentry) {
-                    $transaction->setData([
+                    $span->setData([
                         'messaging.destination.name' => $queueName,
                         'messaging.message.body.size' => strlen($msg->getBody()),
                         'messaging.message.receive.latency' => ($endTime - $startTime) * 1000
@@ -102,12 +104,14 @@ class Queue extends ConsoleCommand
                     $this->out($this->formatOutput('<red>Job error: ' . $e->getMessage() . '</red>'));
                 }
                 if ($runSentry) {
-                    $transaction->setStatus(\Sentry\Tracing\SpanStatus::internalError());
+                    $span->setStatus(\Sentry\Tracing\SpanStatus::internalError());
                     \Sentry\SentrySdk::getCurrentHub()->captureException($e);
                 }
             } finally {
                 // Finish the span
                 if ($runSentry) {
+                    $span->finish();
+                    \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
                     $transaction->finish();
                 }
             }
