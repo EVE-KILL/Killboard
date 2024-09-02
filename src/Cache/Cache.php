@@ -6,6 +6,7 @@ use EK\Redis\Redis;
 use Redis as PhpRedis;
 use Sentry\SentrySdk;
 use Sentry\Tracing\SpanContext;
+use Sentry\Tracing\TransactionContext;
 
 class Cache
 {
@@ -91,11 +92,25 @@ class Cache
 
     protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
     {
-        $spanContext = new SpanContext();
-        $spanContext->setOp($operation);
-        $spanContext->setData($data);
+        $hub = SentrySdk::getCurrentHub();
+        $span = $hub->getSpan();
 
-        $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
-        return $span ?: SentrySdk::getCurrentHub()->getTransaction()->startChild($spanContext);
+        if ($span === null) {
+            // No active span, start a new transaction
+            $transactionContext = new TransactionContext();
+            $transactionContext->setName('cronjob');
+            $transactionContext->setOp('cron');
+            $transaction = $hub->startTransaction($transactionContext);
+            $hub->setSpan($transaction);
+
+            $span = $transaction->startChild(new SpanContext());
+        } else {
+            $span = $span->startChild(new SpanContext());
+        }
+
+        $span->setOp($operation);
+        $span->setData($data);
+
+        return $span;
     }
 }
