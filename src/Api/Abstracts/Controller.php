@@ -28,7 +28,7 @@ abstract class Controller
         // Start a transaction with a context for the controller action
         $transactionContext = new \Sentry\Tracing\TransactionContext();
         $transactionContext->setName($actionName);
-        $transactionContext->setOp('controller');
+        $transactionContext->setOp('http.server');
 
         $transaction = \Sentry\startTransaction($transactionContext);
         \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
@@ -46,26 +46,39 @@ abstract class Controller
         ) {
             // Start a span for the controller operation
             $spanContext = new \Sentry\Tracing\SpanContext();
-            $spanContext->setOp('http.server');
-            $spanContext->setData(['url' => $request->getUri()->getPath(), 'method' => $request->getMethod(), 'args' => $args]);
+            $spanContext->setOp('http.request');
+            $spanContext->setData([
+                'url' => $request->getUri()->getPath(),
+                'method' => $request->getMethod(),
+                'args' => $args,
+            ]);
             $span = $transaction->startChild($spanContext);
             \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
 
-            // Setup the controller with request, response, and arguments
-            $controller->arguments = new Collection($args);
-            $controller->setRequest($request);
-            $controller->setResponse($response);
-            $controller->setBody($request->getBody()->getContents());
+            try {
+                // Setup the controller with request, response, and arguments
+                $controller->arguments = new Collection($args);
+                $controller->setRequest($request);
+                $controller->setResponse($response);
+                $controller->setBody($request->getBody()->getContents());
 
-            // Call the appropriate controller action
-            $result = call_user_func_array([$controller, $actionName], $args);
+                // Call the appropriate controller action
+                $result = call_user_func_array([$controller, $actionName], $args);
 
-            // Finish the span and the transaction
-            $span->finish();
-            \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
-            $transaction->finish();
+                return $result;
+            } catch (\Throwable $e) {
+                // Capture any exception and report it to Sentry
+                \Sentry\SentrySdk::getCurrentHub()->captureException($e);
+                throw $e; // Re-throw the exception
+            } finally {
+                // Ensure the span and transaction are finished
+                $span->finish();
+                \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+                $transaction->finish();
 
-            return $result;
+                // Reset the Sentry state to prevent data leakage between requests
+                \Sentry\SentrySdk::getCurrentHub()->popScope();
+            }
         };
     }
 
