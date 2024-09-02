@@ -20,34 +20,57 @@ class Meilisearch
 
     public function addDocuments(array $documents, string $indexName = 'search'): void
     {
-        $span = $this->startSpan('meilisearch.addDocuments', compact('indexName', 'documentsCount'));
+        $span = $this->startSpan('meilisearch.addDocuments', [
+            'indexName' => $indexName,
+            'documentsCount' => count($documents),
+        ]);
 
-        $index = $this->client->index($indexName);
-        $index->addDocuments($documents);
-
-        $span->finish();
+        try {
+            $index = $this->client->index($indexName);
+            $index->addDocuments($documents);
+        } catch (\Throwable $e) {
+            SentrySdk::getCurrentHub()->captureException($e);
+            throw $e;
+        } finally {
+            $span->finish();
+        }
     }
 
     public function search(string $query, string $indexName = 'search'): SearchResult
     {
-        $span = $this->startSpan('meilisearch.search', compact('indexName', 'query'));
+        $span = $this->startSpan('meilisearch.search', [
+            'indexName' => $indexName,
+            'query' => $query,
+        ]);
 
-        $index = $this->client->index($indexName);
-        $result = $index->search($query);
-
-        $span->finish();
+        try {
+            $index = $this->client->index($indexName);
+            $result = $index->search($query);
+        } catch (\Throwable $e) {
+            SentrySdk::getCurrentHub()->captureException($e);
+            throw $e;
+        } finally {
+            $span->finish();
+        }
 
         return $result;
     }
 
     public function clearIndex(string $indexName = 'search'): void
     {
-        $span = $this->startSpan('meilisearch.clearIndex', compact('indexName'));
+        $span = $this->startSpan('meilisearch.clearIndex', [
+            'indexName' => $indexName,
+        ]);
 
-        $index = $this->client->index($indexName);
-        $index->deleteAllDocuments();
-
-        $span->finish();
+        try {
+            $index = $this->client->index($indexName);
+            $index->deleteAllDocuments();
+        } catch (\Throwable $e) {
+            SentrySdk::getCurrentHub()->captureException($e);
+            throw $e;
+        } finally {
+            $span->finish();
+        }
     }
 
     protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
