@@ -44,45 +44,27 @@ abstract class Controller
             $actionName,
             $transaction
         ) {
-            try {
-                // Start a span for the controller operation
-                $spanContext = new \Sentry\Tracing\SpanContext();
-                $spanContext->setOp('controller');
-                $span = $transaction->startChild($spanContext);
-                \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
+            // Start a span for the controller operation
+            $spanContext = new \Sentry\Tracing\SpanContext();
+            $spanContext->setOp('controller');
+            $span = $transaction->startChild($spanContext);
+            \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
 
-                // Setup the controller with request, response, and arguments
-                $controller->arguments = new Collection($args);
-                $controller->setRequest($request);
-                $controller->setResponse($response);
-                $controller->setBody($request->getBody()->getContents());
+            // Setup the controller with request, response, and arguments
+            $controller->arguments = new Collection($args);
+            $controller->setRequest($request);
+            $controller->setResponse($response);
+            $controller->setBody($request->getBody()->getContents());
 
-                // Call the appropriate controller action
-                $result = call_user_func_array([$controller, $actionName], $args);
+            // Call the appropriate controller action
+            $result = call_user_func_array([$controller, $actionName], $args);
 
-                // Finish the span and the transaction
-                $span->finish();
-                \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
-                $transaction->finish();
+            // Finish the span and the transaction
+            $span->finish();
+            \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+            $transaction->finish();
 
-                return $result;
-
-            } catch (\Throwable $exception) {
-                // Capture the exception and send it to Sentry
-                \Sentry\captureException($exception);
-
-                // Ensure the span and transaction are finished properly
-                if (isset($span) && $span instanceof \Sentry\Tracing\Span) {
-                    $span->finish();
-                }
-                if ($transaction->getStatus() === null) {
-                    $transaction->setStatus(\Sentry\Tracing\Transaction::STATUS_INTERNAL_ERROR);
-                }
-                $transaction->finish();
-
-                // Optionally, rethrow the exception or handle it accordingly
-                throw $exception;
-            }
+            return $result;
         };
     }
 
