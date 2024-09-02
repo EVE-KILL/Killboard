@@ -31,7 +31,9 @@ class Cron extends ConsoleCommand
 
             if ($shouldRun === true) {
                 try {
-                    $sentryCheckinId = \Sentry\captureCheckIn(slug: $cronjob['className'], status: CheckInStatus::inProgress());
+                    $monitorSchedule = \Sentry\MonitorSchedule::crontab($cronjob['cronTime']);
+                    $monitorConfig = new \Sentry\MonitorConfig($monitorSchedule, checkinMargin: 5, maxRuntime: 60, timezone: 'Europe/Copenhagen');
+                    $sentryCheckinId = \Sentry\captureCheckIn(slug: $cronjob['className'], status: CheckInStatus::inProgress(), monitorConfig: $monitorConfig);
                     $this->out('Running cronjob: ' . $cronjob['className']);
                     $cronjob['instance']->handle();
                     \Sentry\captureCheckIn(slug: $cronjob['className'], status: CheckInStatus::ok(), checkInId: $sentryCheckinId);
