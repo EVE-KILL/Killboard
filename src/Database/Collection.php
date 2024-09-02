@@ -66,13 +66,16 @@ class Collection
             }
         }
 
-        // If the data is an IlluminateCollection, we need to convert it back to an array
         return $data instanceof IlluminateCollection ? $data->toArray() : $data;
     }
 
     public function find(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
-        $span = $this->startSpan('database.find', compact('filter', 'options'));
+        $span = $this->startSpan('db.query', 'find', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'find',
+            'db.statement' => json_encode(compact('filter', 'options')),
+        ]);
 
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
@@ -105,7 +108,11 @@ class Collection
 
     public function findOne(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): IlluminateCollection
     {
-        $span = $this->startSpan('database.findOne', compact('filter', 'options'));
+        $span = $this->startSpan('db.query', 'findOne', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'findOne',
+            'db.statement' => json_encode(compact('filter', 'options')),
+        ]);
 
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
@@ -138,7 +145,11 @@ class Collection
 
     public function findOneOrNull(array $filter = [], array $options = [], int $cacheTime = 60, bool $showHidden = false): ?IlluminateCollection
     {
-        $span = $this->startSpan('database.findOneOrNull', compact('filter', 'options'));
+        $span = $this->startSpan('db.query', 'findOneOrNull', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'findOne',
+            'db.statement' => json_encode(compact('filter', 'options')),
+        ]);
 
         $cacheKey = $this->generateCacheKey($filter, $options, $showHidden, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
@@ -175,7 +186,11 @@ class Collection
 
     public function aggregate(array $pipeline = [], array $options = [], int $cacheTime = 60): IlluminateCollection
     {
-        $span = $this->startSpan('database.aggregate', compact('pipeline', 'options'));
+        $span = $this->startSpan('db.query', 'aggregate', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'aggregate',
+            'db.statement' => json_encode(compact('pipeline', 'options')),
+        ]);
 
         $cacheKey = $this->generateCacheKey($pipeline, $options, get_class($this));
         $cacheKeyExists = $cacheTime > 0 && $this->cache->exists($cacheKey);
@@ -204,7 +219,11 @@ class Collection
 
     public function count(array $filter = [], array $options = []): int
     {
-        $span = $this->startSpan('database.count', compact('filter', 'options'));
+        $span = $this->startSpan('db.query', 'count', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'countDocuments',
+            'db.statement' => json_encode(compact('filter', 'options')),
+        ]);
 
         $count = $this->collection->countDocuments($filter, $options);
 
@@ -215,7 +234,11 @@ class Collection
 
     public function aproximateCount(array $filter = [], array $options = []): int
     {
-        $span = $this->startSpan('database.aproximateCount', compact('filter', 'options'));
+        $span = $this->startSpan('db.query', 'approximateCount', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'estimatedDocumentCount',
+            'db.statement' => json_encode(compact('filter', 'options')),
+        ]);
 
         $count = $this->collection->estimatedDocumentCount($filter, $options);
 
@@ -230,7 +253,11 @@ class Collection
             throw new \Exception('Filter cannot be empty');
         }
 
-        $span = $this->startSpan('database.delete', compact('filter'));
+        $span = $this->startSpan('db.query', 'delete', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'deleteOne',
+            'db.statement' => json_encode(compact('filter')),
+        ]);
 
         $result = $this->collection->deleteOne($filter);
 
@@ -245,7 +272,11 @@ class Collection
             throw new \Exception('Filter cannot be empty');
         }
 
-        $span = $this->startSpan('database.update', compact('filter', 'update', 'options'));
+        $span = $this->startSpan('db.query', 'update', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'updateOne',
+            'db.statement' => json_encode(compact('filter', 'update', 'options')),
+        ]);
 
         $result = $this->collection->updateOne($filter, $update, $options);
 
@@ -256,11 +287,15 @@ class Collection
 
     public function truncate(): void
     {
-        $span = $this->startSpan('database.truncate');
+        $span = $this->startSpan('db.query', 'truncate', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'drop',
+        ]);
 
         try {
             $this->collection->drop();
         } catch (\Exception $e) {
+            SentrySdk::getCurrentHub()->captureException($e);
             throw new \Exception('Error truncating collection: ' . $e->getMessage());
         }
 
@@ -279,7 +314,10 @@ class Collection
 
     public function saveMany(): int
     {
-        $span = $this->startSpan('database.saveMany');
+        $span = $this->startSpan('db.query', 'saveMany', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'bulkWrite',
+        ]);
 
         $bulkWrites = [];
 
@@ -334,7 +372,10 @@ class Collection
 
     public function save(): int
     {
-        $span = $this->startSpan('database.save');
+        $span = $this->startSpan('db.query', 'save', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'updateOne',
+        ]);
 
         $document = $this->data->all();
         $this->hasRequired($document);
@@ -392,7 +433,10 @@ class Collection
 
     public function ensureIndexes(): void
     {
-        $span = $this->startSpan('database.ensureIndexes');
+        $span = $this->startSpan('db.query', 'ensureIndexes', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'createIndexes',
+        ]);
 
         $existingIndexes = $this->listIndexes();
         $indexNames = [];
@@ -484,7 +528,11 @@ class Collection
 
     public function createIndex(array $keys = [], array $options = []): void
     {
-        $span = $this->startSpan('database.createIndex', compact('keys', 'options'));
+        $span = $this->startSpan('db.query', 'createIndex', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'createIndex',
+            'db.statement' => json_encode(compact('keys', 'options')),
+        ]);
 
         $this->collection->createIndex($keys, $options);
 
@@ -493,7 +541,11 @@ class Collection
 
     public function dropIndex(array $keys = [], array $options = []): void
     {
-        $span = $this->startSpan('database.dropIndex', compact('keys', 'options'));
+        $span = $this->startSpan('db.query', 'dropIndex', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'dropIndex',
+            'db.statement' => json_encode(compact('keys', 'options')),
+        ]);
 
         foreach ($keys as $key) {
             $this->collection->dropIndex($key, $options);
@@ -504,7 +556,10 @@ class Collection
 
     public function dropIndexes(): void
     {
-        $span = $this->startSpan('database.dropIndexes');
+        $span = $this->startSpan('db.query', 'dropIndexes', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'dropIndexes',
+        ]);
 
         $this->collection->dropIndexes();
 
@@ -513,7 +568,10 @@ class Collection
 
     public function listIndexes(): array
     {
-        $span = $this->startSpan('database.listIndexes');
+        $span = $this->startSpan('db.query', 'listIndexes', [
+            'db.collection' => $this->collectionName,
+            'db.operation' => 'listIndexes',
+        ]);
 
         $indexes = $this->collection->listIndexes();
 
@@ -531,10 +589,11 @@ class Collection
         return md5(serialize($args));
     }
 
-    protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
+    protected function startSpan(string $operation, string $description, array $data = []): \Sentry\Tracing\Span
     {
         $spanContext = new SpanContext();
         $spanContext->setOp($operation);
+        $spanContext->setDescription($description);
         $spanContext->setData($data);
 
         $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
