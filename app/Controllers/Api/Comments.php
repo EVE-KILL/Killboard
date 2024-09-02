@@ -4,8 +4,10 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Models\Characters;
 use EK\Models\Comments as CommentsModel;
 use EK\Models\Users;
+use MongoDB\BSON\UTCDateTime;
 use Psr\Http\Message\ResponseInterface;
 use Sirius\Validation\Validator;
 
@@ -13,7 +15,8 @@ class Comments extends Controller
 {
     public function __construct(
         protected CommentsModel $comments,
-        protected Users $users
+        protected Users $users,
+        protected Characters $characters
     ) {
     }
 
@@ -42,13 +45,19 @@ class Comments extends Controller
 
         $user = $this->users->getUserByIdentifier($postData['identifier']);
         $comment = $postData['comment'];
+        $characterData = $this->characters->findOne(['character_id' => $user['character_id']])->toArray();
 
         $commentObject = [
             'identifier' => $identifier,
             'comment' => $comment,
+            'created_at' => new UTCDateTime(time() * 1000),
             'character' => [
                 'character_id' => $user['character_id'],
-                'character_name' => $user['character_name']
+                'character_name' => $user['character_name'],
+                'corporation_id' => $characterData['corporation_id'],
+                'corporation_name' => $characterData['corporation_name'],
+                'alliance_id' => $characterData['alliance_id'] ?? 0,
+                'alliance_name' => $characterData['alliance_name'] ?? ''
             ]
         ];
 
