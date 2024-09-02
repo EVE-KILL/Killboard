@@ -36,7 +36,7 @@ class Queue extends ConsoleCommand
         $this->out($this->formatOutput('<blue>Queue worker started</blue>: <green>' . $queueName . '</green>'));
 
         $transactionContext = new TransactionContext();
-        $transactionContext->setName($queueName);
+        $transactionContext->setName("queue::$queueName");
         $transactionContext->setOp('queue.worker');
 
         $transaction = \Sentry\startTransaction($transactionContext);
@@ -52,15 +52,13 @@ class Queue extends ConsoleCommand
 
             $className = $jobData["job"] ?? null;
             $data = $jobData["data"] ?? [];
-            $sentryTrace = $jobData["sentry_trace"] ?? null;
-            $baggage = $jobData["baggage"] ?? [];
-            $runSentry = $sentryTrace !== null;
 
             if ($className === null) {
                 $this->out($this->formatOutput('<red>Job error: Invalid job data</red>'));
                 return;
             }
 
+<<<<<<< HEAD
             if ($runSentry) {
                 $spanContext = new SpanContext();
                 $spanContext->setOp('queue.process');
@@ -68,6 +66,13 @@ class Queue extends ConsoleCommand
                 $span = $transaction->startChild($spanContext);
                 \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
             }
+=======
+            $spanContext = new SpanContext();
+            $spanContext->setOp('queue.process');
+            $spanContext->setDescription($className);
+            $span = $transaction->startChild($spanContext);
+            \Sentry\SentrySdk::getCurrentHub()->setSpan($span);
+>>>>>>> a8a972e (Hopefully fix the queue transactions for sentry)
 
             try {
                 $this->out($this->formatOutput('<yellow>Processing job: ' . $className . '</yellow>'));
@@ -83,6 +88,7 @@ class Queue extends ConsoleCommand
                 $endTime = microtime(true);
                 $this->out($this->formatOutput('<green>Job completed in ' . ($endTime - $startTime) . ' seconds</green>'));
 
+<<<<<<< HEAD
                 if ($runSentry) {
                     $span->setData([
                         'messaging.destination.name' => $queueName,
@@ -90,6 +96,13 @@ class Queue extends ConsoleCommand
                         'messaging.message.receive.latency' => ($endTime - $startTime) * 1000
                     ]);
                 }
+=======
+                $span->setData([
+                    'messaging.destination.name' => $queueName,
+                    'messaging.message.body.size' => strlen($msg->getBody()),
+                    'messaging.message.receive.latency' => ($endTime - $startTime) * 1000
+                ]);
+>>>>>>> a8a972e (Hopefully fix the queue transactions for sentry)
 
                 // Acknowledge the message
                 $msg->ack();
@@ -103,6 +116,7 @@ class Queue extends ConsoleCommand
                     $msg->nack(false);
                     $this->out($this->formatOutput('<red>Job error: ' . $e->getMessage() . '</red>'));
                 }
+<<<<<<< HEAD
                 if ($runSentry) {
                     $span->setStatus(\Sentry\Tracing\SpanStatus::internalError());
                     \Sentry\SentrySdk::getCurrentHub()->captureException($e);
@@ -114,6 +128,16 @@ class Queue extends ConsoleCommand
                     \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
                     $transaction->finish();
                 }
+=======
+
+                $span->setStatus(\Sentry\Tracing\SpanStatus::internalError());
+                \Sentry\SentrySdk::getCurrentHub()->captureException($e);
+            } finally {
+                // Finish the span
+                $span->finish();
+                \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
+                $transaction->finish();
+>>>>>>> a8a972e (Hopefully fix the queue transactions for sentry)
             }
         };
 

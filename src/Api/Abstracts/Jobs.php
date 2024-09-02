@@ -58,9 +58,7 @@ abstract class Jobs
             // Prepare job data
             $jobData = [
                 'job' => get_class($this),
-                'data' => $data,
-                'sentry_trace' => \Sentry\getTraceparent(),
-                'baggage' => \Sentry\getBaggage(),
+                'data' => $data
             ];
 
             // Create AMQP message with priority
@@ -124,9 +122,7 @@ abstract class Jobs
 
                 $jobData = [
                     'job' => $thisClass,
-                    'data' => $d,
-                    'sentry_trace' => \Sentry\getTraceparent(),
-                    'baggage' => \Sentry\getBaggage()
+                    'data' => $d
                 ];
 
                 $messageBody = json_encode($jobData);
