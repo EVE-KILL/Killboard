@@ -85,7 +85,6 @@ class Queue extends ConsoleCommand
                         'messaging.destination.name' => $queueName,
                         'messaging.message.body.size' => strlen($msg->getBody()),
                         'messaging.message.receive.latency' => ($endTime - $startTime) * 1000,
-                        'messaging.message.retry.count' => $msg->get('application_headers')['x-death'][0]['count'] ?? 0,
                     ]);
                 }
 
