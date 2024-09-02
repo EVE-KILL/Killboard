@@ -60,7 +60,7 @@ class Queue extends ConsoleCommand
                     $baggage
                 )
                     ->setOp('queue.process')
-                    ->setName($md5);
+                    ->setName($md5 ?? $className);
 
                 $transaction = \Sentry\startTransaction($context);
                 \Sentry\SentrySdk::getCurrentHub()->setSpan($transaction);
