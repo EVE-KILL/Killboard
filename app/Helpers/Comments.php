@@ -4,6 +4,7 @@ namespace EK\Helpers;
 
 use EK\Config\Config;
 use EK\Models\Comments as CommentsModel;
+use EK\Webhooks\Webhooks;
 use GuzzleHttp\Client;
 
 class Comments
@@ -11,7 +12,8 @@ class Comments
     protected Client $client;
     public function __construct(
         protected CommentsModel $comments,
-        protected Config $config
+        protected Config $config,
+        protected Webhooks $webhooks
     ) {
         $this->client = new Client();
     }
@@ -41,5 +43,13 @@ class Comments
             $moderation['categories']['sexual/minors'] ||
             $moderation['categories']['self-harm/intent'] ||
             $moderation['categories']['self-harm/instructions'];
+    }
+
+    public function emitToDiscord(array $comment): void
+    {
+        $commentLink = "https://eve-kill.com/" . implode('/', explode(':', $comment['identifier']));
+        $this->webhooks->sendToComments(
+            "New comment by {$comment['character']['character_name']} on {$commentLink}"
+        );
     }
 }

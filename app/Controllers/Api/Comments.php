@@ -98,6 +98,8 @@ class Comments extends Controller
         $this->comments->setData($commentObject);
         $result = $this->comments->save();
 
+        $this->commentsHelper->emitToDiscord($commentObject);
+
         return $this->json($commentObject, 0);
     }
 }
