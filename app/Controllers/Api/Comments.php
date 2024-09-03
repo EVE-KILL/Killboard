@@ -41,13 +41,17 @@ class Comments extends Controller
                 'projection' => [
                     '_id' => 0,
                     'character_id' => 1,
-                    'character_name' => 1,
+                    'name' => 1,
                     'corporation_id' => 1,
                     'corporation_name' => 1,
                     'alliance_id' => 1,
                     'alliance_name' => 1,
                 ]
             ]);
+
+            // Rename name to character_name
+            $comments[$key]['character']['character_name'] = $comments[$key]['character']['name'];
+            unset($comments[$key]['character']['name']);
         }
 
         return $this->json($comments, 0);
