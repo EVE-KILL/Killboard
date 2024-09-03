@@ -1,0 +1,14 @@
+version: '3'
+
+server:
+    command: 'php bin/console server:roadrunner'
+    relay: pipes
+http:
+    address: '0.0.0.0:9201'
+    middleware:
+        - gzip
+    pool:
+        debug: true
+        num_workers: 1
+        supervisor:
+            max_worker_memory: 256
