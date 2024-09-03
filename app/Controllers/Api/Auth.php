@@ -32,7 +32,6 @@ class Auth extends Controller
     #[RouteAttribute("/auth/eve[/]", ["GET"], "EVE SSO Callback")]
     public function callback(): ResponseInterface
     {
-        session_start();
         $auth = $this->sso->getProvider()->validateAuthenticationV2($this->getParam('state'), $this->getParam('state'), $this->getParam('code'));
 
         $characterId = $auth->getCharacterId();
