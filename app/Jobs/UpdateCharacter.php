@@ -44,7 +44,6 @@ class UpdateCharacter extends Jobs
         if ($characterId === 0) {
             return;
         }
-        $deleted = false;
 
         $characterData = $this->characters->findOneOrNull([
             'character_id' => $characterId,
@@ -63,18 +62,16 @@ class UpdateCharacter extends Jobs
 
 
         if ($this->isCharacterDeleted($characterData)) {
-            //$this->logger->debug("Character $characterId has been deleted, updating database and fetching from EVEWho", $characterData);
-            //$this->updateDeletedCharacter($characterId);
-            //$characterData = $this->fetchCharacterDataFromEVEWho($characterId);
-            //if ($characterData) {
-            //    $this->logger->debug("Character $characterId found in EVEWho, updating database", $characterData);
-            //    $this->updateCharacterData($characterData, true);
-            //}
+            $this->characters->setData([
+                "character_id" => $characterId,
+                "deleted" => true,
+            ]);
+            $this->characters->save();
             return;
         }
 
         if ($this->isCharacterFound($characterData)) {
-            $this->updateCharacterData($characterData, $deleted);
+            $this->updateCharacterData($characterData);
         }
     }
 
@@ -106,38 +103,7 @@ class UpdateCharacter extends Jobs
         $this->characters->save();
     }
 
-    protected function fetchCharacterDataFromEVEWho(int $characterId): ?array
-    {
-        try {
-            $response = $this->eveWhoFetcher->fetch("https://evewho.com/api/character/{$characterId}");
-            $data = json_decode($response['body'], true);
-            $characterInfo = $data["info"][0] ?? [];
-            $data = [
-                'character_id' => $characterInfo["character_id"] ?? $characterId,
-                'name' => $characterInfo["name"] ?? "Unknown",
-                'corporation_id' => $characterInfo["corporation_id"] ?? 0,
-                'corporation_name' => $this->fetchCorporationData($characterInfo["corporation_id"] ?? 0)["name"] ?? "",
-                'alliance_id' => $characterInfo["alliance_id"] ?? 0,
-                'alliance_name' => $this->fetchAllianceData($characterInfo["alliance_id"] ?? 0)["name"] ?? "",
-                'security_status' => $characterInfo["sec_status"] ?? 0
-            ];
-
-            // Set the birthday if the field exists
-            if (isset($characterInfo['birthday'])) {
-                $data['birthday'] = new UTCDateTime(strtotime($characterInfo['birthday']) * 1000);
-            }
-
-            return $data;
-        } catch (\Exception $e) {
-            $this->logger->debug("Failed to fetch data from EVEWho for character $characterId: " . $e->getMessage(), [
-                'character_id' => $characterId,
-                'exception' => $e,
-            ]);
-            return null;
-        }
-    }
-
-    protected function updateCharacterData(array $characterData, bool $deleted): void
+    protected function updateCharacterData(array $characterData): void
     {
         $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
 
@@ -160,7 +126,7 @@ class UpdateCharacter extends Jobs
         $this->characters->setData($characterData);
         $this->characters->save();
 
-        if ($deleted === false && isset($characterData['name'])) {
+        if (isset($characterData['name'])) {
             $this->indexCharacterInSearch($characterData);
         }
     }

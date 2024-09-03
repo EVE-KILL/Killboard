@@ -22,15 +22,15 @@ class UpdateCharacters extends Cronjob
 
     public function handle(): void
     {
-        $this->logger->info("Updating characters that haven't been updated in the last 14 days");
+        $this->logger->info("Updating characters that haven't been updated in the last 7 days");
 
-        $fourteenDaysAgo = new UTCDateTime((time() - 7 * 86400) * 1000);
+        $daysAgo = new UTCDateTime((time() - (7 * 86400)) * 1000);
         $characterCount = $this->characters->count();
 
         // Find characters that haven't been updated in the last 14 days, but ignore them if they have deleted = true
         $staleCharacters = $this->characters->find(
             [
-                "last_updated" => ['$lt' => $fourteenDaysAgo],
+                "last_updated" => ['$lt' => $daysAgo],
                 "deleted" => ['$ne' => true],
             ],
             ["limit" => (int) round(($characterCount / 7) / 24, 0)] // Update 1/168th of the characters every hour
