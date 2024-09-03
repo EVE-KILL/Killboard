@@ -72,7 +72,7 @@ class History
 
             $data = [
                 "corporation_id" => $history["corporation_id"],
-                "name" => $corpData['name'],
+                "name" => $corpData['name'] ?? '',
                 "join_date" => $joinDate->format("Y-m-d H:i:s"),
             ];
 
