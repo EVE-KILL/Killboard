@@ -112,7 +112,6 @@ class UpdateCharacter extends Jobs
             $response = $this->eveWhoFetcher->fetch("https://evewho.com/api/character/{$characterId}");
             $data = json_decode($response['body'], true);
             $characterInfo = $data["info"][0] ?? [];
-            $characterHistory = $data["history"] ?? [];
             $data = [
                 'character_id' => $characterInfo["character_id"] ?? $characterId,
                 'name' => $characterInfo["name"] ?? "Unknown",
@@ -122,7 +121,6 @@ class UpdateCharacter extends Jobs
                 'alliance_name' => $this->fetchAllianceData($characterInfo["alliance_id"] ?? 0)["name"] ?? "",
                 'security_status' => $characterInfo["sec_status"] ?? 0
             ];
-
 
             // Set the birthday if the field exists
             if (isset($characterInfo['birthday'])) {
