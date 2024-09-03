@@ -49,7 +49,7 @@ class Comments
     {
         $commentLink = "https://eve-kill.com/" . implode('/', explode(':', $comment['identifier']));
         $this->webhooks->sendToComments(
-            "New comment by {$comment['character']['character_name']} on {$commentLink}"
+            "New comment by {$comment['character']['character_name']} on {$commentLink} ```{$comment['comment']}```"
         );
     }
 }
