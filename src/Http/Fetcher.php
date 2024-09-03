@@ -4,27 +4,26 @@ namespace EK\Http;
 
 use EK\Cache\Cache;
 use EK\Logger\Logger;
-use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use GuzzleHttp\Client;
 use Psr\Http\Message\ResponseInterface;
 use Sentry\SentrySdk;
 use Sentry\Tracing\SpanContext;
+use Sentry\Tracing\TransactionContext;
 use Symfony\Component\RateLimiter\LimiterInterface;
 
 class Fetcher
 {
+    protected Client $client;
     protected string $baseUri = "";
     protected string $userAgent = "EK/1.0";
     protected string $bucketName = "global";
-    protected bool $useProxy = false;
     protected int $rateLimit = 1000;
     protected int $timeout = 30;
     protected LimiterInterface $limiter;
 
     public function __construct(
         protected Cache $cache,
-        protected Proxies $proxies,
         protected RateLimiter $rateLimiter,
         protected Logger $logger
     ) {
@@ -33,6 +32,8 @@ class Fetcher
             'sliding_window',
             $this->rateLimit
         );
+
+        $this->client = $this->getClient();
     }
 
     public function fetch(
@@ -42,12 +43,19 @@ class Fetcher
         string $body = "",
         array $headers = [],
         array $options = [],
-        ?string $proxy_id = null,
         ?int $cacheTime = null,
         bool $ignorePause = false
     ): array {
         // Start a Sentry span for the fetch operation
-        $span = $this->startSpan('http.client', compact('path', 'requestMethod', 'query'));
+        $span = $this->startSpan('http.client', 'HTTP Client Request', [
+            'path' => $path,
+            'requestMethod' => $requestMethod,
+            'query' => $query,
+            'headers' => $headers,
+            'options' => $options,
+            'cacheTime' => $cacheTime,
+            'ignorePause' => $ignorePause,
+        ]);
 
         // Sort the query, headers, and options
         ksort($query);
@@ -62,19 +70,6 @@ class Fetcher
             $result = $this->getResultFromCache($cacheKey);
             if ($result !== null) {
                 return $result;
-            }
-        }
-
-        // If Proxy usage is enabled, and proxy_id isn't null, we need to fetch a proxy to use
-        $proxy = null;
-        if ($proxy_id !== null && $this->useProxy === true) {
-            $proxy = $this->proxies
-                ->findOne(["proxy_id" => $proxy_id])
-                ->toArray();
-        } elseif ($this->useProxy === true) {
-            $proxy = $this->proxies->getRandomProxy();
-            if (empty($proxy)) {
-                throw new \Exception("No proxies available");
             }
         }
 
@@ -95,11 +90,8 @@ class Fetcher
         // Start time for the request
         $startTime = microtime(true);
 
-        // Get the client
-        $client = $this->getClient($proxy);
-
         // Execute the request
-        $response = $client->request($requestMethod, $path, [
+        $response = $this->client->request($requestMethod, $path, [
             "query" => $query,
             "body" => $body,
             "headers" => array_merge($headers, [
@@ -144,7 +136,6 @@ class Fetcher
                 round($response->getBody()->getSize() / 1024, 2) . "KB"
             ),
             [
-                "proxy_id" => $proxy["proxy_id"] ?? null,
                 "status" => $statusCode,
                 "response_time" => $endTime - $startTime,
             ]
@@ -185,32 +176,21 @@ class Fetcher
         return $response;
     }
 
-    protected function getClient(?array $proxy = []): Client
+    protected function getClient(): Client
     {
-        $span = $this->startSpan('http.getClient', ['useProxy' => $this->useProxy]);
+        $span = $this->startSpan('http.getClient', 'Get the HTTP client');
 
-        if ($this->useProxy === true) {
-            if (!isset($proxy["url"])) {
-                throw new \Exception("Proxy URL not set");
-            }
-
-            $span->finish();
-
-            return new Client([
-                "base_uri" => $proxy["url"],
-            ]);
-        }
-
-        $span->finish();
-
-        return new Client([
+        $client = new Client([
             "base_uri" => $this->baseUri,
         ]);
+
+        $span->finish();
+        return $client;
     }
 
     protected function getResultFromCache(string $cacheKey): ?array
     {
-        $span = $this->startSpan('http.getResultFromCache', ['cacheKey' => $cacheKey]);
+        $span = $this->startSpan('http.getResultFromCache', 'Get result from cache', ['cacheKey' => $cacheKey]);
 
         $result = $this->cache->get($cacheKey);
         if ($result === null || $result === false) {
@@ -242,13 +222,28 @@ class Fetcher
         ];
     }
 
-    protected function startSpan(string $operation, array $data = []): \Sentry\Tracing\Span
+    protected function startSpan(string $operation, string $description, array $data = []): \Sentry\Tracing\Span
     {
-        $spanContext = new SpanContext();
-        $spanContext->setOp($operation);
-        $spanContext->setData($data);
+        $hub = SentrySdk::getCurrentHub();
+        $span = $hub->getSpan();
 
-        $span = SentrySdk::getCurrentHub()->getSpan()?->startChild($spanContext);
-        return $span ?: SentrySdk::getCurrentHub()->getTransaction()->startChild($spanContext);
+        if ($span === null) {
+            // No active span, start a new transaction
+            $transactionContext = new TransactionContext();
+            $transactionContext->setName('db');
+            $transactionContext->setOp('db');
+            $transactionContext->setDescription($description);
+            $transaction = $hub->startTransaction($transactionContext);
+            $hub->setSpan($transaction);
+
+            $span = $transaction->startChild(new SpanContext());
+        } else {
+            $span = $span->startChild(new SpanContext());
+        }
+
+        $span->setOp($operation);
+        $span->setData($data);
+
+        return $span;
     }
 }

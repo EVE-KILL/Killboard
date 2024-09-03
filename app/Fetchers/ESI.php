@@ -18,12 +18,11 @@ class ESI extends Fetcher
 
     public function __construct(
         protected Cache $cache,
-        protected Proxies $proxies,
         protected RateLimiter $rateLimiter,
         protected Webhooks $webhooks,
         protected Logger $logger
     ) {
-        parent::__construct($cache, $proxies, $rateLimiter, $logger);
+        parent::__construct($cache, $rateLimiter, $logger);
     }
 
     public function handle(ResponseInterface $response): ResponseInterface
