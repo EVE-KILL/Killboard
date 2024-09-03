@@ -63,13 +63,13 @@ class UpdateCharacter extends Jobs
 
 
         if ($this->isCharacterDeleted($characterData)) {
-            $this->logger->debug("Character $characterId has been deleted, updating database and fetching from EVEWho", $characterData);
-            $this->updateDeletedCharacter($characterId);
-            $characterData = $this->fetchCharacterDataFromEVEWho($characterId);
-            if ($characterData) {
-                $this->logger->debug("Character $characterId found in EVEWho, updating database", $characterData);
-                $this->updateCharacterData($characterData, true);
-            }
+            //$this->logger->debug("Character $characterId has been deleted, updating database and fetching from EVEWho", $characterData);
+            //$this->updateDeletedCharacter($characterId);
+            //$characterData = $this->fetchCharacterDataFromEVEWho($characterId);
+            //if ($characterData) {
+            //    $this->logger->debug("Character $characterId found in EVEWho, updating database", $characterData);
+            //    $this->updateCharacterData($characterData, true);
+            //}
             return;
         }
 
