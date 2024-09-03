@@ -34,6 +34,7 @@ class UpdateCharacter extends Jobs
         protected Logger $logger,
         protected EveWho $eveWhoFetcher,
         protected RabbitMQ $rabbitMQ,
+        protected UpdateMeilisearch $updateMeilisearch
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -58,6 +59,11 @@ class UpdateCharacter extends Jobs
         $lastUpdated = isset($characterData['last_updated']) ? $characterData['last_updated']?->toDateTime() ?? new \DateTime() : new \DateTime();
         if ($characterData === null || $lastUpdated < (new \DateTime())->modify('-7 day')) {
             $characterData = $this->esiCharacters->getCharacterInfo($characterId);
+        }
+
+        // If the character has been updated within the last 7 days, we can skip it
+        if ($lastUpdated > (new \DateTime())->modify('-7 day')) {
+            return;
         }
 
 
@@ -127,7 +133,11 @@ class UpdateCharacter extends Jobs
         $this->characters->save();
 
         if (isset($characterData['name'])) {
-            $this->indexCharacterInSearch($characterData);
+            $this->updateMeilisearch->enqueue([
+                "id" => $characterData["character_id"],
+                "name" => $characterData["name"],
+                "type" => "character",
+            ]);
         }
     }
 
@@ -159,14 +169,5 @@ class UpdateCharacter extends Jobs
             ])?->toArray();
         }
         return [];
-    }
-
-    protected function indexCharacterInSearch($characterData)
-    {
-        $this->meilisearch->addDocuments([
-            "id" => $characterData["character_id"],
-            "name" => $characterData["name"],
-            "type" => "character",
-        ]);
     }
 }

@@ -29,6 +29,7 @@ class UpdateAlliance extends Jobs
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
         protected Container $container,
+        protected UpdateMeilisearch $updateMeilisearch
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -70,7 +71,12 @@ class UpdateAlliance extends Jobs
         $this->alliances->setData($allianceData);
         $this->alliances->save();
 
-        $this->indexAllianceInSearch($allianceData);
+        $this->updateMeilisearch->enqueue([
+            "id" => $allianceData["alliance_id"],
+            "name" => $allianceData["name"],
+            "ticker" => $allianceData["ticker"],
+            "type" => "alliance",
+        ]);
     }
 
     protected function fetchCorporationName($corporationId)
@@ -100,15 +106,5 @@ class UpdateAlliance extends Jobs
             return $factionData["name"] ?? "";
         }
         return "";
-    }
-
-    protected function indexAllianceInSearch($allianceData)
-    {
-        $this->meilisearch->addDocuments([
-            "id" => $allianceData["alliance_id"],
-            "name" => $allianceData["name"],
-            "ticker" => $allianceData["ticker"],
-            "type" => "alliance",
-        ]);
     }
 }
