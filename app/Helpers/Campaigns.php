@@ -206,7 +206,7 @@ class Campaigns
                     switch ($treatment) {
                         case 'friend':
                                 $addedFriendlyTotalValue = false;
-                                $friendlyKills++;
+                                $addedFriendlyKill = false;
                                 $friendlyActiveSystems[$killmail['system_id']] = true;
                                 $friendlyActiveRegions[$killmail['region_id']] = true;
 
@@ -219,6 +219,10 @@ class Campaigns
                                         if (!$addedFriendlyTotalValue) {
                                             $friendlyTotalValue += $killmail['total_value'];
                                             $addedFriendlyTotalValue = true;
+                                        }
+                                        if (!$addedFriendlyKill) {
+                                            $friendlyKills++;
+                                            $addedFriendlyKill = true;
                                         }
                                     }
                                     switch($type . '_id') {
@@ -256,7 +260,7 @@ class Campaigns
                             break;
                         case 'foe':
                                 $addedFoeTotalValue = false;
-                                $foeKills++;
+                                $addedFoekill = false;
                                 $foeActiveSystems[$killmail['system_id']] = true;
                                 $foeActiveRegions[$killmail['region_id']] = true;
 
@@ -269,6 +273,10 @@ class Campaigns
                                         if (!$addedFoeTotalValue) {
                                             $foeTotalValue += $killmail['total_value'];
                                             $addedFoeTotalValue = true;
+                                        }
+                                        if (!$addedFoekill) {
+                                            $foeKills++;
+                                            $addedFoekill = true;
                                         }
                                     }
                                     switch($type . '_id') {
