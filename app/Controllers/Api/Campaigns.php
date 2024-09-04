@@ -68,6 +68,6 @@ class Campaigns extends Controller
         $this->campaigns->setData($postData);
         $this->campaigns->save();
 
-        return $this->json($postData, 300);
+        return $this->json(['success' => true], 0);
     }
 }
