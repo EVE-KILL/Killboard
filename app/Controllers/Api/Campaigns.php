@@ -25,7 +25,13 @@ class Campaigns extends Controller
     #[RouteAttribute("/campaigns[/]", ["GET"], "Get all campaigns")]
     public function all(): ResponseInterface
     {
-        $campaigns = [];
+        $campaigns = $this->campaigns->find(['stats' => ['$exists' => true]], ['projection' => [
+            '_id' => 0,
+            'user' => 0
+        ]])->toArray();
+
+        $campaigns = $this->cleanupTimestamps($campaigns);
+
         return $this->json($campaigns, 300);
     }
 
