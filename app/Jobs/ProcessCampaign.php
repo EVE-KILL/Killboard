@@ -10,7 +10,7 @@ use EK\RabbitMQ\RabbitMQ;
 
 class ProcessCampaign extends Jobs
 {
-    protected string $defaultQueue = "campaign";
+    protected string $defaultQueue = "campaigns";
 
     public function __construct(
         protected RabbitMQ $rabbitMQ,
