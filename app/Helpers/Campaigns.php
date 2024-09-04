@@ -205,8 +205,8 @@ class Campaigns
 
                     switch ($treatment) {
                         case 'friend':
+                                $addedFriendlyTotalValue = false;
                                 $friendlyKills++;
-                                $friendlyTotalValue += $killmail['total_value'];
                                 $friendlyActiveSystems[$killmail['system_id']] = true;
                                 $friendlyActiveRegions[$killmail['region_id']] = true;
 
@@ -215,6 +215,12 @@ class Campaigns
                                 }
 
                                 foreach($killmail['attackers'] as $attacker) {
+                                    if ($attacker[$type . '_id'] === $id) {
+                                        if (!$addedFriendlyTotalValue) {
+                                            $friendlyTotalValue += $killmail['total_value'];
+                                            $addedFriendlyTotalValue = true;
+                                        }
+                                    }
                                     switch($type . '_id') {
                                         case 'character_id':
                                             if ($attacker['character_id'] === $id) {
@@ -249,8 +255,8 @@ class Campaigns
                                 }
                             break;
                         case 'foe':
+                                $addedFoeTotalValue = false;
                                 $foeKills++;
-                                $foeTotalValue += $killmail['total_value'];
                                 $foeActiveSystems[$killmail['system_id']] = true;
                                 $foeActiveRegions[$killmail['region_id']] = true;
 
@@ -259,6 +265,12 @@ class Campaigns
                                 }
 
                                 foreach($killmail['attackers'] as $attacker) {
+                                    if ($attacker[$type . '_id'] === $id) {
+                                        if (!$addedFoeTotalValue) {
+                                            $foeTotalValue += $killmail['total_value'];
+                                            $addedFoeTotalValue = true;
+                                        }
+                                    }
                                     switch($type . '_id') {
                                         case 'character_id':
                                             if ($attacker['character_id'] === $id) {
