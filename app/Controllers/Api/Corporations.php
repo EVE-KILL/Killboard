@@ -251,6 +251,24 @@ class Corporations extends Controller
         return $this->json($topCharacters, 300);
     }
 
+    #[RouteAttribute("/corporations/{corporation_id}/top/solo[/]", ["GET"], "Get the top solo characters of a corporation")]
+    public function topSolo(int $corporation_id): ResponseInterface
+    {
+        $corporation = $this->corporations->findOne([
+            "corporation_id" => $corporation_id,
+        ]);
+        if ($corporation->isEmpty()) {
+            return $this->json(["error" => "Corporation not found"], 300);
+        }
+
+        $topSolo = $this->topLists->topSolo(
+            "corporation_id",
+            $corporation_id
+        );
+
+        return $this->json($topSolo, 300);
+    }
+
     #[RouteAttribute("/corporations/{corporation_id}/top/ships[/]", ["GET"], "Get the top ships of a corporation")]
     public function topShips(int $corporation_id): ResponseInterface
     {

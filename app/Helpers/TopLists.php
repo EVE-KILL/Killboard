@@ -386,6 +386,101 @@ class TopLists
         return $data->toArray();
     }
 
+    public function topSolo(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
+        $cacheKey = $this->cache->generateKey(
+            "top_solo",
+            $attackerType,
+            $typeId,
+            $limit,
+            $days
+        );
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            //return $cacheResult;
+        }
+
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
+
+        // Match filter based on the attackerType and typeId (if present)
+        $matchFilter = [
+            "is_solo" => true, // Only solo kills
+            "kill_time" => ['$gte' => $calculatedTime], // Kill time within the range
+        ];
+
+        if ($attackerType && $typeId) {
+            // Add a filter for the specific attacker type and type ID (corporation, alliance, etc.)
+            $matchFilter["attackers.{$attackerType}"] = $typeId;
+        }
+
+        // Aggregation query to calculate solo kills per character
+        $aggregateQuery = [
+            ['$match' => $matchFilter], // Filter based on the above criteria
+            ['$unwind' => '$attackers'], // Unwind the attackers array
+            [
+                '$match' => [
+                    'attackers.final_blow' => true, // Ensure that we consider the attacker who delivered the final blow
+                ]
+            ],
+            [
+                '$group' => [
+                    "_id" => '$attackers.character_id', // Group by character ID
+                    "count" => ['$sum' => 1], // Count the solo kills per character
+                ],
+            ],
+            [
+                '$project' => [
+                    "_id" => 0,
+                    "count" => '$count', // Output the count of solo kills
+                    "character_id" => '$_id', // The character's ID
+                ],
+            ],
+            ['$sort' => ["count" => -1]], // Sort by count in descending order
+            ['$limit' => $limit], // Limit the results to the top $limit characters
+        ];
+
+        // Execute the aggregation query
+        $data = $this->killmails->aggregate($aggregateQuery, [
+            "allowDiskUse" => true,
+            "maxTimeMS" => 30000,
+        ]);
+
+        // Prepare the final result array
+        $result = [];
+
+        // Iterate over the aggregated data to fetch the character information
+        foreach ($data as $solo) {
+            // Fetch character information for each character ID
+            $characterData = $this->characters->findOne(
+                ["character_id" => $solo["character_id"]],
+                [
+                    "projection" => [
+                        "_id" => 0,
+                        "last_modified" => 0,
+                        "history" => 0,
+                        "description" => 0,
+                    ],
+                ]
+            );
+
+            if ($characterData) {
+                // Merge the solo kill count with the character data
+                $result[] = array_merge(
+                    ["count" => $solo["count"]],
+                    $characterData->toArray()
+                );
+            }
+        }
+
+        // Cache the result
+        $this->cache->set($cacheKey, $result, $cacheTime);
+
+        return $result;
+    }
+
     public function topShips(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
         $cacheKey = $this->cache->generateKey(

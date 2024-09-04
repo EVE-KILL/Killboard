@@ -248,6 +248,19 @@ class Alliances extends Controller
         return $this->json($topCharacters, 300);
     }
 
+    #[RouteAttribute("/alliances/{alliance_id}/top/solo[/]", ["GET"], "Get the top solo characters of an alliance")]
+    public function topSolo(int $alliance_id): ResponseInterface
+    {
+        $alliance = $this->alliances->findOne(["alliance_id" => $alliance_id]);
+        if ($alliance->isEmpty()) {
+            return $this->json(["error" => "Alliance not found"], 300);
+        }
+
+        $topSolo = $this->topLists->topSolo("alliance_id", $alliance_id);
+
+        return $this->json($topSolo, 300);
+    }
+
     #[RouteAttribute("/alliances/{alliance_id}/top/corporations[/]", ["GET"], 'Get top corporations of an alliance')]
     public function topCorporations(int $alliance_id): ResponseInterface
     {
