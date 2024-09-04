@@ -30,8 +30,17 @@ class Campaigns
         return $campaigns->toArray();
     }
 
-    protected function generateCampaignStats(array $campaign): array
+    public function generateCampaignStats(string $campaignId): array
     {
+        // Find the campaign to process
+        $campaign = $this->campaigns->findOne(['campaign_id' => $campaignId], [
+            'projection' => [
+                '_id' => 0,
+                'last_modified' => 0,
+                'user' => 0
+            ]
+        ])->toArray();
+
         $entities = $campaign['entities'] ?? [];
         $locations = $campaign['locations'] ?? [];
         $timePeriod = $campaign['timePeriods'][0] ?? null;

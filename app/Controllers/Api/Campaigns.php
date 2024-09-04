@@ -5,6 +5,7 @@ namespace EK\Controllers\Api;
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Helpers\Campaigns as CampaignHelper;
+use EK\Jobs\ProcessCampaign;
 use EK\Models\Campaigns as CampaignsModel;
 use EK\Models\Users;
 use Psr\Http\Message\ResponseInterface;
@@ -15,6 +16,7 @@ class Campaigns extends Controller
     public function __construct(
         protected CampaignsModel $campaigns,
         protected CampaignHelper $campaignHelper,
+        protected ProcessCampaign $processCampaign,
         protected Users $users
     ) {
         parent::__construct();
@@ -23,7 +25,7 @@ class Campaigns extends Controller
     #[RouteAttribute("/campaigns[/]", ["GET"], "Get all campaigns")]
     public function all(): ResponseInterface
     {
-        $campaigns = $this->campaignHelper->getAllCampaigns();
+        $campaigns = [];
         return $this->json($campaigns, 300);
     }
 
@@ -67,6 +69,9 @@ class Campaigns extends Controller
 
         $this->campaigns->setData($postData);
         $this->campaigns->save();
+
+        // Queue the campaign for processing
+        $this->processCampaign->enqueue(['campaign_id' => $postData['campaign_id']]);
 
         return $this->json(['success' => true], 0);
     }
