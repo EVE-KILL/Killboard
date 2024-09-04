@@ -85,12 +85,12 @@ class Killmail extends Controller
         }
 
         if ($killmailInBattle === false) {
-            $this->cache->set($cacheKey, [false], 300);
-            return $this->json([false]);
+            $this->cache->set($cacheKey, ['inBattle' => false], 300);
+            return $this->json(['inBattle' => false]);
         }
 
-        $this->cache->set($cacheKey, [true], 300);
-        return $this->json([true]);
+        $this->cache->set($cacheKey, ['inBattle' => true], 300);
+        return $this->json(['inBattle' => true]);
     }
 
     #[RouteAttribute("/killmail[/]", ["POST"], "Get multiple killmails by ID")]
