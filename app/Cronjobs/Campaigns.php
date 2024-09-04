@@ -9,7 +9,7 @@ use EK\Models\Campaigns as CampaignsModel;
 
 class Campaigns extends Cronjob
 {
-    protected string $cronTime = '* * * * *';
+    protected string $cronTime = '*/15 * * * *';
 
     public function __construct(
         protected StdOutLogger $logger,
