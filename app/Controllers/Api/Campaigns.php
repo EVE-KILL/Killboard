@@ -22,18 +22,32 @@ class Campaigns extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/campaigns[/]", ["GET"], "Get all campaigns")]
-    public function all(): ResponseInterface
+    #[RouteAttribute("/campaigns[/{page:\d+}]", ["GET"], "Get all campaigns")]
+    public function all(int $page = 1): ResponseInterface
     {
-        $campaigns = $this->campaigns->find(['stats' => ['$exists' => true]], ['projection' => [
-            '_id' => 0,
-            'user' => 0
-        ]])->toArray();
+        $limit = 100; // Define the limit (number of documents per page)
+        $offset = ($page - 1) * $limit; // Calculate the number of documents to skip
 
+        // Query the campaigns collection with limit and skip for pagination
+        $campaigns = $this->campaigns->find(
+            ['stats' => ['$exists' => true]], // Filter condition
+            [
+                'projection' => [
+                    '_id' => 0,
+                    'user' => 0
+                ],
+                'limit' => $limit, // Limit the number of documents returned
+                'skip' => $offset   // Skip the documents based on the current page
+            ]
+        )->toArray();
+
+        // Cleanup timestamps if necessary
         $campaigns = $this->cleanupTimestamps($campaigns);
 
-        return $this->json($campaigns, 300);
+        // Return the campaigns as a JSON response with status code 200 (OK)
+        return $this->json($campaigns, 200);
     }
+
 
     #[RouteAttribute("/campaigns[/]", ["POST"], "Create a campaign")]
     public function create(): ResponseInterface
