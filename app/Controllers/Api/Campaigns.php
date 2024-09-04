@@ -48,6 +48,27 @@ class Campaigns extends Controller
         return $this->json($campaigns, 200);
     }
 
+    #[RouteAttribute("/campaigns/{campaign_id}", ["GET"], "Get a campaign")]
+    public function get(string $campaign_id): ResponseInterface
+    {
+        // Query the campaigns collection for the specified campaign ID
+        $campaign = $this->campaigns->findOne(
+            ['campaign_id' => $campaign_id],
+            ['projection' => ['_id' => 0]]
+        )->toArray();
+
+        // If the campaign does not exist, return a 404 (Not Found) response
+        if ($campaign === null) {
+            return $this->json(["error" => "Campaign not found"], 404);
+        }
+
+        // Cleanup timestamps if necessary
+        $campaign = $this->cleanupTimestamps($campaign);
+
+        // Return the campaign as a JSON response with status code 200 (OK)
+        return $this->json($campaign, 200);
+    }
+
 
     #[RouteAttribute("/campaigns[/]", ["POST"], "Create a campaign")]
     public function create(): ResponseInterface
