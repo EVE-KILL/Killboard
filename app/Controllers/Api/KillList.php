@@ -375,6 +375,25 @@ class KillList extends Controller
         return $this->json($data, 60);
     }
 
+    #[RouteAttribute("/killlist/combined/{type}/{value:[0-9]+}[/{page:[0-9]+}]", ["GET"], "Get kills and losses for a specific type")]
+    public function combined(string $type, int $value, int $page = 1): ResponseInterface
+    {
+        $data = $this->killlistHelper->getCombinedForType(
+            $type,
+            $value,
+            $page,
+            100
+        );
+        if ($data->has("error")) {
+            return $this->json($data, 300);
+        }
+
+        $data = $data->map(function ($kill) {
+            return $this->cleanupTimestamps($kill);
+        });
+        return $this->json($data, 60);
+    }
+
     #[RouteAttribute("/killlist/{type}/{value:[0-9]+}[/{page:[0-9]+}]", ["GET"], "Get kills for a specific type")]
     public function killsForType(string $type, int $value, int $page = 1): ResponseInterface
     {

@@ -34,6 +34,39 @@ class KillList
         );
     }
 
+    public function getCombinedForType(string $type, int $value, int $page = 1, int $limit = 1000, int $cacheTime = 60): IlluminateCollection
+    {
+        $validTypes = [
+            'character_id',
+            'corporation_id',
+            'alliance_id',
+            'faction_id',
+        ];
+
+        if (!in_array($type, $validTypes)) {
+            return collect(["error" => "Invalid type provided"]);
+        }
+
+        $offset = $limit * ($page - 1);
+        $cacheKey = $this->cache->generateKey("killlist_combined_for_type", $type, $value, $page, $offset);
+        return $this->fetchData(
+            [
+                '$or' => [
+                    ['victim.' . $type => $value],
+                    ['attackers.' . $type => $value],
+                ]
+            ],
+            [
+                "sort" => ["kill_time" => -1],
+                "projection" => ["_id" => 0, "items" => 0],
+                "skip" => $offset,
+                "limit" => $limit,
+            ],
+            $cacheKey,
+            $cacheTime
+        );
+    }
+
     public function getKillsForType(string $type, int $value, int $page = 1, int $limit = 1000, int $cacheTime = 60): IlluminateCollection
     {
         $validTypes = [
