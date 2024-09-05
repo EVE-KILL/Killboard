@@ -126,6 +126,10 @@ class Killmail extends Controller
             )
             ->map(function ($killmail) {
                 return $this->cleanupTimestamps($killmail);
+            })->map(function ($killmail) {
+                $commentCount = $this->comments->count(['identifier' => 'kill:' . $killmail['killmail_id']]);
+                $killmail['comment_count'] = $commentCount;
+                return $killmail;
             });
 
         return $this->json($killmails->toArray(), 300);
