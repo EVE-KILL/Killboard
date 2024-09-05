@@ -70,10 +70,10 @@ class Characters extends Controller
         );
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/stats[/]", ["GET"], "Get the stats of a character")]
-    public function stats(int $character_id): ResponseInterface
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/stats[/{days:[0-9]+}]", ["GET"], "Get the stats of a character")]
+    public function stats(int $character_id, int $days = 0): ResponseInterface
     {
-        $cacheKey = "characters.stats.$character_id";
+        $cacheKey = "characters.stats.$character_id.$days";
         if ($this->cache->exists($cacheKey)) {
             return $this->json(
                 $this->cache->get($cacheKey),
@@ -81,7 +81,7 @@ class Characters extends Controller
             );
         }
 
-        $stats = $this->stats->calculateStats("character_id", $character_id);
+        $stats = $this->stats->calculateStats("character_id", $character_id, $days);
 
         $this->cache->set($cacheKey, $stats, 3600);
         return $this->json($stats, 300);

@@ -12,11 +12,15 @@ class Stats
     ) {
     }
 
-    public function calculateStats(string $type, int $id): array
+    public function calculateStats(string $type, int $id, int $timeRangeInDays = 90): array
     {
         $validTypes = ['character_id', 'corporation_id', 'alliance_id'];
         if (!in_array($type, $validTypes)) {
             throw new \Exception('Error, ' . $type . ' is not a valid type. Valid types are: ' . implode(', ', $validTypes));
+        }
+
+        if ($timeRangeInDays < 0) {
+            $timeRangeInDays = 90;
         }
 
         // Initialize heat map with string keys
@@ -49,15 +53,24 @@ class Stats
         ];
 
         // Get kill stats
-        $stats['kills'] = $this->killmails->count(['attackers.' . $type => $id]);
-        $stats['losses'] = $this->killmails->count(['victim.' . $type => $id]);
+        if ($timeRangeInDays > 0) {
+            $stats['kills'] = $this->killmails->count(['attackers.' . $type => $id, 'kill_time' => ['$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)]]);
+        } else {
+            $stats['kills'] = $this->killmails->count(['attackers.' . $type => $id]);
+        }
+
+        if ($timeRangeInDays > 0) {
+            $stats['losses'] = $this->killmails->count(['victim.' . $type => $id, 'kill_time' => ['$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)]]);
+        } else {
+            $stats['losses'] = $this->killmails->count(['victim.' . $type => $id]);
+        }
 
         // Track blob data
         $blobKills = 0;
 
         // Query for kills
         $iskKilledCursor = $this->killmails->collection->find(
-            ['attackers.' . $type => $id],
+            $timeRangeInDays > 0 ? ['attackers.' . $type => $id, 'kill_time' => ['$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)]] : ['attackers.' . $type => $id],
             ['projection' => [
                 'killmail_id' => 1,
                 'total_value' => 1,
@@ -165,6 +178,8 @@ class Stats
                 return $b['count'] - $a['count'];
             });
 
+            // Remove the ship with id 0 because it's #system which is broken
+            unset($stats['mostUsedShips'][0]);
             // Remove all but top 10 most used ships
             $stats['mostUsedShips'] = array_slice($stats['mostUsedShips'], 0, 10, true);
         }
@@ -176,7 +191,7 @@ class Stats
 
         // Query for losses
         $iskLostCursor = $this->killmails->collection->find(
-            ['victim.' . $type => $id],
+            $timeRangeInDays > 0 ? ['victim.' . $type => $id, 'kill_time' => ['$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)]] : ['victim.' . $type => $id],
             ['projection' => [
                 'total_value' => 1,
                 'is_npc' => 1,
