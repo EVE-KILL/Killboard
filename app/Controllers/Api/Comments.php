@@ -100,9 +100,24 @@ class Comments extends Controller
         ];
 
         $this->comments->setData($commentObject);
-        $result = $this->comments->save();
+        $this->comments->save();
 
         $this->commentsHelper->emitToDiscord($commentObject);
+
+        $commentObject = $this->cleanupTimestamps($commentObject);
+
+        // Add the character information
+        $commentObject['character'] = $this->characters->findOne(['character_id' => $user['character_id']], [
+            'projection' => [
+                '_id' => 0,
+                'character_id' => 1,
+                'name' => 1,
+                'corporation_id' => 1,
+                'corporation_name' => 1,
+                'alliance_id' => 1,
+                'alliance_name' => 1,
+            ]
+        ]);
 
         return $this->json($commentObject, 0);
     }
