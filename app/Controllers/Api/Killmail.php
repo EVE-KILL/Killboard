@@ -7,13 +7,17 @@ use EK\Api\Attributes\RouteAttribute;
 use EK\Cache\Cache;
 use EK\Helpers\Battle;
 use EK\Models\Celestials;
+use EK\Models\Comments;
+use EK\Models\Killmails;
+use EK\Models\KillmailsESI;
 use Psr\Http\Message\ResponseInterface;
 
 class Killmail extends Controller
 {
     public function __construct(
-        protected \EK\Models\Killmails $killmails,
-        protected \EK\Models\KillmailsESI $killmailsESI,
+        protected Killmails $killmails,
+        protected KillmailsESI $killmailsESI,
+        protected Comments $comments,
         protected Celestials $celestials,
         protected Battle $battleHelper,
         protected Cache $cache
@@ -46,7 +50,13 @@ class Killmail extends Controller
             );
         }
 
-        return $this->json($this->cleanupTimestamps($killmail->toArray()));
+        $killmail = $this->cleanupTimestamps($killmail->toArray());
+
+        // Add comment count to the killmail
+        $commentCount = $this->comments->count(['identifier' => 'kill:' . $killmail['killmail_id']]);
+        $killmail['comment_count'] = $commentCount;
+
+        return $this->json($killmail);
     }
 
     #[RouteAttribute("/killmail/esi/{killmail_id:[0-9]+}[/]", ["GET"], "Get esi killmail by ID")]
