@@ -3,6 +3,7 @@
 namespace EK\Helpers;
 
 use EK\Cache\Cache;
+use EK\Models\Comments;
 use EK\Models\Killmails;
 use Illuminate\Support\Collection as IlluminateCollection;
 
@@ -10,6 +11,7 @@ class KillList
 {
     public function __construct(
         protected Killmails $killmails,
+        protected Comments $comments,
         protected Cache $cache
     ) {
     }
@@ -77,10 +79,15 @@ class KillList
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
         ) {
-            return collect($cacheResult);
+            //return collect($cacheResult);
         }
 
-        $result = $this->killmails->find($find, $options);
+        $result = $this->killmails->find($find, $options)->toArray();
+
+        // Add comment count to each killmail
+        foreach ($result as $key => $killmail) {
+            $result[$key]['comment_count'] = $this->comments->count(['killmail_id' => $killmail['killmail_id']]);
+        }
 
         $this->cache->set($cacheKey, $result, $cacheTime);
         return collect($result);

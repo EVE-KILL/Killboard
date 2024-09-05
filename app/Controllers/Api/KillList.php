@@ -4,12 +4,14 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Helpers\KillList as KillListHelper;
 use Psr\Http\Message\ResponseInterface;
 
 class KillList extends Controller
 {
-    public function __construct(protected \EK\Helpers\KillList $killlistHelper)
-    {
+    public function __construct(
+        protected KillListHelper $killlistHelper
+    ) {
         parent::__construct();
     }
 
