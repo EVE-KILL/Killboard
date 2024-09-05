@@ -12,34 +12,18 @@ class Stats
     ) {
     }
 
-    /*
-kills
-losses
-isk killed
-isk lost
-death to npcs
-solo kills
-solo losses
-last active
-most used ship
-most often dies to corp/alli
-blob factor (+10 attackers on a kill with them percentage wise versus overall kills partaken in i guess) // Blob factor could be average or median number of pilots on kills or something simlar
-heat map (showing where they're active over the last 90 days)
-related (Who they fly with the most and might be related to, corps/alliances)
-sheep factor (how often they fly the same ship as their alliance mates on kills)
-killmail whore % (based on their average share of damage on a killmail, under 5% = whore)
-
-MAYBE:
-% of ships lost that didn't have warp scramblers / warp disruptors / statis webifiers / bubble launchers on interdictors / interdictor point on hictors (limit it to interdictors, heavy interdictors and electronic attack ships)
-bling ship most often flown (not entirely sure how to do this one, i'd need to limit it to faction ships i guess and exclude caps?)
-number of times fit had no rigs, but had rigs in cargo
-    */
-
     public function calculateStats(string $type, int $id): array
     {
         $validTypes = ['character_id', 'corporation_id', 'alliance_id'];
         if (!in_array($type, $validTypes)) {
             throw new \Exception('Error, ' . $type . ' is not a valid type. Valid types are: ' . implode(', ', $validTypes));
+        }
+
+        // Initialize heat map with string keys
+        $heatMap = [];
+        for ($i = 0; $i < 24; $i++) {
+            $hourString = 'h' . str_pad((string)$i, 2, '0', STR_PAD_LEFT); // Convert hours to strings "00", "01", etc.
+            $heatMap[$hourString] = 0;
         }
 
         // Initialize stats array
@@ -56,8 +40,8 @@ number of times fit had no rigs, but had rigs in cargo
             'mostLostShips' => [],
             'diesToCorporations' => [],
             'diesToAlliances' => [],
-            'blobFactor' => 0, // Add blob factor
-            'heatMap' => array_fill(0, 24, 0), // Initialize heat map for 24 hours
+            'blobFactor' => 0,
+            'heatMap' => $heatMap, // Use the pre-initialized heatmap with string keys
             'fliesWithCorporations' => [],
             'fliesWithAlliances' => [],
             'sameShipAsOtherAttackers' => [],
@@ -109,8 +93,8 @@ number of times fit had no rigs, but had rigs in cargo
                 $stats['lastActive'] = $killTimeUnix;
             }
 
-            // Heat map - Track kills by hour of the day
-            $hour = (int) $killTime->format('H');
+            // Heat map - Track kills by hour of the day (use string keys "00", "01", ..., "23")
+            $hour = 'h' . $killTime->format('H'); // Ensure the hour is always a string
             $stats['heatMap'][$hour]++;
 
             // Calculate blob factor - count how many killmails have more than 10 attackers
@@ -130,12 +114,12 @@ number of times fit had no rigs, but had rigs in cargo
             }
 
             // Get most used ships and track same ship usage
-            $entityShipTypeId = null; // Declare this variable to track the entity's ship ID
+            $entityShipTypeId = null;
             foreach ($killmail['attackers'] as $attacker) {
                 if ($attacker[$type] == $id) {
                     // Set the entity's ship type
                     $entityShipTypeId = $attacker['ship_id'];
-                    $shipName = $attacker['ship_name'] ?? 'Unknown'; // Fallback if ship_name doesn't exist
+                    $shipName = $attacker['ship_name'] ?? 'Unknown';
                     if (!isset($stats['mostUsedShips'][$entityShipTypeId])) {
                         $stats['mostUsedShips'][$entityShipTypeId] = ['count' => 1, 'name' => $shipName];
                     } else {
@@ -151,8 +135,9 @@ number of times fit had no rigs, but had rigs in cargo
                 // Track corporations and alliances they flew with, using killmail_id as unique
                 if ($attacker['corporation_id'] != $id && $attacker['corporation_id'] > 0) {
                     $corpId = $attacker['corporation_id'];
+                    $corpName = $attacker['corporation_name'];
                     if (!isset($stats['fliesWithCorporations'][$corpId])) {
-                        $stats['fliesWithCorporations'][$corpId] = ['count' => 1, 'killmails' => [$killmailId]];
+                        $stats['fliesWithCorporations'][$corpId] = ['count' => 1, 'name' => $corpName, 'killmails' => [$killmailId]];
                     } else {
                         if (!in_array($killmailId, $stats['fliesWithCorporations'][$corpId]['killmails'])) {
                             $stats['fliesWithCorporations'][$corpId]['count']++;
@@ -163,8 +148,9 @@ number of times fit had no rigs, but had rigs in cargo
 
                 if ($attacker['alliance_id'] != $id && $attacker['alliance_id'] > 0) {
                     $alliId = $attacker['alliance_id'];
+                    $alliName = $attacker['alliance_name'];
                     if (!isset($stats['fliesWithAlliances'][$alliId])) {
-                        $stats['fliesWithAlliances'][$alliId] = ['count' => 1, 'killmails' => [$killmailId]];
+                        $stats['fliesWithAlliances'][$alliId] = ['count' => 1, 'name' => $alliName, 'killmails' => [$killmailId]];
                     } else {
                         if (!in_array($killmailId, $stats['fliesWithAlliances'][$alliId]['killmails'])) {
                             $stats['fliesWithAlliances'][$alliId]['count']++;
@@ -216,7 +202,7 @@ number of times fit had no rigs, but had rigs in cargo
                 $killTime = $killTime->toDateTime(); // Convert MongoDB UTCDateTime to PHP DateTime
             }
 
-            $killTimeUnix = $killTime->getTimestamp(); // Convert to Unix timestamp
+            $killTimeUnix = $killTime->getTimestamp();
 
             // Compare Unix timestamps and store the latest
             if ($killTimeUnix > $stats['lastActive']) {
@@ -225,7 +211,7 @@ number of times fit had no rigs, but had rigs in cargo
 
             // Get most lost ships
             $shipTypeId = $lossmail['victim']['ship_id'];
-            $shipName = $lossmail['victim']['ship_name'] ?? 'Unknown'; // Fallback if ship_name doesn't exist
+            $shipName = $lossmail['victim']['ship_name'] ?? 'Unknown';
             if (!isset($stats['mostLostShips'][$shipTypeId])) {
                 $stats['mostLostShips'][$shipTypeId] = ['count' => 1, 'name' => $shipName];
             } else {
@@ -240,7 +226,7 @@ number of times fit had no rigs, but had rigs in cargo
             // Remove all but top 10 most lost ships
             $stats['mostLostShips'] = array_slice($stats['mostLostShips'], 0, 10, true);
 
-            // Figure out which corporations/alliances they most often die to (top 10 of each)
+            // Track most often died to corporations/alliances
             foreach ($lossmail['attackers'] as $attacker) {
                 if ($attacker['corporation_id'] > 0) {
                     $corpId = $attacker['corporation_id'];
@@ -283,7 +269,7 @@ number of times fit had no rigs, but had rigs in cargo
         if ($stats['lastActive'] > 0) {
             $stats['lastActive'] = date('Y-m-d H:i:s', $stats['lastActive']);
         } else {
-            $stats['lastActive'] = null; // If no activity, set it to null
+            $stats['lastActive'] = null;
         }
 
         // Count the number of unique killmails where they flew the same ship as other attackers
@@ -308,7 +294,6 @@ number of times fit had no rigs, but had rigs in cargo
             unset($stats['fliesWithAlliances'][$alliId]['killmails']);
         }
 
-        // Return the stats array
         return $stats;
     }
 }
