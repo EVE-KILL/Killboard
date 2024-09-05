@@ -119,6 +119,10 @@ class Comments extends Controller
             ]
         ]);
 
+        // Rename name to character_name
+        $commentObject['character']['character_name'] = $commentObject['character']['name'];
+        unset($commentObject['character']['name']);
+
         return $this->json($commentObject, 0);
     }
 
