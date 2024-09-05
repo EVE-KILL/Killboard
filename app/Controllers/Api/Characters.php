@@ -6,6 +6,7 @@ use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Cache\Cache;
 use EK\Helpers\History;
+use EK\Helpers\Stats;
 use EK\Helpers\TopLists;
 use EK\Models\Characters as ModelsCharacters;
 use EK\Models\Killmails;
@@ -18,7 +19,8 @@ class Characters extends Controller
         protected Killmails $killmails,
         protected TopLists $topLists,
         protected Cache $cache,
-        protected History $history
+        protected History $history,
+        protected Stats $stats
     ) {
         parent::__construct();
     }
@@ -66,6 +68,23 @@ class Characters extends Controller
             $this->cleanupTimestamps($character->toArray()),
             300
         );
+    }
+
+    #[RouteAttribute("/characters/{character_id:[0-9]+}/stats[/]", ["GET"], "Get the stats of a character")]
+    public function stats(int $character_id): ResponseInterface
+    {
+        $cacheKey = "characters.stats.$character_id";
+        if ($this->cache->exists($cacheKey)) {
+            return $this->json(
+                $this->cache->get($cacheKey),
+                $this->cache->getTTL($cacheKey)
+            );
+        }
+
+        $stats = $this->stats->calculateStats("character_id", $character_id);
+
+        $this->cache->set($cacheKey, $stats, 3600);
+        return $this->json($stats, 300);
     }
 
     #[RouteAttribute("/characters[/]", ["POST"], "Get multiple characters by ID")]
