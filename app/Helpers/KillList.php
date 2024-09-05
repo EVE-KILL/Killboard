@@ -79,14 +79,14 @@ class KillList
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
         ) {
-            //return collect($cacheResult);
+            return collect($cacheResult);
         }
 
         $result = $this->killmails->find($find, $options)->toArray();
 
         // Add comment count to each killmail
         foreach ($result as $key => $killmail) {
-            $result[$key]['comment_count'] = $this->comments->count(['killmail_id' => $killmail['killmail_id']]);
+            $result[$key]['comment_count'] = $this->comments->count(['identifier' => 'kill:' . $killmail['killmail_id']]);
         }
 
         $this->cache->set($cacheKey, $result, $cacheTime);
