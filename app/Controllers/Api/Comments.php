@@ -106,4 +106,11 @@ class Comments extends Controller
 
         return $this->json($commentObject, 0);
     }
+
+    #[RouteAttribute("/comments/{identifier}/count[/]", ["GET"], "Get the number of comments for a particular identifier")]
+    public function getCommentCount(string $identifier): ResponseInterface
+    {
+        $count = $this->comments->count(['identifier' => $identifier]);
+        return $this->json(['count' => $count], 0);
+    }
 }
