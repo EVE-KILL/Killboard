@@ -26,7 +26,7 @@ class Users extends Collection
     /** @var string[] $indexes The fields that should be indexed */
     public array $indexes = [
         'unique' => ['character_name', 'character_id'],
-        'desc' => ['identifier'],
+        'desc' => ['identifier', 'last_fetched'],
         'asc' => [],
         'text' => []
     ];
