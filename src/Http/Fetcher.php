@@ -117,6 +117,10 @@ class Fetcher
         // Get the status code
         $statusCode = $response->getStatusCode();
 
+        if ($statusCode === 420) {
+            dump($path, $requestMethod, $query, $body, $headers, $options, $cacheTime, $ignorePause, $response->getBody()->getContents());
+        }
+
         // Get the expires header from the response (The Expires and Date are in GMT)
         $now = new \DateTime("now", new \DateTimeZone("GMT"));
         $expires =
