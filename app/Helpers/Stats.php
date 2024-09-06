@@ -50,6 +50,8 @@ class Stats
             'fliesWithAlliances' => [],
             'sameShipAsOtherAttackers' => [],
             'whoreKills' => 0, // Kills where entity did less than 1% of total damage
+            'possibleFC' => false,
+            'possibleCynoAlt' => false,
         ];
 
         // Get kill stats
@@ -69,7 +71,7 @@ class Stats
         $blobKills = 0;
 
         // Query for kills
-        $iskKilledCursor = $this->killmails->collection->find(
+        $attackerKillmails = $this->killmails->collection->find(
             $timeRangeInDays > 0 ? ['attackers.' . $type => $id, 'kill_time' => ['$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)]] : ['attackers.' . $type => $id],
             ['projection' => [
                 'killmail_id' => 1,
@@ -88,7 +90,7 @@ class Stats
             ]
         ]);
 
-        foreach ($iskKilledCursor as $killmail) {
+        foreach ($attackerKillmails as $killmail) {
             $killmailId = $killmail['killmail_id'];
             $stats['iskKilled'] += $killmail['total_value'];
             $stats['soloKills'] += $killmail['is_solo'] ? 1 : 0;
@@ -190,13 +192,14 @@ class Stats
         }
 
         // Query for losses
-        $iskLostCursor = $this->killmails->collection->find(
+        $victimKillmails = $this->killmails->collection->find(
             $timeRangeInDays > 0 ? ['victim.' . $type => $id, 'kill_time' => ['$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)]] : ['victim.' . $type => $id],
             ['projection' => [
                 'total_value' => 1,
                 'is_npc' => 1,
                 'is_solo' => 1,
                 'kill_time' => 1,
+                'items' => 1,
                 'victim.ship_id' => 1,
                 'victim.ship_name' => 1,
                 'attackers.corporation_id' => 1,
@@ -206,10 +209,27 @@ class Stats
             ]
         ]);
 
-        foreach ($iskLostCursor as $lossmail) {
+        foreach ($victimKillmails as $lossmail) {
             $stats['iskLost'] += $lossmail['total_value'];
             $stats['npcLosses'] += $lossmail['is_npc'] ? 1 : 0;
             $stats['soloLosses'] += $lossmail['is_solo'] ? 1 : 0;
+
+            if ($type === 'character_id') {
+                if ($lossmail['victim']['ship_id'] === 45534) {
+                    $stats['possibleFC'] = true;
+                }
+
+                $killTime = $lossmail['kill_time']->toDateTime()->getTimestamp();
+                $unixTime = strtotime('2019-09-01');
+                if ($stats['kills'] < 25 && $killTime > $unixTime) {
+                    foreach($lossmail['items'] as $item) {
+                        if (in_array($item['type_id'], [28646, 21096])) {
+                            $stats['possibleCynoAlt'] = true;
+                            break;
+                        }
+                    }
+                }
+            }
 
             // Update lastActive with the latest kill_time
             $killTime = $lossmail['kill_time'];
