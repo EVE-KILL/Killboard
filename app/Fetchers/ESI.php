@@ -41,8 +41,10 @@ class ESI extends Fetcher
                 $sleepTime = $expiresInSeconds === 0 ? 60 : $expiresInSeconds;
                 //$this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
 
+                // Tell sentry about the error
+                \Sentry\captureMessage('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
+
                 // Tell the other workers to sleep
-                dump($statusCode, $content, $sleepTime);
                 $this->cache->set('fetcher_paused', $sleepTime, $sleepTime);
 
                 sleep($sleepTime > 0 ? $sleepTime : 1);
