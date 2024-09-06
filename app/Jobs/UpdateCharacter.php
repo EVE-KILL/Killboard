@@ -66,7 +66,6 @@ class UpdateCharacter extends Jobs
             return;
         }
 
-
         if ($this->isCharacterDeleted($characterData)) {
             $this->characters->setData([
                 "character_id" => $characterId,

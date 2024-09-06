@@ -35,6 +35,10 @@ class ESI extends Fetcher
         $serverTime = $response->getHeader('Date')[0] ?? $now->format('D, d M Y H:i:s T');
         $expiresInSeconds = (int) strtotime($expires) - strtotime($serverTime) ?? 60;
         $expiresInSeconds = abs($expiresInSeconds);
+        $esiErrorLimitRemaining = $response->getHeader('X-Esi-Error-Limit-Remain')[0] ?? 0;
+        $esiErrorLimitReset = $response->getHeader('X-Esi-Error-Limit-Reset')[0] ?? 0;
+        $this->cache->set('esi_error_limit_remaining', $esiErrorLimitRemaining);
+        $this->cache->set('esi_error_limit_reset', $esiErrorLimitReset);
 
         switch ($statusCode) {
             case 420:
