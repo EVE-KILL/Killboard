@@ -59,8 +59,6 @@ class ESI extends Fetcher
             // Ensure sleep time is not too short, minimum of 1 millisecond (1000 microseconds)
             $sleepTimeInMicroseconds = max(1000, $sleepTimeInMicroseconds);
 
-            dump('Progressive slowdown: sleeping for ' . ($sleepTimeInMicroseconds / 1000000) . ' seconds, error limit remaining: ' . $esiErrorLimitRemaining . ' reset in: ' . $esiErrorLimitReset . ' seconds');
-
             // Apply usleep (sleep in microseconds)
             usleep($sleepTimeInMicroseconds);
         }
