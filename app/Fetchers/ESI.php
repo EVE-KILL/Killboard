@@ -39,7 +39,7 @@ class ESI extends Fetcher
         switch ($statusCode) {
             case 420:
                 $sleepTime = $expiresInSeconds === 0 ? 60 : $expiresInSeconds;
-                $this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
+                //$this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
 
                 // Tell the other workers to sleep
                 $this->cache->set('fetcher_paused', $sleepTime, $sleepTime);
