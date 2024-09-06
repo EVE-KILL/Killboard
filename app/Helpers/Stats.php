@@ -223,7 +223,7 @@ class Stats
                 $unixTime = strtotime('2019-09-01');
                 if ($stats['kills'] < 25 && $killTime > $unixTime) {
                     foreach($lossmail['items'] as $item) {
-                        if (in_array($item['type_id'], [28646, 21096])) {
+                        if (in_array($item['type_id'], [28646, 21096, 52694])) {
                             $stats['possibleCynoAlt'] = true;
                             break;
                         }
