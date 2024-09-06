@@ -117,6 +117,7 @@ class Fetcher
         // Get the status code
         $statusCode = $response->getStatusCode();
 
+        dump($response->getHeaders());
         if ($statusCode === 420) {
             dump($path, $requestMethod, $query, $body, $headers, $options, $cacheTime, $ignorePause, $response->getBody()->getContents());
         }
