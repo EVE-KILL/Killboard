@@ -5,7 +5,6 @@ namespace EK\Fetchers;
 use EK\Cache\Cache;
 use EK\Http\Fetcher;
 use EK\Logger\Logger;
-use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use EK\Webhooks\Webhooks;
 use Psr\Http\Message\ResponseInterface;
@@ -35,6 +34,7 @@ class ESI extends Fetcher
         $expires = $response->getHeader('Expires')[0] ?? $now->format('D, d M Y H:i:s T');
         $serverTime = $response->getHeader('Date')[0] ?? $now->format('D, d M Y H:i:s T');
         $expiresInSeconds = (int) strtotime($expires) - strtotime($serverTime) ?? 60;
+        $expiresInSeconds = abs($expiresInSeconds);
 
         switch ($statusCode) {
             case 420:
