@@ -35,26 +35,47 @@ class ESI extends Fetcher
         $serverTime = $response->getHeader('Date')[0] ?? $now->format('D, d M Y H:i:s T');
         $expiresInSeconds = (int) strtotime($expires) - strtotime($serverTime) ?? 60;
         $expiresInSeconds = abs($expiresInSeconds);
-        $esiErrorLimitRemaining = $response->getHeader('X-Esi-Error-Limit-Remain')[0] ?? 0;
-        $esiErrorLimitReset = $response->getHeader('X-Esi-Error-Limit-Reset')[0] ?? 0;
+
+        // Retrieve error limit remaining and reset time from headers
+        $esiErrorLimitRemaining = (int) ($response->getHeader('X-Esi-Error-Limit-Remain')[0] ?? 100);
+        $esiErrorLimitReset = (int) ($response->getHeader('X-Esi-Error-Limit-Reset')[0] ?? 0);
+
+        // Cache the values
         $this->cache->set('esi_error_limit_remaining', $esiErrorLimitRemaining);
         $this->cache->set('esi_error_limit_reset', $esiErrorLimitReset);
 
-        switch ($statusCode) {
-            case 420:
-                $sleepTime = $expiresInSeconds === 0 ? 60 : $expiresInSeconds;
-                //$this->webhooks->sendToEsiErrors('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
+        // Calculate progressive usleep time (in microseconds) based on inverse of error limit remaining
+        if ($esiErrorLimitRemaining < 100) {
+            // Error limit remaining should inversely affect the sleep time
+            // The closer it is to zero, the longer the sleep
+            $maxSleepTimeInMicroseconds = $esiErrorLimitReset * 1000000; // max sleep time, e.g., reset in seconds converted to microseconds
 
-                // Tell sentry about the error
-                \Sentry\captureMessage('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
+            // Calculate the inverse factor (higher remaining errors = lower sleep)
+            $inverseFactor = (100 - $esiErrorLimitRemaining) / 100;
 
-                // Tell the other workers to sleep
-                $this->cache->set('fetcher_paused', $sleepTime, $sleepTime);
+            // Exponentially scale the sleep time as remaining errors approach zero
+            $sleepTimeInMicroseconds = (int) ($inverseFactor * $inverseFactor * $maxSleepTimeInMicroseconds);
 
-                sleep($sleepTime > 0 ? $sleepTime : 1);
-                break;
+            // Ensure sleep time is not too short, minimum of 1 millisecond (1000 microseconds)
+            $sleepTimeInMicroseconds = max(1000, $sleepTimeInMicroseconds);
+
+            dump('Progressive slowdown: sleeping for ' . ($sleepTimeInMicroseconds / 1000000) . ' seconds, error limit remaining: ' . $esiErrorLimitRemaining . ' reset in: ' . $esiErrorLimitReset . ' seconds');
+
+            // Apply usleep (sleep in microseconds)
+            usleep($sleepTimeInMicroseconds);
+        }
+
+        // Handle 420 error code if needed
+        if ($statusCode === 420) {
+            $sleepTime = $expiresInSeconds === 0 ? 60 : $expiresInSeconds;
+
+            \Sentry\captureMessage('420 Error, sleeping for ' . $sleepTime . ' seconds: ' . $content);
+
+            $this->cache->set('fetcher_paused', $sleepTime, $sleepTime);
+            sleep($sleepTime);
         }
 
         return $response;
     }
+
 }
