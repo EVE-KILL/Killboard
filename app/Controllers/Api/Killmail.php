@@ -233,4 +233,92 @@ class Killmail extends Controller
 
         return $this->json($results);
     }
+
+    #[RouteAttribute("/killmail/history[/]", ["GET"], "Get all the dates available to fetch from the history API")]
+    public function history(): ResponseInterface
+    {
+        // Fetch the oldest killmail
+        $oldestKillmail = $this->killmails->findOne([], ['sort' => ['kill_time' => 1], 'projection' => ['kill_time' => 1], 'hint' => ['kill_time' => -1]]);
+
+        // Fetch the latest killmail
+        $newestKillmail = $this->killmails->findOne([], ['sort' => ['kill_time' => -1], 'projection' => ['kill_time' => 1], 'hint' => ['kill_time' => -1]]);
+
+        if ($oldestKillmail && $newestKillmail) {
+            $startDate = new \DateTime($oldestKillmail['kill_time']->toDateTime()->format('Y-m-d'));
+            $endDate = new \DateTime($newestKillmail['kill_time']->toDateTime()->format('Y-m-d'));
+
+            $dateInterval = new \DateInterval('P1D'); // 1 day interval
+            $datePeriod = new \DatePeriod($startDate, $dateInterval, $endDate->modify('+1 day'));
+
+            $uniqueDates = [];
+            foreach ($datePeriod as $date) {
+                $uniqueDates[] = $date->format('Ymd');
+            }
+
+            return $this->json($uniqueDates);
+        }
+
+        return $this->json([]); // Return empty array if no results
+    }
+
+    #[RouteAttribute("/killmail/history/{date:[0-9]+}[/]", ["GET"], "Get all the killmails for a specific date")]
+    public function historyDate(string $date): ResponseInterface
+    {
+        // Validate the date format (Ymd)
+        $dateRegex = '/^\d{4}\d{2}\d{2}$/';
+        if (!preg_match($dateRegex, $date)) {
+            return $this->json(['error' => 'Invalid date format. Expected Ymd.'], 400);
+        }
+
+        // Convert the date string to a DateTime object
+        $startDate = \DateTime::createFromFormat('Ymd', $date);
+        if (!$startDate) {
+            return $this->json(['error' => 'Invalid date provided.'], 400);
+        }
+
+        // Define the start and end of the day
+        $startOfDay = new \MongoDB\BSON\UTCDateTime($startDate->getTimestamp() * 1000); // MongoDB date in milliseconds
+        $endOfDay = new \MongoDB\BSON\UTCDateTime(($startDate->modify('+1 day')->getTimestamp() - 1) * 1000);
+
+        // Query to fetch all killmails for the specific day
+        $killmails = $this->killmails->find([
+            'kill_time' => [
+                '$gte' => $startOfDay,
+                '$lt' => $endOfDay
+            ]
+        ], [
+            'projection' => [
+                'killmail_id' => 1,
+                'hash' => 1
+            ]
+        ]);
+
+        // Prepare the result array
+        $result = [];
+        foreach ($killmails as $killmail) {
+            $result[$killmail['killmail_id']] = $killmail['hash'];
+        }
+
+        return $this->json($result);
+    }
+
+    #[RouteAttribute("/killmail/latest[/]", ["GET"], "Get the latest killmail IDs in reverse order")]
+    public function latest(): ResponseInterface
+    {
+        // Fetch the latest 1000 killmail IDs and their corresponding hashes
+        $latestKillmails = $this->killmails->find([], [
+            'sort' => ['killmail_id' => -1],
+            'projection' => ['killmail_id' => 1, 'hash' => 1],
+            'limit' => 1000
+        ]);
+
+        // Prepare the result as a key-value array where the key is killmail_id and the value is hash
+        $result = [];
+        foreach ($latestKillmails as $killmail) {
+            $result[$killmail['killmail_id']] = $killmail['hash'];
+        }
+
+        return $this->json($result);
+    }
+
 }
