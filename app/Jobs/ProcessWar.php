@@ -3,7 +3,9 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
+use EK\ESI\Wars as ESIWars;
 use EK\Logger\Logger;
+use EK\Models\Killmails;
 use EK\Models\Wars;
 use EK\RabbitMQ\RabbitMQ;
 use MongoDB\BSON\UTCDateTime;
@@ -13,8 +15,9 @@ class ProcessWar extends Jobs
     protected string $defaultQueue = 'low';
     public function __construct(
         protected Wars $warsModel,
-        protected \EK\ESI\Wars $esiWars,
+        protected ESIWars $esiWars,
         protected ProcessKillmail $killmailJob,
+        protected Killmails $killmails,
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
     ) {
@@ -47,6 +50,18 @@ class ProcessWar extends Jobs
         $this->warsModel->save();
 
         foreach ($warKills as $kill) {
+            $existingKillmail = $this->killmails->findOne([
+                'killmail_id' => $kill['killmail_id'],
+                'war_id' => $war_id,
+                ['attackers' => ['$exists' => true]]
+            ], [
+                'projection' => ['_id' => 1]
+            ])->toArray();
+
+            if (!empty($existingKillmail)) {
+                continue;
+            }
+
             $this->killmailJob->enqueue(['killmail_id' => $kill['killmail_id'], 'hash' => $kill['killmail_hash'], 'war_id' => $war_id]);
         }
     }
