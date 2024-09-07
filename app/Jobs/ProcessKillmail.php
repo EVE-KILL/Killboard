@@ -83,12 +83,12 @@ class ProcessKillmail extends Jobs
 
         $shipId = $parsedKillmail['victim']['ship_id'] ?? null;
         if ($shipId) {
-            $routingKeys[] = "victim.ship.{$shipId}";
+            $routingKeys[] = "ship.{$shipId}";
         }
 
         $shipGroupId = $parsedKillmail['victim']['ship_group_id'] ?? null;
         if ($shipGroupId) {
-            $routingKeys[] = "victim.ship_group.{$shipGroupId}";
+            $routingKeys[] = "ship_group.{$shipGroupId}";
         }
 
         $characterId = $parsedKillmail['victim']['character_id'] ?? null;
@@ -134,12 +134,12 @@ class ProcessKillmail extends Jobs
 
             $shipId = $attacker['ship_id'] ?? null;
             if ($shipId) {
-                $routingKeys[] = "attacker.ship.{$shipId}";
+                $routingKeys[] = "ship.{$shipId}";
             }
 
             $shipGroupId = $attacker['ship_group_id'] ?? null;
             if ($shipGroupId) {
-                $routingKeys[] = "attacker.ship_group.{$shipGroupId}";
+                $routingKeys[] = "ship_group.{$shipGroupId}";
             }
         }
 
