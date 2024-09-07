@@ -81,6 +81,16 @@ class ProcessKillmail extends Jobs
             $routingKeys[] = "region.{$regionId}";
         }
 
+        $shipId = $parsedKillmail['victim']['ship_id'] ?? null;
+        if ($shipId) {
+            $routingKeys[] = "victim.ship.{$shipId}";
+        }
+
+        $shipGroupId = $parsedKillmail['victim']['ship_group_id'] ?? null;
+        if ($shipGroupId) {
+            $routingKeys[] = "victim.ship_group.{$shipGroupId}";
+        }
+
         $characterId = $parsedKillmail['victim']['character_id'] ?? null;
         if ($characterId) {
             $routingKeys[] = "character.{$characterId}";
@@ -120,6 +130,16 @@ class ProcessKillmail extends Jobs
             $factionId = $attacker['faction_id'] ?? null;
             if ($factionId) {
                 $routingKeys[] = "faction.{$factionId}";
+            }
+
+            $shipId = $attacker['ship_id'] ?? null;
+            if ($shipId) {
+                $routingKeys[] = "attacker.ship.{$shipId}";
+            }
+
+            $shipGroupId = $attacker['ship_group_id'] ?? null;
+            if ($shipGroupId) {
+                $routingKeys[] = "attacker.ship_group.{$shipGroupId}";
             }
         }
 
