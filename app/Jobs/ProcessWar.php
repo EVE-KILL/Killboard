@@ -53,7 +53,7 @@ class ProcessWar extends Jobs
             $existingKillmail = $this->killmails->findOne([
                 'killmail_id' => $kill['killmail_id'],
                 'war_id' => $war_id,
-                ['attackers' => ['$exists' => true]]
+                'attackers' => ['$exists' => true]
             ], [
                 'projection' => ['_id' => 1]
             ])->toArray();

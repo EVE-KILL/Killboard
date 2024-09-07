@@ -40,7 +40,7 @@ class ProcessESI extends Jobs
                 // Don't process if we have already processed it
                 $existingKillmail = $this->killmails->findOne([
                     'killmail_id' => $killmail['killmail_id'],
-                    ['attackers' => ['$exists' => true]]
+                    'attackers' => ['$exists' => true]
                 ], [
                     'projection' => ['_id' => 1]
                 ])->toArray();
