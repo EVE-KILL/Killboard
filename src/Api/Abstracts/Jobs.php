@@ -162,7 +162,7 @@ abstract class Jobs
         $queue = $queue ?? $this->defaultQueue;
 
         // Declare the queue
-        $this->channel->queue_declare($queue, false, true, false, false);
+        $this->channel->queue_declare($queue, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
 
         // Purge the queue
         $this->channel->queue_purge($queue);
@@ -173,11 +173,8 @@ abstract class Jobs
     {
         $queue = $queue ?? $this->defaultQueue;
 
-        // Declare the queue
-        $this->channel->queue_declare($queue, false, true, false, false);
-
         // Get the queue message count
-        $queueInfo = $this->channel->queue_declare($queue, false, true, false, false);
+        $queueInfo = $this->channel->queue_declare($queue, false, true, false, false, false, ['x-max-priority' => ['I', 10]]);
         $queueLength = $queueInfo[1];
 
         return $queueLength;
