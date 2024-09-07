@@ -53,7 +53,7 @@ class UpdateCharacters extends Cronjob
                 continue;
             }
 
-            $updates[] = $character['character_id'];
+            $updates[] = ['character_id' => $character['character_id']];
         }
 
         $this->logger->info("Updating " . count($updates) . " characters");
