@@ -49,7 +49,7 @@ class UpdateCharacters extends Cronjob
 
         $updates = [];
         foreach ($staleCharacters as $character) {
-            if ($character['deleted'] === true) {
+            if ($character['deleted'] || false === true) {
                 continue;
             }
 
