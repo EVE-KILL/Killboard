@@ -5,6 +5,7 @@ namespace EK\Jobs;
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\ESI;
 use EK\Logger\Logger;
+use EK\Models\Killmails;
 use EK\RabbitMQ\RabbitMQ;
 
 class ProcessESI extends Jobs
@@ -12,6 +13,7 @@ class ProcessESI extends Jobs
     protected string $defaultQueue = 'esi';
     public function __construct(
         protected ProcessKillmail $processKillmail,
+        protected Killmails $killmails,
         protected ESI $esi,
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
@@ -35,6 +37,18 @@ class ProcessESI extends Jobs
 
         if (!empty($killmails)) {
             foreach ($killmails as $killmail) {
+                // Don't process if we have already processed it
+                $existingKillmail = $this->killmails->findOne([
+                    'killmail_id' => $killmail['killmail_id'],
+                    ['$exists' => 'attackers']
+                ], [
+                    'projection' => ['_id' => 1]
+                ])->toArray();
+
+                if (!empty($existingKillmail)) {
+                    continue;
+                }
+
                 $this->processKillmail->enqueue([
                     'killmail_id' => $killmail['killmail_id'],
                     'hash' => $killmail['killmail_hash'],
