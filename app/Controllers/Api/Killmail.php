@@ -307,9 +307,10 @@ class Killmail extends Controller
     {
         // Fetch the latest 1000 killmail IDs and their corresponding hashes
         $latestKillmails = $this->killmails->find([], [
-            'sort' => ['killmail_id' => -1],
+            'sort' => ['last_modified' => -1],
             'projection' => ['killmail_id' => 1, 'hash' => 1],
-            'limit' => 1000
+            'limit' => 1000,
+            'hint' => ['last_modified' => -1]
         ], cacheTime: 5);
 
         // Prepare the result as a key-value array where the key is killmail_id and the value is hash
