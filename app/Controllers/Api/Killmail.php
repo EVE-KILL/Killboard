@@ -238,10 +238,10 @@ class Killmail extends Controller
     public function history(): ResponseInterface
     {
         // Fetch the oldest killmail
-        $oldestKillmail = $this->killmails->findOne([], ['sort' => ['kill_time' => 1], 'projection' => ['kill_time' => 1], 'hint' => ['kill_time' => -1]]);
+        $oldestKillmail = $this->killmails->findOne([], ['sort' => ['kill_time' => 1], 'projection' => ['kill_time' => 1], 'hint' => ['kill_time' => -1]], cacheTime: 5);
 
         // Fetch the latest killmail
-        $newestKillmail = $this->killmails->findOne([], ['sort' => ['kill_time' => -1], 'projection' => ['kill_time' => 1], 'hint' => ['kill_time' => -1]]);
+        $newestKillmail = $this->killmails->findOne([], ['sort' => ['kill_time' => -1], 'projection' => ['kill_time' => 1], 'hint' => ['kill_time' => -1]], cacheTime: 5);
 
         if ($oldestKillmail && $newestKillmail) {
             $startDate = new \DateTime($oldestKillmail['kill_time']->toDateTime()->format('Y-m-d'));
@@ -291,7 +291,7 @@ class Killmail extends Controller
                 'killmail_id' => 1,
                 'hash' => 1
             ]
-        ]);
+        ], cacheTime: 5);
 
         // Prepare the result array
         $result = [];
@@ -310,7 +310,7 @@ class Killmail extends Controller
             'sort' => ['killmail_id' => -1],
             'projection' => ['killmail_id' => 1, 'hash' => 1],
             'limit' => 1000
-        ]);
+        ], cacheTime: 5);
 
         // Prepare the result as a key-value array where the key is killmail_id and the value is hash
         $result = [];
