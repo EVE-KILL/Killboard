@@ -309,7 +309,7 @@ class Killmail extends Controller
         $latestKillmails = $this->killmails->find([], [
             'sort' => ['last_modified' => -1],
             'projection' => ['killmail_id' => 1, 'hash' => 1],
-            'limit' => 1000,
+            'limit' => 10000,
             'hint' => ['last_modified' => -1]
         ], cacheTime: 5);
 
