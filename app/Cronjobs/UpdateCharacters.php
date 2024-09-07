@@ -10,7 +10,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacters extends Cronjob
 {
-    protected string $cronTime = "0 * * * *";
+    protected string $cronTime = "*/5 * * * *";
 
     public function __construct(
         protected Characters $characters,
@@ -24,8 +24,16 @@ class UpdateCharacters extends Cronjob
     {
         $this->logger->info("Updating characters that haven't been updated in the last 7 days");
 
+        $queueLength = $this->updateCharacter->queueLength();
+        if ($queueLength > 0) {
+            $this->logger->info("There are currently $queueLength characters in the queue, skipping this run");
+            return;
+        }
+
         $daysAgo = new UTCDateTime((time() - (7 * 86400)) * 1000);
-        $characterCount = $this->characters->count();
+        $characterCount = $this->characters->aproximateCount();
+        // Get the amount to add every five minutes
+        $limit = (int) round(((($characterCount / 7) / 24)/ 60) * 5, 0);
 
         // Find characters that haven't been updated in the last 14 days, but ignore them if they have deleted = true
         $staleCharacters = $this->characters->find(
@@ -33,14 +41,20 @@ class UpdateCharacters extends Cronjob
                 "last_updated" => ['$lt' => $daysAgo],
                 "deleted" => ['$ne' => true],
             ],
-            ["limit" => (int) round(($characterCount / 7) / 24, 0)] // Update 1/168th of the characters every hour
+            [
+                "limit" => $limit,
+                "projection" => ["character_id" => 1, 'deleted' => 1, '_id' => 0],
+            ]
         );
 
-        $updates = array_map(function ($character) {
-            return [
-                "character_id" => $character["character_id"],
-            ];
-        }, $staleCharacters->toArray());
+        $updates = [];
+        foreach ($staleCharacters as $character) {
+            if ($character['deleted'] === true) {
+                continue;
+            }
+
+            $updates[] = $character['character_id'];
+        }
 
         $this->logger->info("Updating " . count($updates) . " characters");
         $this->updateCharacter->massEnqueue($updates);

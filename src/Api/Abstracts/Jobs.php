@@ -169,5 +169,19 @@ abstract class Jobs
         $this->logger->debug("Queue {$queue} purged.");
     }
 
+    public function queueLength(?string $queue = null): int
+    {
+        $queue = $queue ?? $this->defaultQueue;
+
+        // Declare the queue
+        $this->channel->queue_declare($queue, false, true, false, false);
+
+        // Get the queue message count
+        $queueInfo = $this->channel->queue_declare($queue, false, true, false, false);
+        $queueLength = $queueInfo[1];
+
+        return $queueLength;
+    }
+
     abstract public function handle(array $data): void;
 }
