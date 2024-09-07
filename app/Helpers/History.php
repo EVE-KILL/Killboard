@@ -132,11 +132,14 @@ class History
             $joinDate = new \DateTime($history["start_date"]);
             $leaveDate = isset($allianceHistoryData[$i + 1]) ? new \DateTime($allianceHistoryData[$i + 1]["start_date"]) : null;
 
-            $allianceEntry = [
-                "alliance_id" => $allianceData["alliance_id"],
-                "name" => $allianceData["name"],
-                "join_date" => $joinDate->format("Y-m-d H:i:s"),
-            ];
+            $allianceEntry = [];
+            if (isset($allianceData['alliance_id'])) {
+                $allianceEntry = [
+                    "alliance_id" => $allianceData["alliance_id"],
+                    "name" => $allianceData["name"],
+                    "join_date" => $joinDate->format("Y-m-d H:i:s"),
+                ];
+            }
 
             if ($leaveDate) {
                 $allianceEntry["leave_date"] = $leaveDate->format("Y-m-d H:i:s");
