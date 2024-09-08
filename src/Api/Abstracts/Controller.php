@@ -300,7 +300,7 @@ abstract class Controller
         string $contentType = 'application/json; charset=UTF-8'
     ): ResponseInterface {
         $response = $this->generateResponse($status, $contentType, $cacheTime);
-        $response->getBody()->write(json_encode($data, JSON_NUMERIC_CHECK));
+        $response->getBody()->write(json_encode($data));
 
         return $response;
     }
