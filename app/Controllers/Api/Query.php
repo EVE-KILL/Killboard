@@ -120,6 +120,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getBySystemId($systemId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -129,6 +130,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getByRegionId($regionId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -138,6 +140,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getByCharacterId($characterId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -147,6 +150,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getByCorporationId($corporationId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -156,6 +160,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getByAllianceId($allianceId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -165,6 +170,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getByFactionId($factionId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -174,6 +180,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getByWeaponTypeId($weaponId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -183,6 +190,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getByShipId($shipId, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -192,6 +200,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getAfterDate($unixTime, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -201,6 +210,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getBeforeDate($unixTime, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -210,6 +220,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->getBetweenDates($unixTimeFrom, $unixTimeTill, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -219,6 +230,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->totalValueLess($value, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -228,6 +240,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->totalValueMore($value, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -237,6 +250,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->totalValueBetween($valueFrom, $valueTill, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -246,6 +260,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->shipValueLess($value, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -255,6 +270,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->shipValueMore($value, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -264,6 +280,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->shipValueBetween($value1, $value2, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -273,6 +290,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->pointValueLess($value, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -282,6 +300,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->pointValueMore($value, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 
@@ -291,6 +310,7 @@ class Query extends Controller
     {
         $params = $this->validateParams($params);
         $result = $this->queryHelper->pointValueBetween($valueFrom, $valueTill, $params);
+        $result = $this->cleanupTimestamps($result);
         return $this->json($result);
     }
 }

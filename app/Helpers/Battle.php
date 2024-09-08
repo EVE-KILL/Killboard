@@ -2,13 +2,16 @@
 
 namespace EK\Helpers;
 
+use EK\Models\Killmails;
+use EK\Models\SolarSystems;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 
 class Battle
 {
     public function __construct(
-        protected \EK\Models\Killmails $killmails,
+        protected Killmails $killmails,
+        protected SolarSystems $solarSystems
     ) {
 
     }
@@ -131,6 +134,14 @@ class Battle
             'start_time' => $battleStartTime,
             'end_time' => $battleEndTime,
             'system_id' => $systemId,
+            'systemInfo' => $this->solarSystems->findOne(['system_id' => $systemId], ['projection' => [
+                '_id' => 0,
+                'planets' => 0,
+                'position' => 0,
+                'stargates' => 0,
+                'stations' => 0,
+                'last_modified' => 0
+            ]]),
             'red_team' => $redTeam,
             'blue_team' => $blueTeam
         ];

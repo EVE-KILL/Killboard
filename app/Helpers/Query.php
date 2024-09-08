@@ -52,8 +52,8 @@ class Query
         if (isset($parameters['offset']) && $parameters['offset'] > 0) {
             $queryArray['skip'] = $parameters['offset'];
         }
-        // Remove _id
-        $queryArray['projection'] = ['_id' => 0];
+        // Remove _id and items
+        $queryArray['projection'] = ['_id' => 0, 'items' => 0, 'emitted' => 0];
 
         // Return the query
         return ['filter' => $dataArray, 'options' => $queryArray];
@@ -94,7 +94,7 @@ class Query
         $result = $this->killmails->aggregate($pipeline)->toArray();
 
         // Cache the result
-        $cacheTime = 3600; // Cache time in seconds (1 hour)
+        $cacheTime = 3600;
         $this->cache->set($cacheKey, $result, $cacheTime);
 
         return $result;
