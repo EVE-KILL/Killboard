@@ -25,10 +25,13 @@ class Characters extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/characters[/]", ["GET"], "Get all characters")]
-    public function all(): ResponseInterface
+    #[RouteAttribute("/characters[/page/{page:[0-9]+}]", ["GET"], "Get all characters")]
+    public function all(int $page = 1): ResponseInterface
     {
-        $cacheKey = "characters.all";
+        $limit = 10000;
+        $skip = ($page - 1) * $limit;
+
+        $cacheKey = "characters.all.$page";
         if ($this->cache->exists($cacheKey)) {
             return $this->json(
                 $this->cache->get($cacheKey),
@@ -37,7 +40,7 @@ class Characters extends Controller
         }
 
         $characters = $this->characters
-            ->find([], ["projection" => ["character_id" => 1]], 300)
+            ->find([], ['limit' => $limit, 'skip' => $skip, 'sort' => ['character_id' => 1], "projection" => ["character_id" => 1]], 300)
             ->map(function ($character) {
                 return $character["character_id"];
             });
