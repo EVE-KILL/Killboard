@@ -12,7 +12,131 @@ class Stats
     ) {
     }
 
-    public function calculateStats(string $type, int $id, int $timeRangeInDays = 90): array
+    public function calculateShortStats(string $type, int $id, int $timeRangeInDays = 90): array
+    {
+        $validTypes = ['character_id', 'corporation_id', 'alliance_id'];
+        if (!in_array($type, $validTypes)) {
+            throw new \Exception('Error, ' . $type . ' is not a valid type. Valid types are: ' . implode(', ', $validTypes));
+        }
+
+        if ($timeRangeInDays < 0) {
+            $timeRangeInDays = 90;
+        }
+
+        // Initialize stats array
+        $stats = [
+            'kills' => 0,
+            'losses' => 0,
+            'iskKilled' => 0,
+            'iskLost' => 0,
+            'npcLosses' => 0,
+            'soloKills' => 0,
+            'soloLosses' => 0,
+            'lastActive' => 0,
+        ];
+
+        // Get kill stats
+        if ($timeRangeInDays > 0) {
+            $stats['kills'] = $this->killmails->count([
+                'attackers.' . $type => $id,
+                'kill_time' => [
+                    '$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)
+                ]
+            ]);
+        } else {
+            $stats['kills'] = $this->killmails->count(['attackers.' . $type => $id]);
+        }
+
+        if ($timeRangeInDays > 0) {
+            $stats['losses'] = $this->killmails->count([
+                'victim.' . $type => $id,
+                'kill_time' => [
+                    '$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)
+                ]
+            ]);
+        } else {
+            $stats['losses'] = $this->killmails->count(['victim.' . $type => $id]);
+        }
+
+        // Query for kills
+        $attackerKillmails = $this->killmails->collection->find(
+            $timeRangeInDays > 0 ? [
+                'attackers.' . $type => $id,
+                'kill_time' => [
+                    '$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)
+                ]
+             ] : ['attackers.' . $type => $id],
+            ['projection' => [
+                'total_value' => 1,
+                'is_solo' => 1,
+                'kill_time' => 1,
+            ]
+        ]);
+
+        foreach ($attackerKillmails as $killmail) {
+            $stats['iskKilled'] += $killmail['total_value'];
+            $stats['soloKills'] += $killmail['is_solo'] ? 1 : 0;
+
+            // Update lastActive with the latest kill_time
+            $killTime = $killmail['kill_time'];
+            if ($killTime instanceof UTCDateTime) {
+                $killTime = $killTime->toDateTime(); // Convert MongoDB UTCDateTime to PHP DateTime
+            }
+
+            $killTimeUnix = $killTime->getTimestamp(); // Convert to Unix timestamp
+
+            // Compare Unix timestamps and store the latest
+            if ($killTimeUnix > $stats['lastActive']) {
+                $stats['lastActive'] = $killTimeUnix;
+            }
+        }
+
+        // Query for losses
+        $victimKillmails = $this->killmails->collection->find(
+            $timeRangeInDays > 0 ? [
+                'victim.' . $type => $id,
+                'kill_time' => [
+                    '$gte' => new UTCDateTime((time() - ($timeRangeInDays * 86400)) * 1000)
+                ]
+             ] : ['victim.' . $type => $id],
+            ['projection' => [
+                'total_value' => 1,
+                'is_npc' => 1,
+                'is_solo' => 1,
+                'kill_time' => 1,
+            ]
+        ]);
+
+        foreach ($victimKillmails as $lossmail) {
+            $stats['iskLost'] += $lossmail['total_value'];
+            $stats['npcLosses'] += $lossmail['is_npc'] ? 1 : 0;
+            $stats['soloLosses'] += $lossmail['is_solo'] ? 1 : 0;
+
+            // Update lastActive with the latest kill_time
+            $killTime = $lossmail['kill_time'];
+            if ($killTime instanceof UTCDateTime) {
+                $killTime = $killTime->toDateTime(); // Convert MongoDB UTCDateTime to PHP DateTime
+            }
+
+            $killTimeUnix = $killTime->getTimestamp(); // Convert to Unix timestamp
+
+            // Compare Unix timestamps and store the latest
+            if ($killTimeUnix > $stats['lastActive']) {
+                $stats['lastActive'] = $killTimeUnix;
+            }
+        }
+
+        // Convert lastActive from Unix timestamp to formatted string, if not zero
+        if ($stats['lastActive'] > 0) {
+            $stats['lastActive'] = date('Y-m-d H:i:s', $stats['lastActive']);
+        } else {
+            $stats['lastActive'] = null;
+        }
+
+        return $stats;
+    }
+
+    public function calculateFullStats(string $type, int $id, int $timeRangeInDays = 90): array
     {
         $validTypes = ['character_id', 'corporation_id', 'alliance_id'];
         if (!in_array($type, $validTypes)) {
