@@ -128,8 +128,8 @@ class Battle
 
         // Total stats
         $battle = [
-            'start_time' => new UTCDateTime($battleStartTime * 1000),
-            'end_time' => new UTCDateTime($battleEndTime * 1000),
+            'start_time' => $battleStartTime,
+            'end_time' => $battleEndTime,
             'system_id' => $systemId,
             'red_team' => $redTeam,
             'blue_team' => $blueTeam

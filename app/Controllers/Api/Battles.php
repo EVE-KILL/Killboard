@@ -70,7 +70,6 @@ class Battles extends Controller
 
         // Get battle data
         $battleData = $this->battleHelper->getBattleData($killmailId);
-        $battleData = $this->cleanupTimestamps($battleData);
 
         $this->cache->set($cacheKey, $battleData, 60);
 
