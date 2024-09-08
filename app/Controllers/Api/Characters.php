@@ -76,7 +76,7 @@ class Characters extends Controller
     #[RouteAttribute("/characters/{character_id:[0-9]+}/shortstats[/{days:[0-9]+}]", ["GET"], "Get the stats of a character")]
     public function shortStats(int $character_id, int $days = 0): ResponseInterface
     {
-        $cacheKey = "characters.stats.$character_id.$days";
+        $cacheKey = "characters.shortstats.$character_id.$days";
         if ($this->cache->exists($cacheKey)) {
             return $this->json(
                 $this->cache->get($cacheKey),
@@ -93,7 +93,7 @@ class Characters extends Controller
     #[RouteAttribute("/characters/{character_id:[0-9]+}/stats[/{days:[0-9]+}]", ["GET"], "Get the stats of a character")]
     public function stats(int $character_id, int $days = 0): ResponseInterface
     {
-        $cacheKey = "characters.stats.$character_id.$days";
+        $cacheKey = "characters.fullstats.$character_id.$days";
         if ($this->cache->exists($cacheKey)) {
             return $this->json(
                 $this->cache->get($cacheKey),

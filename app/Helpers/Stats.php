@@ -33,6 +33,8 @@ class Stats
             'soloKills' => 0,
             'soloLosses' => 0,
             'lastActive' => 0,
+            'killPoints' => 0,
+            'lossPoints' => 0,
         ];
 
         // Get kill stats
@@ -70,12 +72,20 @@ class Stats
                 'total_value' => 1,
                 'is_solo' => 1,
                 'kill_time' => 1,
+                'point_value' => 1,
+                'attackers.' . $type => 1,
             ]
         ]);
 
         foreach ($attackerKillmails as $killmail) {
             $stats['iskKilled'] += $killmail['total_value'];
             $stats['soloKills'] += $killmail['is_solo'] ? 1 : 0;
+
+            foreach($killmail['attackers'] as $attacker) {
+                if ($attacker[$type] == $id) {
+                    $stats['killPoints'] += $killmail['point_value'];
+                }
+            }
 
             // Update lastActive with the latest kill_time
             $killTime = $killmail['kill_time'];
@@ -104,6 +114,7 @@ class Stats
                 'is_npc' => 1,
                 'is_solo' => 1,
                 'kill_time' => 1,
+                'point_value' => 1
             ]
         ]);
 
@@ -111,6 +122,7 @@ class Stats
             $stats['iskLost'] += $lossmail['total_value'];
             $stats['npcLosses'] += $lossmail['is_npc'] ? 1 : 0;
             $stats['soloLosses'] += $lossmail['is_solo'] ? 1 : 0;
+            $stats['lossPoints'] += $killmail['point_value'];
 
             // Update lastActive with the latest kill_time
             $killTime = $lossmail['kill_time'];
