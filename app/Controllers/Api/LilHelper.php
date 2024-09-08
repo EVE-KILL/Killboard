@@ -17,13 +17,49 @@ class LilHelper extends Controller
         parent::__construct();
     }
 
-    #[RouteAttribute("/lilhelper/dscan[/]", ["POST"], "")]
-    public function dScan(): ResponseInterface
+    #[RouteAttribute("/lilhelper/dscan/{id}[/]", ["GET"], "Get DScan results")]
+    public function dScanGet(string $id): ResponseInterface
     {
-        return $this->json([]);
+        $data = $this->lilHelper->findOne(['hash' => $id], ['projection' => [
+            '_id' => 0,
+            'hash' => 0,
+            'last_modified' => 0
+        ]]);
+        if (empty($data)) {
+            return $this->json(['error' => 'No data found']);
+        }
+
+        return $this->json($data);
     }
 
-    #[RouteAttribute("/lilhelper/localscan/{id}[/]", ["GET"], "")]
+    #[RouteAttribute("/lilhelper/dscan[/]", ["POST"], "Post DScan results")]
+    public function dScan(): ResponseInterface
+    {
+        $postData = json_validate($this->getBody()) ? json_decode($this->getBody(), true) : [];
+        if (empty($postData)) {
+            return $this->json(['error' => 'No data provided']);
+        }
+
+        $returnData = [];
+
+        // Count the amount of times a ship appears in the dscan
+        foreach($postData as $ship) {
+            if (empty($returnData['ships'][$ship])) {
+                $returnData['ships'][$ship] = 1;
+            } else {
+                $returnData['ships'][$ship]++;
+            }
+        }
+
+        $returnData['hash'] = hash('sha256', json_encode($returnData));
+
+        $this->lilHelper->setData($returnData);
+        $this->lilHelper->save();
+
+        return $this->json($returnData);
+    }
+
+    #[RouteAttribute("/lilhelper/localscan/{id}[/]", ["GET"], "Get LocalScan results")]
     public function localScanGet(string $id): ResponseInterface
     {
         $data = $this->lilHelper->findOne(['hash' => $id], ['projection' => [
@@ -38,7 +74,7 @@ class LilHelper extends Controller
         return $this->json($data);
     }
 
-    #[RouteAttribute("/lilhelper/localscan[/]", ["POST"], "")]
+    #[RouteAttribute("/lilhelper/localscan[/]", ["POST"], "Post LocalScan results")]
     public function localScan(): ResponseInterface
     {
         $postData = json_validate($this->getBody()) ? json_decode($this->getBody(), true) : [];
