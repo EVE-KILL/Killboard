@@ -34,7 +34,7 @@ class Battle
         $pipeline = [
             ['$match' => ['system_id' => $systemId, 'kill_time' => ['$gte' => new UTCDateTime($startTime * 1000), '$lte' => new UTCDateTime($endTime * 1000)]]],
             ['$group' => ['_id' => '$battle_id', 'count' => ['$sum' => 1]]],
-            ['$match' => ['count' => ['$gte' => 25]]], // @TODO play with the gte number, because sometimes this can say yes, when the fact is no..
+            ['$match' => ['count' => ['$gte' => 25]]],
             ['$sort' => ['count' => -1]],
             ['$limit' => 1]
         ];
@@ -126,138 +126,11 @@ class Battle
         $redTeam = $teams['a'];
         $blueTeam = $teams['b'];
 
-        // Populate the battle data
-        foreach ($redTeam['corporations'] as $teamMember) {
-            foreach ($kills as $kill) {
-                foreach ($kill['attackers'] as $attacker) {
-                    if ($attacker['corporation_id'] === $teamMember['id']) {
-                        if (!isset($redTeam['kills'])) {
-                            $redTeam['kills'] = [];
-                        }
-                        if (!isset($redTeam['value'])) {
-                            $redTeam['value'] = 0;
-                        }
-                        if (!isset($redTeam['points'])) {
-                            $redTeam['points'] = 0;
-                        }
-
-                        $redTeam['kills'][$kill['killmail_id']] = $kill['killmail_id'];
-                        $redTeam['value'] += $kill['total_value'];
-                        $redTeam['points'] += $kill['point_value'];
-
-                        // Add the ship type to the team, if it's already added then increment the count
-                        if (!isset($redTeam['ship_types'][$attacker['ship_id']])) {
-                            $redTeam['ship_types'][$attacker['ship_id']] = [
-                                'name' => $attacker['ship_name'],
-                                'count' => 1
-                            ];
-                        } else {
-                            $redTeam['ship_types'][$attacker['ship_id']]['count']++;
-                        }
-
-                        // Add the character to the team (if not already added)
-                        if (!isset($redTeam['characters'][$attacker['character_id']])) {
-                            $redTeam['characters'][$attacker['character_id']] = [
-                                'character_name' => $attacker['character_name'],
-                                'character_id' => $attacker['character_id'],
-                                'corporation_name' => $attacker['corporation_name'],
-                                'corporation_id' => $attacker['corporation_id'],
-                                'alliance_name' => $attacker['alliance_name'],
-                                'alliance_id' => $attacker['alliance_id'],
-                                'faction_name' => $attacker['faction_name'],
-                                'faction_id' => $attacker['faction_id']
-                            ];
-                        }
-                    }
-                }
-            }
-
-            $redTeam['ship_type_count'] = count($redTeam['ship_types'] ?? []);
-            $redTeam['total_ship_count'] = array_sum(array_column($redTeam['ship_types'] ?? [], 'count'));
-            ksort($redTeam);
-        }
-
-        // Sort the ship types by count
-        if (!empty($redTeam['ship_types'])) {
-            uasort($redTeam['ship_types'], function ($a, $b) {
-                return $b['count'] <=> $a['count'];
-            });
-        }
-
-        // Blue team
-        foreach ($blueTeam['corporations'] as $teamMember) {
-            foreach ($kills as $kill) {
-                foreach ($kill['attackers'] as $attacker) {
-                    if ($attacker['corporation_id'] === $teamMember['id']) {
-                        if (!isset($blueTeam['kills'])) {
-                            $blueTeam['kills'] = [];
-                        }
-                        if (!isset($blueTeam['value'])) {
-                            $blueTeam['value'] = 0;
-                        }
-                        if (!isset($blueTeam['points'])) {
-                            $blueTeam['points'] = 0;
-                        }
-
-                        $blueTeam['kills'][$kill['killmail_id']] = $kill['killmail_id'];
-                        $blueTeam['value'] += $kill['total_value'];
-                        $blueTeam['points'] += $kill['point_value'];
-
-                        // Add the ship type to the team, if it's already added then increment the count
-                        if (!isset($blueTeam['ship_types'][$attacker['ship_id']])) {
-                            $blueTeam['ship_types'][$attacker['ship_id']] = [
-                                'name' => $attacker['ship_name'],
-                                'count' => 1
-                            ];
-                        } else {
-                            $blueTeam['ship_types'][$attacker['ship_id']]['count']++;
-                        }
-
-                        // Add the character to the team (if not already added)
-                        if (!isset($blueTeam['characters'][$attacker['character_id']])) {
-                            $blueTeam['characters'][$attacker['character_id']] = [
-                                'character_name' => $attacker['character_name'],
-                                'character_id' => $attacker['character_id'],
-                                'corporation_name' => $attacker['corporation_name'],
-                                'corporation_id' => $attacker['corporation_id'],
-                                'alliance_name' => $attacker['alliance_name'],
-                                'alliance_id' => $attacker['alliance_id'],
-                                'faction_name' => $attacker['faction_name'],
-                                'faction_id' => $attacker['faction_id']
-                            ];
-                        }
-                    }
-                }
-            }
-
-            $blueTeam['ship_type_count'] = count($blueTeam['ship_types'] ?? []);
-            $blueTeam['total_ship_count'] = array_sum(array_column($blueTeam['ship_types'] ?? [], 'count'));
-            ksort($blueTeam);
-        }
-
-        // Sort the ship types by count
-        if (!empty($blueTeam['ship_types'])) {
-            uasort($blueTeam['ship_types'], function ($a, $b) {
-                return $b['count'] <=> $a['count'];
-            });
-        }
-
-        // Kills can sometimes show up in both blue and red team, remove them from blue team if they do
-        $blueTeam['kills'] = array_diff($blueTeam['kills'] ?? [], $redTeam['kills'] ?? []);
-
         // Total stats
         $battle = [
             'start_time' => new UTCDateTime($battleStartTime * 1000),
             'end_time' => new UTCDateTime($battleEndTime * 1000),
-            'total_value' => ($redTeam['value'] ?? 0) + ($blueTeam['value'] ?? 0),
-            'total_alliances' => count($redTeam['alliances'] ?? []) + count($blueTeam['alliances'] ?? []),
-            'total_corporations' => count($redTeam['corporations'] ?? []) + count($blueTeam['corporations'] ?? []),
-            'total_characters' => count($redTeam['characters'] ?? []) + count($blueTeam['characters'] ?? []),
-            'ship_type_count' => ($redTeam['ship_type_count'] ?? 0) + ($blueTeam['ship_type_count'] ?? 0),
-            'ship_count' => ($redTeam['total_ship_count'] ?? 0) + ($blueTeam['total_ship_count'] ?? 0),
-            'points' => ($redTeam['points'] ?? 0) + ($blueTeam['points'] ?? 0),
-            'kills' => count(array_unique(array_column($kills->toArray() ?? [], 'killmail_id'))),
-            'kills_team_count' => count($redTeam['kills'] ?? []) + count($blueTeam['kills'] ?? []),
+            'system_id' => $systemId,
             'red_team' => $redTeam,
             'blue_team' => $blueTeam
         ];
