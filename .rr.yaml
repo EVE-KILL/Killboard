@@ -11,6 +11,8 @@ http:
     middleware:
         - gzip
     pool:
-        num_workers: 4
+        num_workers: 0 # Means number of logical CPUs
         supervisor:
-            max_worker_memory: 256
+            max_worker_memory: 256 # 256MB memory limit per worker (Soft limit)
+            exec_ttl: 60s # Maximum time a single job can run (Hard limit)
+            ttl: 3600s # How long a worker can live (Soft limit)
