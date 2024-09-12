@@ -62,18 +62,18 @@ class Query
 
         if (isset($input['options'])) {
             if (isset($input['options']['sort'])) {
-                $query['options']['sort'] = $input['options']['sort'];
+                $query['options']['sort'] = $this->validateSort($input['options']['sort']);
             }
             if (isset($input['options']['skip'])) {
-                $query['options']['skip'] = $input['options']['skip'];
+                $query['options']['skip'] = $this->validateSkip($input['options']['skip']);
             }
             if (isset($input['options']['limit'])) {
-                $query['options']['limit'] = $input['options']['limit'];
+                $query['options']['limit'] = $this->validateLimit($input['options']['limit']);
             }
             if (isset($input['options']['projection'])) {
                 $query['options']['projection'] = array_merge(
                     $query['options']['projection'],
-                    $input['options']['projection']
+                    $this->validateProjection($input['options']['projection'])
                 );
             }
         }
@@ -242,18 +242,22 @@ class Query
         foreach ($filter as $key => $value) {
             switch ($key) {
                 case 'killmail_id':
-                case 'is_npc':
-                case 'is_solo':
                 case 'region_id':
                 case 'system_id':
                 case 'war_id':
                     if ($value !== null) {
-                        $parsedFilter[$key] = $value;
+                        $parsedFilter[$key] = $this->validatePositiveInteger($value, $key);
+                    }
+                    break;
+                case 'is_npc':
+                case 'is_solo':
+                    if ($value !== null) {
+                        $parsedFilter[$key] = (bool)$value;
                     }
                     break;
                 case 'system_security':
                 case 'total_value':
-                    $parsedFilter[$key] = $this->parseRangeFilter($value);
+                    $parsedFilter[$key] = $this->parseRangeFilter($value, $key);
                     break;
                 case 'kill_time':
                     $parsedFilter[$key] = $this->parseKillTimeFilter($value);
@@ -264,14 +268,14 @@ class Query
         return $parsedFilter;
     }
 
-    private function parseRangeFilter(array $range): array
+    private function parseRangeFilter(array $range, string $field): array
     {
         $filter = [];
         if (isset($range['lowest']) && $range['lowest'] !== null) {
-            $filter['$gte'] = $range['lowest'];
+            $filter['$gte'] = $this->validateNumber($range['lowest'], $field . '.lowest');
         }
         if (isset($range['highest']) && $range['highest'] !== null) {
-            $filter['$lte'] = $range['highest'];
+            $filter['$lte'] = $this->validateNumber($range['highest'], $field . '.highest');
         }
         return $filter;
     }
@@ -280,10 +284,10 @@ class Query
     {
         $filter = [];
         if (isset($range['lowest']) && $range['lowest'] !== null) {
-            $filter['$gte'] = new UTCDateTime($range['lowest'] * 1000);
+            $filter['$gte'] = new UTCDateTime($this->validatePositiveInteger($range['lowest'], 'kill_time.lowest') * 1000);
         }
         if (isset($range['highest']) && $range['highest'] !== null) {
-            $filter['$lte'] = new UTCDateTime($range['highest'] * 1000);
+            $filter['$lte'] = new UTCDateTime($this->validatePositiveInteger($range['highest'], 'kill_time.highest') * 1000);
         }
         return $filter;
     }
@@ -322,26 +326,64 @@ class Query
         return $filter;
     }
 
-    private function parseOptions(array $options): array
+    private function validatePositiveInteger($value, string $field): int
     {
-        $pipeline = [];
-
-        if (isset($options['sort'])) {
-            $pipeline[] = ['$sort' => $options['sort']];
+        $intValue = filter_var($value, FILTER_VALIDATE_INT);
+        if ($intValue === false || $intValue < 0) {
+            throw new InvalidArgumentException("$field must be a positive integer");
         }
+        return $intValue;
+    }
 
-        if (isset($options['skip'])) {
-            $pipeline[] = ['$skip' => $options['skip']];
+    private function validateNumber($value, string $field): float
+    {
+        if (!is_numeric($value)) {
+            throw new InvalidArgumentException("$field must be a number");
         }
+        return (float)$value;
+    }
 
-        if (isset($options['limit'])) {
-            $pipeline[] = ['$limit' => $options['limit']];
+    private function validateSort($sort): array
+    {
+        if (!is_array($sort)) {
+            throw new InvalidArgumentException("Sort must be an array");
         }
-
-        if (isset($options['projection'])) {
-            $pipeline[] = ['$project' => $options['projection']];
+        foreach ($sort as $field => $direction) {
+            if (!in_array($direction, [1, -1, 'asc', 'desc'])) {
+                throw new InvalidArgumentException("Invalid sort direction for $field");
+            }
+            $sort[$field] = $direction === 'asc' ? 1 : ($direction === 'desc' ? -1 : $direction);
         }
+        return $sort;
+    }
 
-        return $pipeline;
+    private function validateSkip($skip): int
+    {
+        return $this->validatePositiveInteger($skip, 'skip');
+    }
+
+    private function validateLimit($limit): int
+    {
+        $intValue = filter_var($limit, FILTER_VALIDATE_INT);
+        if ($intValue === false || $intValue < 1) {
+            throw new InvalidArgumentException("Limit must be a positive integer");
+        }
+        if ($intValue > 1000) {
+            throw new InvalidArgumentException("Limit cannot exceed 1000");
+        }
+        return $intValue;
+    }
+
+    private function validateProjection($projection): array
+    {
+        if (!is_array($projection)) {
+            throw new InvalidArgumentException("Projection must be an array");
+        }
+        foreach ($projection as $field => $include) {
+            if (!is_int($include) || ($include !== 0 && $include !== 1)) {
+                throw new InvalidArgumentException("Invalid projection value for $field");
+            }
+        }
+        return $projection;
     }
 }
