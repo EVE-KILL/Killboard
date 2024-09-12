@@ -180,15 +180,22 @@ class Query extends Controller
     #[RouteAttribute('/query[/]', ['POST'], 'Query the API for killmails')]
     public function query(): ResponseInterface
     {
-        $postData = json_validate($this->getBody())
-            ? json_decode($this->getBody(), true)
-            : [];
+        $rawBody = $this->getBody();
+        $postData = json_decode($rawBody, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            $errorMsg = json_last_error_msg();
+            return $this->json([
+                "error" => "Invalid JSON provided",
+                "details" => $errorMsg
+            ], 400);
+        }
 
         if (empty($postData)) {
             return $this->json(["error" => "No data provided"], 400);
         }
 
-        $cacheKey = $this->cache->generateKey("query", json_encode($postData));
+        $cacheKey = $this->cache->generateKey("query", $rawBody);
 
         try {
             $query = $this->generateQuery($postData);
