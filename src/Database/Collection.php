@@ -233,7 +233,7 @@ class Collection
         return $count;
     }
 
-    public function aproximateCount(array $filter = [], array $options = []): int
+    public function aproximateCount(array $options = []): int
     {
         $span = $this->startSpan('db.query', 'approximateCount', [
             'db.collection' => $this->collectionName,
@@ -241,7 +241,7 @@ class Collection
             'db.statement' => json_encode(compact('filter', 'options')),
         ]);
 
-        $count = $this->collection->estimatedDocumentCount($filter, $options);
+        $count = $this->collection->estimatedDocumentCount($options);
 
         $span->finish();
 
