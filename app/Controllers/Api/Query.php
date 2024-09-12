@@ -50,33 +50,27 @@ class Query extends Controller
 
         try {
             if ($simpleOrComplexQuery === 'complex') {
-                $query = $this->queryHelper->generateComplexQuery($postData);
+                $queryData = $this->queryHelper->generateComplexQuery($postData);
             } elseif ($simpleOrComplexQuery === 'simple') {
-                $query = $this->queryHelper->generateSimpleQuery($postData);
+                $queryData = $this->queryHelper->generateSimpleQuery($postData);
             } else {
                 return $this->json(["error" => "Invalid query type: " . $simpleOrComplexQuery], 400);
             }
 
-            $pipeline = $this->buildAggregatePipeline($query);
-
             if ($this->cache->exists($cacheKey)) {
                 $cachedData = $this->cache->get($cacheKey);
-                // Convert cached data to ensure kill_time is properly formatted
                 $cachedData = array_map([$this, 'prepareQueryResult'], $cachedData);
                 $cursor = new ArrayIterator($cachedData);
             } else {
-                $cursor = $this->killmails->collection->aggregate($pipeline);
+                $cursor = $this->killmails->collection->aggregate($queryData['pipeline']);
 
-                // Cache the results
                 $results = iterator_to_array($cursor);
-                $this->cache->set($cacheKey, $results, 300); // Cache for 5 minutes
+                $this->cache->set($cacheKey, $results, 300);
 
-                // Reset the cursor for streaming
                 $cursor = new ArrayIterator($results);
             }
 
-            // Stream the results
-            return $this->prepareAndStreamResults($cursor);
+            return $this->prepareAndStreamResultsWithPagination($cursor, $queryData['pagination']);
         } catch (InvalidArgumentException $e) {
             return $this->json(["error" => $e->getMessage()], 400);
         } catch (\Exception $e) {
@@ -104,12 +98,20 @@ class Query extends Controller
         return $data;
     }
 
-    protected function prepareAndStreamResults($cursor): ResponseInterface
+    protected function prepareAndStreamResultsWithPagination($cursor, array $pagination): ResponseInterface
     {
         $response = $this->response->withHeader('Content-Type', 'application/json');
         $body = $response->getBody();
 
-        $body->write('[');
+        $paginationJson = json_encode([
+            'pagination' => [
+                'totalCount' => $pagination['totalCount'],
+                'limit' => $pagination['limit'],
+                'page' => $pagination['page']
+            ]
+        ]);
+
+        $body->write(substr($paginationJson, 0, -1) . ',"killmails":[');
         $first = true;
 
         foreach ($cursor as $document) {
@@ -121,7 +123,7 @@ class Query extends Controller
             $first = false;
         }
 
-        $body->write(']');
+        $body->write(']}');
 
         return $response;
     }

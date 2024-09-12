@@ -238,7 +238,7 @@ class Collection
         $span = $this->startSpan('db.query', 'approximateCount', [
             'db.collection' => $this->collectionName,
             'db.operation' => 'estimatedDocumentCount',
-            'db.statement' => json_encode(compact('filter', 'options')),
+            'db.statement' => json_encode(compact('options')),
         ]);
 
         $count = $this->collection->estimatedDocumentCount($options);

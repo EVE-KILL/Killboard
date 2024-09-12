@@ -77,7 +77,41 @@ class Query
             }
         }
 
-        return $query;
+        $pipeline = [];
+        if (!empty($query['filter'])) {
+            $pipeline[] = ['$match' => $query['filter']];
+        }
+
+        if (isset($query['options']['sort'])) {
+            $pipeline[] = ['$sort' => $query['options']['sort']];
+        }
+
+        if (isset($query['options']['skip'])) {
+            $pipeline[] = ['$skip' => $query['options']['skip']];
+        }
+
+        if (isset($query['options']['limit'])) {
+            $pipeline[] = ['$limit' => $query['options']['limit']];
+        }
+
+        $pipeline[] = ['$project' => $query['options']['projection']];
+
+        $pagination = [
+            'totalCount' => 0,
+            'limit' => $query['options']['limit'] ?? 1000,
+            'page' => 1
+        ];
+
+        if (!empty($query['filter'])) {
+            $pagination['totalCount'] = $this->getQueryCount($query['filter']);
+            $pagination['page'] = floor(($query['options']['skip'] ?? 0) / $pagination['limit']) + 1;
+        }
+
+        return [
+            'query' => $query,
+            'pipeline' => $pipeline,
+            'pagination' => $pagination
+        ];
     }
 
     public function generateComplexQuery(array $input): array
@@ -129,7 +163,44 @@ class Query
             $query['options'] = array_merge($query['options'], $validatedOptions);
         }
 
-        return $query;
+        $pipeline = [];
+        if (!empty($query['filter'])) {
+            $pipeline[] = ['$match' => $query['filter']];
+        }
+        if (isset($query['options']['sort'])) {
+            $pipeline[] = ['$sort' => $query['options']['sort']];
+        }
+        if (isset($query['options']['skip'])) {
+            $pipeline[] = ['$skip' => $query['options']['skip']];
+        }
+        if (isset($query['options']['limit'])) {
+            $pipeline[] = ['$limit' => $query['options']['limit']];
+        }
+        if (isset($query['options']['projection'])) {
+            $pipeline[] = ['$project' => $query['options']['projection']];
+        }
+
+        $pagination = [
+            'totalCount' => 0,
+            'limit' => $query['options']['limit'] ?? 1000,
+            'page' => 1
+        ];
+
+        if (!empty($query['filter'])) {
+            $pagination['totalCount'] = $this->getQueryCount($query['filter']);
+            $pagination['page'] = floor(($query['options']['skip'] ?? 0) / $pagination['limit']) + 1;
+        }
+
+        return [
+            'query' => $query,
+            'pipeline' => $pipeline,
+            'pagination' => $pagination
+        ];
+    }
+
+    public function getQueryCount(array $filter): int
+    {
+        return $this->killmails->count($filter);
     }
 
     private function parseSimpleFilter(array $filter): array
@@ -345,12 +416,9 @@ class Query
     {
         $intValue = filter_var($limit, FILTER_VALIDATE_INT);
         if ($intValue === false || $intValue < 1) {
-            throw new InvalidArgumentException("Limit must be a positive integer");
+            return 1000; // Default to 1000 if the limit is invalid
         }
-        if ($intValue > 1000) {
-            throw new InvalidArgumentException("Limit cannot exceed 1000");
-        }
-        return $intValue;
+        return min($intValue, 1000); // Ensure the limit doesn't exceed 1000
     }
 
     private function validateProjection($projection): array
