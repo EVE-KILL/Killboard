@@ -99,7 +99,7 @@ class Query
         $pagination = [
             'totalCount' => -1,
             'limit' => $query['options']['limit'] ?? 1000,
-            'page' => 1
+            'page' => floor(($query['options']['skip'] ?? 0) / $query['options']['limit']) + 1
         ];
 
         if (!empty($query['filter'])) {
@@ -183,7 +183,7 @@ class Query
         $pagination = [
             'totalCount' => -1,
             'limit' => $query['options']['limit'] ?? 1000,
-            'page' => 1
+            'page' => floor(($query['options']['skip'] ?? 0) / $query['options']['limit']) + 1
         ];
 
         if (!empty($query['filter'])) {
