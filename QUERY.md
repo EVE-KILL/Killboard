@@ -226,3 +226,4 @@ json
 ```
 
 Remember, the API will always exclude `_id`, `last_modified`, and `kill_time_str` fields from the results. The `kill_time` field will be returned as a Unix timestamp.
+Also, the API will cache results for 5 minutes.
