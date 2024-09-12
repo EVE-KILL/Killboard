@@ -318,8 +318,6 @@ abstract class Controller
     {
         $response = $this->response->withStatus($status)
             ->withHeader('Content-Type', $contentType)
-            ->withAddedHeader('Access-Control-Allow-Origin', '*')
-            ->withAddedHeader('Access-Control-Allow-Methods', '*')
             ->withAddedHeader('X-Server', 'EVE-KILL/1.0');
 
         if ($cacheTime > 0) {
