@@ -21,10 +21,9 @@ class Query
     ];
     private const VALID_OPTIONS = ['sort', 'limit', 'skip', 'projection'];
 
-   public function __construct(
+    public function __construct(
         protected Killmails $killmails,
     ) {
-
     }
 
     public function generateSimpleQuery(array $input): array
@@ -133,108 +132,6 @@ class Query
         return $query;
     }
 
-    private function validateFilter($filter): array
-    {
-        $validatedFilter = [];
-
-        foreach ($filter as $key => $value) {
-            try {
-                if ($key === '$or') {
-                    if (!is_array($value)) {
-                        throw new InvalidArgumentException("Invalid \$or operator: value must be an object");
-                    }
-                    $orConditions = [];
-                    foreach ($value as $orKey => $orValue) {
-                        if (!in_array($orKey, self::VALID_FIELDS)) {
-                            throw new InvalidArgumentException("Invalid field in \$or condition: $orKey");
-                        }
-                        $orConditions[] = [$orKey => $this->validateFilterValue($orKey, $orValue)];
-                    }
-                    $validatedFilter[$key] = $orConditions;
-                } elseif (in_array($key, self::VALID_FIELDS)) {
-                    $validatedFilter[$key] = $this->validateFilterValue($key, $value);
-                } else {
-                    throw new InvalidArgumentException("Invalid filter field: $key");
-                }
-            } catch (InvalidArgumentException $e) {
-                throw new InvalidArgumentException("Error in filter: " . $e->getMessage());
-            }
-        }
-
-        return $validatedFilter;
-    }
-
-    private function validateFilterValue(string $key, $value): mixed
-    {
-        if (str_contains($key, '_id') && is_numeric($value)) {
-            return (int)$value; // Convert to integer for ID fields
-        }
-
-        if (is_array($value)) {
-            $validatedValue = [];
-            foreach ($value as $operator => $operand) {
-                if (in_array($operator, self::VALID_FILTERS)) {
-                    $validatedValue[$operator] = $operand;
-                } else {
-                    throw new InvalidArgumentException("Invalid filter operator: $operator");
-                }
-            }
-            return $validatedValue;
-        }
-        return $value;
-    }
-
-    private function validateOptions(array $options): array
-    {
-        $validatedOptions = [];
-        foreach ($options as $key => $value) {
-            if (!in_array($key, self::VALID_OPTIONS)) {
-                throw new InvalidArgumentException("Invalid option: $key");
-            }
-
-            switch ($key) {
-                case 'sort':
-                    if (is_array($value)) {
-                        foreach ($value as $field => $direction) {
-                            if (!in_array($field, self::VALID_FIELDS)) {
-                                throw new InvalidArgumentException("Invalid sort field: $field");
-                            }
-                            if (!in_array($direction, ['asc', 'desc', 1, -1])) {
-                                throw new InvalidArgumentException("Invalid sort direction for $field: $direction. Must be 'asc', 'desc', 1, or -1");
-                            }
-                            $validatedOptions[$key][$field] = $direction === 'asc' || $direction === 1 ? 1 : -1;
-                        }
-                    } elseif (is_string($value) && in_array($value, self::VALID_FIELDS)) {
-                        $validatedOptions[$key] = $value;
-                    } else {
-                        throw new InvalidArgumentException("Invalid sort value: " . json_encode($value));
-                    }
-                    break;
-                case 'limit':
-                case 'skip':
-                    if (!is_int($value) || $value < 0) {
-                        throw new InvalidArgumentException("Invalid $key: $value. Must be a non-negative integer");
-                    }
-                    $validatedOptions[$key] = $value;
-                    break;
-                case 'projection':
-                    if (!is_array($value)) {
-                        throw new InvalidArgumentException("Invalid projection: must be an array");
-                    }
-                    foreach ($value as $field => $include) {
-                        if (!in_array($include, [0, 1], true)) {
-                            throw new InvalidArgumentException("Invalid projection value for $field: must be 0 or 1");
-                        }
-                    }
-                    $validatedOptions[$key] = $value;
-                    break;
-                default:
-                    $validatedOptions[$key] = $value;
-            }
-        }
-        return $validatedOptions;
-    }
-
     private function parseSimpleFilter(array $filter): array
     {
         $parsedFilter = [];
@@ -326,6 +223,85 @@ class Query
         return $filter;
     }
 
+    private function validateFilter($filter): array
+    {
+        $validatedFilter = [];
+
+        foreach ($filter as $key => $value) {
+            try {
+                if ($key === '$or') {
+                    if (!is_array($value)) {
+                        throw new InvalidArgumentException("Invalid \$or operator: value must be an object");
+                    }
+                    $orConditions = [];
+                    foreach ($value as $orKey => $orValue) {
+                        if (!in_array($orKey, self::VALID_FIELDS)) {
+                            throw new InvalidArgumentException("Invalid field in \$or condition: $orKey");
+                        }
+                        $orConditions[] = [$orKey => $this->validateFilterValue($orKey, $orValue)];
+                    }
+                    $validatedFilter[$key] = $orConditions;
+                } elseif (in_array($key, self::VALID_FIELDS)) {
+                    $validatedFilter[$key] = $this->validateFilterValue($key, $value);
+                } else {
+                    throw new InvalidArgumentException("Invalid filter field: $key");
+                }
+            } catch (InvalidArgumentException $e) {
+                throw new InvalidArgumentException("Error in filter: " . $e->getMessage());
+            }
+        }
+
+        return $validatedFilter;
+    }
+
+    private function validateFilterValue(string $key, $value): mixed
+    {
+        if (str_contains($key, '_id') && is_numeric($value)) {
+            return (int)$value; // Convert to integer for ID fields
+        }
+
+        if (is_array($value)) {
+            $validatedValue = [];
+            foreach ($value as $operator => $operand) {
+                if (in_array($operator, self::VALID_FILTERS)) {
+                    $validatedValue[$operator] = $operand;
+                } else {
+                    throw new InvalidArgumentException("Invalid filter operator: $operator");
+                }
+            }
+            return $validatedValue;
+        }
+        return $value;
+    }
+
+    private function validateOptions(array $options): array
+    {
+        $validatedOptions = [];
+        foreach ($options as $key => $value) {
+            if (!in_array($key, self::VALID_OPTIONS)) {
+                throw new InvalidArgumentException("Invalid option: $key");
+            }
+
+            switch ($key) {
+                case 'sort':
+                    $validatedOptions[$key] = $this->validateSort($value);
+                    break;
+                case 'limit':
+                    $validatedOptions[$key] = $this->validateLimit($value);
+                    break;
+                case 'skip':
+                    $validatedOptions[$key] = $this->validateSkip($value);
+                    break;
+                case 'projection':
+                    $validatedOptions[$key] = $this->validateProjection($value);
+                    break;
+                default:
+                    $validatedOptions[$key] = $value;
+            }
+        }
+        return $validatedOptions;
+    }
+
     private function validatePositiveInteger($value, string $field): int
     {
         $intValue = filter_var($value, FILTER_VALIDATE_INT);
@@ -349,10 +325,13 @@ class Query
             throw new InvalidArgumentException("Sort must be an array");
         }
         foreach ($sort as $field => $direction) {
-            if (!in_array($direction, [1, -1, 'asc', 'desc'])) {
-                throw new InvalidArgumentException("Invalid sort direction for $field");
+            if (!in_array($field, self::VALID_FIELDS)) {
+                throw new InvalidArgumentException("Invalid sort field: $field");
             }
-            $sort[$field] = $direction === 'asc' ? 1 : ($direction === 'desc' ? -1 : $direction);
+            if (!in_array($direction, [1, -1, 'asc', 'desc'])) {
+                throw new InvalidArgumentException("Invalid sort direction for $field: $direction. Must be 'asc', 'desc', 1, or -1");
+            }
+            $sort[$field] = $direction === 'asc' || $direction === 1 ? 1 : -1;
         }
         return $sort;
     }
@@ -380,8 +359,8 @@ class Query
             throw new InvalidArgumentException("Projection must be an array");
         }
         foreach ($projection as $field => $include) {
-            if (!is_int($include) || ($include !== 0 && $include !== 1)) {
-                throw new InvalidArgumentException("Invalid projection value for $field");
+            if (!in_array($include, [0, 1], true)) {
+                throw new InvalidArgumentException("Invalid projection value for $field: must be 0 or 1");
             }
         }
         return $projection;
