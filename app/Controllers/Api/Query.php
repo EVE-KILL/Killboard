@@ -47,12 +47,10 @@ class Query extends Controller
         ];
 
         if (isset($input['filter']) && is_array($input['filter'])) {
-            foreach ($input['filter'] as $key => $value) {
-                if (in_array($key, self::VALID_FIELDS)) {
-                    $query['filter'][$key] = $this->validateFilter($key, $value);
-                } else {
-                    throw new InvalidArgumentException("Invalid filter field: $key");
-                }
+            try {
+                $query['filter'] = $this->validateFilter($input['filter']);
+            } catch (InvalidArgumentException $e) {
+                throw new InvalidArgumentException("Error in filter: " . $e->getMessage());
             }
         }
 
@@ -86,10 +84,41 @@ class Query extends Controller
         return $query;
     }
 
-    private function validateFilter(string $key, $value): mixed
+    private function validateFilter($filter): array
     {
-        if (str_contains($key, '_id') && (!is_int($value) || $value < 0)) {
-            throw new InvalidArgumentException("Invalid value for $key: must be a non-negative integer");
+        $validatedFilter = [];
+
+        foreach ($filter as $key => $value) {
+            try {
+                if ($key === '$or') {
+                    if (!is_array($value)) {
+                        throw new InvalidArgumentException("Invalid \$or operator: value must be an object");
+                    }
+                    $orConditions = [];
+                    foreach ($value as $orKey => $orValue) {
+                        if (!in_array($orKey, self::VALID_FIELDS)) {
+                            throw new InvalidArgumentException("Invalid field in \$or condition: $orKey");
+                        }
+                        $orConditions[] = [$orKey => $this->validateFilterValue($orKey, $orValue)];
+                    }
+                    $validatedFilter[$key] = $orConditions;
+                } elseif (in_array($key, self::VALID_FIELDS)) {
+                    $validatedFilter[$key] = $this->validateFilterValue($key, $value);
+                } else {
+                    throw new InvalidArgumentException("Invalid filter field: $key");
+                }
+            } catch (InvalidArgumentException $e) {
+                throw new InvalidArgumentException("Error in filter: " . $e->getMessage());
+            }
+        }
+
+        return $validatedFilter;
+    }
+
+    private function validateFilterValue(string $key, $value): mixed
+    {
+        if (str_contains($key, '_id') && is_numeric($value)) {
+            return (int)$value; // Convert to integer for ID fields
         }
 
         if (is_array($value)) {
