@@ -97,7 +97,7 @@ class Query
         $pipeline[] = ['$project' => $query['options']['projection']];
 
         $pagination = [
-            'totalCount' => 0,
+            'totalCount' => -1,
             'limit' => $query['options']['limit'] ?? 1000,
             'page' => 1
         ];
@@ -181,7 +181,7 @@ class Query
         }
 
         $pagination = [
-            'totalCount' => 0,
+            'totalCount' => -1,
             'limit' => $query['options']['limit'] ?? 1000,
             'page' => 1
         ];
