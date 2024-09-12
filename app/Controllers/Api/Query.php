@@ -4,313 +4,269 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Helpers\Query as HelpersQuery;
+use EK\Cache\Cache;
+use EK\Models\Killmails;
 use Psr\Http\Message\ResponseInterface;
+use InvalidArgumentException;
+use MongoDB\BSON\UTCDateTime;
 
 class Query extends Controller
 {
+    private const VALID_FILTERS = ['$gt', '$gte', '$lt', '$lte', '$eq', '$ne', '$in', '$nin', '$exists'];
+    private const VALID_FIELDS = [
+        'killmail_id', 'dna', 'is_npc', 'is_solo', 'point_value', 'region_id', 'system_id',
+        'system_security', 'total_value', 'war_id', 'kill_time',
+        'victim.ship_id', 'victim.ship_group_id', 'victim.character_id', 'victim.corporation_id',
+        'victim.alliance_id', 'victim.faction_id',
+        'attackers.ship_id', 'attackers.ship_group_id', 'attackers.character_id',
+        'attackers.corporation_id', 'attackers.alliance_id', 'attackers.faction_id',
+        'attackers.weapon_type_id',
+        'item.type_id', 'item.group_id'
+    ];
+    private const VALID_OPTIONS = ['sort', 'limit', 'skip', 'projection'];
+
     public function __construct(
-        protected HelpersQuery $queryHelper,
-    ) {}
+        protected Killmails $killmails,
+        protected Cache $cache,
+    ) {
+    }
 
-    protected function validateParams(string $params): array
+    protected function generateQuery(array $input): array
     {
-        // Explode on /, remove trailing /
-        $params = explode("/", rtrim($params, '/'));
-        $validParams = array_merge($this->queryHelper->validQueryParams, $this->queryHelper->validSortParams);
+        $query = [
+            'filter' => [],
+            'options' => [
+                'projection' => [
+                    '_id' => 0,
+                    'last_modified' => 0,
+                    'kill_time_str' => 0,
+                    'emitted' => 0,
+                ]
+            ]
+        ];
 
-        $count = 0;
-        $tempParams = [];
-
-        if (count($params) >= 2) {
-            foreach ($params as $param) {
-                if (empty($param)) {
-                    continue;
+        if (isset($input['filter']) && is_array($input['filter'])) {
+            foreach ($input['filter'] as $key => $value) {
+                if (in_array($key, self::VALID_FIELDS)) {
+                    $query['filter'][$key] = $this->validateFilter($key, $value);
+                } else {
+                    throw new InvalidArgumentException("Invalid filter field: $key");
                 }
-
-                // Get key-value pairs
-                if ($count % 2 == 0) {
-                    $key = $param;
-                    $value = $params[$count + 1] ?? null;
-
-                    // Check if the parameter is valid
-                    if (isset($validParams[$key])) {
-                        $expectedType = $validParams[$key];
-
-                        // Typecast based on the expected type
-                        $castedValue = $this->castValue($value, $expectedType);
-
-                        if ($castedValue !== null) {
-                            // If the key already exists, convert it to an array or append to the existing array
-                            if (isset($tempParams[$key])) {
-                                if (!is_array($tempParams[$key])) {
-                                    $tempParams[$key] = [$tempParams[$key]];
-                                }
-                                $tempParams[$key][] = $castedValue;
-                            } else {
-                                $tempParams[$key] = $castedValue;
-                            }
-                        } else {
-                            throw new \InvalidArgumentException("Invalid type for parameter '$key'. Expected $expectedType.");
-                        }
-                    } else {
-                        throw new \InvalidArgumentException("Invalid parameter '$key' provided.");
-                    }
-                }
-
-                $count++;
             }
         }
 
-        // Apply additional validation for specific parameters
-        $tempParams['page'] = $tempParams['page'] ?? 1;
-        $tempParams['limit'] = $tempParams['limit'] ?? 1000;
-        $tempParams['offset'] = $tempParams['offset'] ?? 0;
-        $tempParams['order'] = $tempParams['order'] ?? 'DESC';
+        if (isset($input['options']) && is_array($input['options'])) {
+            $validatedOptions = $this->validateOptions($input['options']);
 
-        // Adjust offset based on page and limit
-        if ($tempParams['page'] > 1) {
-            $tempParams['offset'] = $tempParams['limit'] * ($tempParams['page'] - 1);
-        }
-
-        // Enforce limits on 'limit'
-        if ($tempParams['limit'] > 1000) {
-            $tempParams['limit'] = 1000;
-        } elseif ($tempParams['limit'] < 1) {
-            $tempParams['limit'] = 1;
-        }
-
-        // Validate the 'order' parameter
-        $validOrder = ['ASC', 'DESC'];
-        if (!in_array(strtoupper($tempParams['order']), $validOrder, true)) {
-            $tempParams['order'] = 'DESC';
-        }
-
-        return $tempParams;
-    }
-
-    private function castValue($value, string $type): mixed
-    {
-        switch ($type) {
-            case 'int':
-                return is_numeric($value) ? (int)$value : null;
-            case 'float':
-                return is_numeric($value) ? (float)$value : null;
-            case 'bool':
-                $lowerValue = strtolower($value);
-                if (in_array($lowerValue, ['true', '1'], true)) {
-                    return true;
-                } elseif (in_array($lowerValue, ['false', '0'], true)) {
-                    return false;
+            // Handle projection separately
+            if (isset($validatedOptions['projection'])) {
+                // If user specified fields to include, we switch to inclusion mode
+                if (array_search(1, $validatedOptions['projection']) !== false) {
+                    $query['options']['projection'] = ['_id' => 0];  // Start with excluding _id
+                    foreach ($validatedOptions['projection'] as $field => $include) {
+                        if ($include) {
+                            $query['options']['projection'][$field] = 1;
+                        }
+                    }
+                } else {
+                    // Otherwise, we're in exclusion mode, so we merge with existing exclusions
+                    $query['options']['projection'] = array_merge(
+                        $query['options']['projection'],
+                        $validatedOptions['projection']
+                    );
                 }
-                return null;
-            case 'datetime':
-                $datetime = \DateTime::createFromFormat('Y-m-d H:i:s', $value);
-                return $datetime ? $datetime : null;
-            case 'string':
-                return is_string($value) ? (string)$value : null;
-            default:
-                return null;
+                unset($validatedOptions['projection']);
+            }
+
+            // Merge other options
+            $query['options'] = array_merge($query['options'], $validatedOptions);
+        }
+
+        return $query;
+    }
+
+    private function validateFilter(string $key, $value): mixed
+    {
+        if (str_contains($key, '_id') && (!is_int($value) || $value < 0)) {
+            throw new InvalidArgumentException("Invalid value for $key: must be a non-negative integer");
+        }
+
+        if (is_array($value)) {
+            $validatedValue = [];
+            foreach ($value as $operator => $operand) {
+                if (in_array($operator, self::VALID_FILTERS)) {
+                    $validatedValue[$operator] = $operand;
+                } else {
+                    throw new InvalidArgumentException("Invalid filter operator: $operator");
+                }
+            }
+            return $validatedValue;
+        }
+        return $value;
+    }
+
+    private function validateOptions(array $options): array
+    {
+        $validatedOptions = [];
+        foreach ($options as $key => $value) {
+            if (!in_array($key, self::VALID_OPTIONS)) {
+                throw new InvalidArgumentException("Invalid option: $key");
+            }
+
+            switch ($key) {
+                case 'sort':
+                    if (is_array($value)) {
+                        foreach ($value as $field => $direction) {
+                            if (!in_array($field, self::VALID_FIELDS)) {
+                                throw new InvalidArgumentException("Invalid sort field: $field");
+                            }
+                            if (!in_array($direction, ['asc', 'desc', 1, -1])) {
+                                throw new InvalidArgumentException("Invalid sort direction for $field: $direction. Must be 'asc', 'desc', 1, or -1");
+                            }
+                            $validatedOptions[$key][$field] = $direction === 'asc' || $direction === 1 ? 1 : -1;
+                        }
+                    } elseif (is_string($value) && in_array($value, self::VALID_FIELDS)) {
+                        $validatedOptions[$key] = $value;
+                    } else {
+                        throw new InvalidArgumentException("Invalid sort value: " . json_encode($value));
+                    }
+                    break;
+                case 'limit':
+                case 'skip':
+                    if (!is_int($value) || $value < 0) {
+                        throw new InvalidArgumentException("Invalid $key: $value. Must be a non-negative integer");
+                    }
+                    $validatedOptions[$key] = $value;
+                    break;
+                case 'projection':
+                    if (!is_array($value)) {
+                        throw new InvalidArgumentException("Invalid projection: must be an array");
+                    }
+                    foreach ($value as $field => $include) {
+                        if (!in_array($include, [0, 1], true)) {
+                            throw new InvalidArgumentException("Invalid projection value for $field: must be 0 or 1");
+                        }
+                    }
+                    $validatedOptions[$key] = $value;
+                    break;
+                default:
+                    $validatedOptions[$key] = $value;
+            }
+        }
+        return $validatedOptions;
+    }
+
+    protected function prepareQueryResult(array $data): array
+    {
+        foreach ($data as $key => $value) {
+            // Convert kill_time to Unix timestamp
+            if ($key === 'kill_time') {
+                if ($value instanceof UTCDateTime) {
+                    $data[$key] = $value->toDateTime()->getTimestamp();
+                } elseif (is_array($value) && isset($value['$date']['$numberLong'])) {
+                    $data[$key] = (int)($value['$date']['$numberLong'] / 1000); // Convert milliseconds to seconds
+                }
+            }
+            // Handle nested arrays
+            elseif (is_array($value)) {
+                $data[$key] = $this->prepareQueryResult($value);
+            }
+        }
+
+        return $data;
+    }
+
+    #[RouteAttribute('/query[/]', ['POST'], 'Query the API for killmails')]
+    public function query(): ResponseInterface
+    {
+        $postData = json_validate($this->getBody())
+            ? json_decode($this->getBody(), true)
+            : [];
+
+        if (empty($postData)) {
+            return $this->json(["error" => "No data provided"], 400);
+        }
+
+        $cacheKey = $this->cache->generateKey("query", json_encode($postData));
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult);
+        }
+
+        try {
+            $query = $this->generateQuery($postData);
+            $pipeline = $this->buildAggregatePipeline($query);
+            $cursor = $this->killmails->collection->aggregate($pipeline);
+
+            // Cache the results
+            $results = iterator_to_array($cursor);
+            $this->cache->set($cacheKey, $results, 300);
+
+            // Reset the cursor to the beginning
+            $cursor = new \ArrayIterator($results);
+
+            // Stream the results
+            return $this->prepareAndStreamResults($cursor);
+        } catch (InvalidArgumentException $e) {
+            return $this->json(["error" => $e->getMessage()], 400);
+        } catch (\Exception $e) {
+            return $this->json(["error" => $e->getMessage()], 500);
         }
     }
 
-    // System
-    #[RouteAttribute("/query/system/{systemId:[0-9]+}[/{params:.*}]", ["GET"], "Query system for killmails")]
-    public function querySystem(int $systemId, string $params): ResponseInterface
+    protected function prepareAndStreamResults($cursor): ResponseInterface
     {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getBySystemId($systemId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
+        $response = $this->response->withHeader('Content-Type', 'application/json');
+        $body = $response->getBody();
+
+        $body->write('[');
+        $first = true;
+
+        foreach ($cursor as $document) {
+            $preparedDocument = $this->prepareQueryResult($document);
+            if (!$first) {
+                $body->write(',');
+            }
+            $body->write(json_encode($preparedDocument));
+            $first = false;
+        }
+
+        $body->write(']');
+
+        return $response;
     }
 
-    // Region
-    #[RouteAttribute("/query/region/{regionId:[0-9]+}[/{params:.*}]", ["GET"], "Query region for killmails")]
-    public function queryRegion(int $regionId, string $params): ResponseInterface
+    private function buildAggregatePipeline(array $query): array
     {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getByRegionId($regionId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
+        $pipeline = [];
 
-    // Character
-    #[RouteAttribute("/query/character/{characterId:[0-9]+}[/{params:.*}]", ["GET"], "Query character for killmails")]
-    public function queryCharacter(int $characterId, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getByCharacterId($characterId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
+        // $match stage
+        if (!empty($query['filter'])) {
+            $pipeline[] = ['$match' => $query['filter']];
+        }
 
-    // Corporation
-    #[RouteAttribute("/query/corporation/{corporationId:[0-9]+}[/{params:.*}]", ["GET"], "Query corporation for killmails")]
-    public function queryCorporation(int $corporationId, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getByCorporationId($corporationId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
+        // $sort stage
+        if (isset($query['options']['sort'])) {
+            $pipeline[] = ['$sort' => $query['options']['sort']];
+        }
 
-    // Alliance
-    #[RouteAttribute("/query/alliance/{allianceId:[0-9]+}[/{params:.*}]", ["GET"], "Query alliance for killmails")]
-    public function queryAlliance(int $allianceId, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getByAllianceId($allianceId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
+        // $skip stage
+        if (isset($query['options']['skip'])) {
+            $pipeline[] = ['$skip' => $query['options']['skip']];
+        }
 
-    // Faction
-    #[RouteAttribute("/query/faction/{factionId:[0-9]+}[/{params:.*}]", ["GET"], "Query faction for killmails")]
-    public function queryFaction(int $factionId, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getByFactionId($factionId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
+        // $limit stage
+        if (isset($query['options']['limit'])) {
+            $pipeline[] = ['$limit' => $query['options']['limit']];
+        }
 
-    // WeaponType
-    #[RouteAttribute("/query/weapon/{weaponId:[0-9]+}[/{params:.*}]", ["GET"], "Query weapon for killmails")]
-    public function queryWeapon(int $weaponId, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getByWeaponTypeId($weaponId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
+        // $project stage
+        if (isset($query['options']['projection'])) {
+            $pipeline[] = ['$project' => $query['options']['projection']];
+        }
 
-    // Ship
-    #[RouteAttribute("/query/ship/{shipId:[0-9]+}[/{params:.*}]", ["GET"], "Query ship for killmails")]
-    public function queryShip(int $shipId, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getByShipId($shipId, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // AfterDate
-    #[RouteAttribute("/query/after/{unixTime:[0-9]+}[/{params:.*}]", ["GET"], "Query after date for killmails")]
-    public function queryAfterDate(string $unixTime, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getAfterDate($unixTime, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // BeforeDate
-    #[RouteAttribute("/query/before/{unixTime:[0-9]+}[/{params:.*}]", ["GET"], "Query before date for killmails")]
-    public function queryBeforeDate(string $unixTime, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getBeforeDate($unixTime, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // BetweenDates
-    #[RouteAttribute("/query/between/{unixTimeFrom:[0-9]+}/{unixTimeTill:[0-9]+}[/{params:.*}]", ["GET"], "Query between dates for killmails")]
-    public function queryBetweenDates(string $unixTimeFrom, string $unixTimeTill, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->getBetweenDates($unixTimeFrom, $unixTimeTill, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // TotalValueLess
-    #[RouteAttribute("/query/totalValue/less/{value:[0-9]+}[/{params:.*}]", ["GET"], "Query total value less for killmails")]
-    public function queryTotalValueLess(float $value, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->totalValueLess($value, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // TotalValueMore
-    #[RouteAttribute("/query/totalValue/more/{value:[0-9]+}[/{params:.*}]", ["GET"], "Query total value more for killmails")]
-    public function queryTotalValueMore(float $value, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->totalValueMore($value, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // TotalValueBetween
-    #[RouteAttribute("/query/totalValue/between/{valueFrom:[0-9]+}/{valueTill:[0-9]+}[/{params:.*}]", ["GET"], "Query total value between for killmails")]
-    public function queryTotalValueBetween(float $valueFrom, float $valueTill, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->totalValueBetween($valueFrom, $valueTill, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // ShipValueLess
-    #[RouteAttribute("/query/shipValue/less/{value:[0-9]+}[/{params:.*}]", ["GET"], "Query ship value less for killmails")]
-    public function queryShipValueLess(float $value, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->shipValueLess($value, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // ShipValueMore
-    #[RouteAttribute("/query/shipValue/more/{value:[0-9]+}[/{params:.*}]", ["GET"], "Query ship value more for killmails")]
-    public function queryShipValueMore(float $value, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->shipValueMore($value, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // ShipValueBetween
-    #[RouteAttribute("/query/shipValue/between/{value1:[0-9]+}/{value2:[0-9]+}[/{params:.*}]", ["GET"], "Query ship value between for killmails")]
-    public function queryShipValueBetween(float $value1, float $value2, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->shipValueBetween($value1, $value2, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // PointValueLess
-    #[RouteAttribute("/query/pointValue/less/{value:[0-9]+}[/{params:.*}]", ["GET"], "Query point value less for killmails")]
-    public function queryPointValueLess(float $value, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->pointValueLess($value, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // PointValueMore
-    #[RouteAttribute("/query/pointValue/more/{value:[0-9]+}[/{params:.*}]", ["GET"], "Query point value more for killmails")]
-    public function queryPointValueMore(float $value, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->pointValueMore($value, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
-    }
-
-    // PointValueBetween
-    #[RouteAttribute("/query/pointValue/between/{valueFrom:[0-9]+}/{valueTill:[0-9]+}[/{params:.*}]", ["GET"], "Query point value between for killmails")]
-    public function queryPointValueBetween(float $valueFrom, float $valueTill, string $params): ResponseInterface
-    {
-        $params = $this->validateParams($params);
-        $result = $this->queryHelper->pointValueBetween($valueFrom, $valueTill, $params);
-        $result = $this->cleanupTimestamps($result);
-        return $this->json($result);
+        return $pipeline;
     }
 }
