@@ -2,6 +2,7 @@
 
 namespace EK\Controllers\Api;
 
+use ArrayIterator;
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Cache\Cache;
@@ -188,24 +189,26 @@ class Query extends Controller
         }
 
         $cacheKey = $this->cache->generateKey("query", json_encode($postData));
-        if (
-            $this->cache->exists($cacheKey) &&
-            !empty(($cacheResult = $this->cache->get($cacheKey)))
-        ) {
-            return $this->json($cacheResult);
-        }
 
         try {
             $query = $this->generateQuery($postData);
             $pipeline = $this->buildAggregatePipeline($query);
-            $cursor = $this->killmails->collection->aggregate($pipeline);
 
-            // Cache the results
-            $results = iterator_to_array($cursor);
-            $this->cache->set($cacheKey, $results, 300);
+            if ($this->cache->exists($cacheKey)) {
+                $cachedData = $this->cache->get($cacheKey);
+                // Convert cached data to ensure kill_time is properly formatted
+                $cachedData = array_map([$this, 'prepareQueryResult'], $cachedData);
+                $cursor = new ArrayIterator($cachedData);
+            } else {
+                $cursor = $this->killmails->collection->aggregate($pipeline);
 
-            // Reset the cursor to the beginning
-            $cursor = new \ArrayIterator($results);
+                // Cache the results
+                $results = iterator_to_array($cursor);
+                $this->cache->set($cacheKey, $results, 300); // Cache for 5 minutes
+
+                // Reset the cursor for streaming
+                $cursor = new ArrayIterator($results);
+            }
 
             // Stream the results
             return $this->prepareAndStreamResults($cursor);
