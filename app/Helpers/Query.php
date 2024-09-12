@@ -4,6 +4,7 @@ namespace EK\Helpers;
 
 use EK\Models\Killmails;
 use InvalidArgumentException;
+use MongoDB\BSON\UTCDateTime;
 
 class Query
 {
@@ -30,8 +31,14 @@ class Query
     {
         $query = [
             'filter' => [],
-            'involved_entities_matches' => [],
-            'options' => []
+            'options' => [
+                'projection' => [
+                    '_id' => 0,
+                    'last_modified' => 0,
+                    'kill_time_str' => 0,
+                    'emitted' => 0,
+                ]
+            ]
         ];
 
         if (isset($input['filter'])) {
@@ -39,13 +46,36 @@ class Query
         }
 
         if (isset($input['filter']['involved_entities'])) {
+            $involvedEntitiesFilter = [];
             foreach ($input['filter']['involved_entities'] as $entity) {
-                $query['involved_entities_matches'][] = ['$match' => $this->parseInvolvedEntity($entity)];
+                $entityFilter = $this->parseInvolvedEntity($entity);
+                if (!empty($entityFilter)) {
+                    $involvedEntitiesFilter[] = $entityFilter;
+                }
+            }
+            if (count($involvedEntitiesFilter) === 1) {
+                $query['filter'] = array_merge($query['filter'], $involvedEntitiesFilter[0]);
+            } elseif (count($involvedEntitiesFilter) > 1) {
+                $query['filter']['$and'] = $involvedEntitiesFilter;
             }
         }
 
         if (isset($input['options'])) {
-            $query['options'] = $input['options'];
+            if (isset($input['options']['sort'])) {
+                $query['options']['sort'] = $input['options']['sort'];
+            }
+            if (isset($input['options']['skip'])) {
+                $query['options']['skip'] = $input['options']['skip'];
+            }
+            if (isset($input['options']['limit'])) {
+                $query['options']['limit'] = $input['options']['limit'];
+            }
+            if (isset($input['options']['projection'])) {
+                $query['options']['projection'] = array_merge(
+                    $query['options']['projection'],
+                    $input['options']['projection']
+                );
+            }
         }
 
         return $query;
@@ -223,8 +253,10 @@ class Query
                     break;
                 case 'system_security':
                 case 'total_value':
-                case 'kill_time':
                     $parsedFilter[$key] = $this->parseRangeFilter($value);
+                    break;
+                case 'kill_time':
+                    $parsedFilter[$key] = $this->parseKillTimeFilter($value);
                     break;
             }
         }
@@ -244,23 +276,46 @@ class Query
         return $filter;
     }
 
-    private function parseInvolvedEntity(array $entity): array
+    private function parseKillTimeFilter(array $range): array
     {
         $filter = [];
-        $idField = $entity['entity_type'] . '_id';
-
-        if ($entity['involved_as'] === 'both' || $entity['involved_as'] === 'victim') {
-            $filter['victim.' . $idField] = $entity['entity_id'];
+        if (isset($range['lowest']) && $range['lowest'] !== null) {
+            $filter['$gte'] = new UTCDateTime($range['lowest'] * 1000);
         }
+        if (isset($range['highest']) && $range['highest'] !== null) {
+            $filter['$lte'] = new UTCDateTime($range['highest'] * 1000);
+        }
+        return $filter;
+    }
 
-        if ($entity['involved_as'] === 'both' || $entity['involved_as'] === 'attacker') {
-            $filter['attackers.' . $idField] = $entity['entity_id'];
+    private function parseInvolvedEntity(array $entity): array
+    {
+        $idField = $entity['entity_type'] . '_id';
+        $victimField = 'victim.' . $idField;
+        $attackerField = 'attackers.' . $idField;
+
+        $filter = [];
+
+        if ($entity['involved_as'] === 'both') {
+            $filter['$or'] = [
+                [$victimField => $entity['entity_id']],
+                [$attackerField => $entity['entity_id']]
+            ];
+        } elseif ($entity['involved_as'] === 'victim') {
+            $filter[$victimField] = $entity['entity_id'];
+        } elseif ($entity['involved_as'] === 'attacker') {
+            $filter[$attackerField] = $entity['entity_id'];
         }
 
         foreach (['ship_id', 'ship_group_id', 'weapon_type_id'] as $field) {
             if (isset($entity[$field]) && $entity[$field] !== null) {
-                $prefix = $entity['involved_as'] === 'victim' ? 'victim.' : 'attackers.';
-                $filter[$prefix . $field] = $entity[$field];
+                if ($entity['involved_as'] === 'both') {
+                    $filter['$or'][0]['victim.' . $field] = $entity[$field];
+                    $filter['$or'][1]['attackers.' . $field] = $entity[$field];
+                } else {
+                    $prefix = $entity['involved_as'] === 'victim' ? 'victim.' : 'attackers.';
+                    $filter[$prefix . $field] = $entity[$field];
+                }
             }
         }
 
