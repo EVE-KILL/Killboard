@@ -82,10 +82,6 @@ class Query
             $pipeline[] = ['$match' => $query['filter']];
         }
 
-        if (isset($query['options']['sort'])) {
-            $pipeline[] = ['$sort' => $query['options']['sort']];
-        }
-
         if (isset($query['options']['skip'])) {
             $pipeline[] = ['$skip' => $query['options']['skip']];
         }
@@ -95,6 +91,9 @@ class Query
         }
 
         $pipeline[] = ['$project' => $query['options']['projection']];
+
+        // Set the sort to kill_time descending
+        $pipeline[] = ['$sort' => ['kill_time' => -1]];
 
         $pagination = [
             'totalCount' => -1,
@@ -167,9 +166,6 @@ class Query
         if (!empty($query['filter'])) {
             $pipeline[] = ['$match' => $query['filter']];
         }
-        if (isset($query['options']['sort'])) {
-            $pipeline[] = ['$sort' => $query['options']['sort']];
-        }
         if (isset($query['options']['skip'])) {
             $pipeline[] = ['$skip' => $query['options']['skip']];
         }
@@ -179,6 +175,9 @@ class Query
         if (isset($query['options']['projection'])) {
             $pipeline[] = ['$project' => $query['options']['projection']];
         }
+
+        // Set the sort to kill_time descending
+        $pipeline[] = ['$sort' => ['kill_time' => -1]];
 
         $pagination = [
             'totalCount' => -1,

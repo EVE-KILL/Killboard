@@ -62,7 +62,7 @@ class Query extends Controller
                 $cachedData = array_map([$this, 'prepareQueryResult'], $cachedData);
                 $cursor = new ArrayIterator($cachedData);
             } else {
-                $cursor = $this->killmails->collection->aggregate($queryData['pipeline']);
+                $cursor = $this->killmails->collection->aggregate($queryData['pipeline'], ['hint' => ['kill_time' => -1]]);
 
                 $results = iterator_to_array($cursor);
                 $this->cache->set($cacheKey, $results, 300);
