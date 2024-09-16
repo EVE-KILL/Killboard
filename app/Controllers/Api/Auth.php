@@ -24,8 +24,9 @@ class Auth extends Controller
     #[RouteAttribute("/auth/eve/getloginurl[/]", ["GET"], "Get the EVE SSO login URL")]
     public function getLoginUrl(): ResponseInterface
     {
+        $noScope = (bool) $this->getParam('noscope', false);
         return $this->json([
-            'url' => $this->sso->getLoginUrl()
+            'url' => $this->sso->getLoginUrl($noScope)
         ]);
     }
 
@@ -40,7 +41,7 @@ class Auth extends Controller
         $refreshToken = $auth->getToken()->getRefreshToken();
         $accessToken = $auth->getToken()->getToken();
         $expires = $auth->getToken()->getExpires();
-
+        $scopes = $auth->getScopes();
         // Return a unique hash that the frontend can use to authenticate, this hash should be stored in the cache with a TTL of 5 seconds
         $loginHash = base64_encode(json_encode([
             'characterId' => $characterId,
@@ -58,7 +59,8 @@ class Auth extends Controller
             'character_owner_hash' => $characterOwnerHash,
             'refresh_token' => $refreshToken,
             'access_token' => $accessToken,
-            'sso_expires' => $expires
+            'sso_expires' => $expires,
+            'scopes' => $scopes
         ]);
         $this->users->save();
 

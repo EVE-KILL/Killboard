@@ -146,7 +146,8 @@ abstract class Controller
      */
     protected function getParam(string $key, mixed $default = null): mixed
     {
-        return $this->getParams()->get($key, $default);
+        $result = $this->getParams()[$key] ?? $default;
+        return $result;
     }
 
     /**
@@ -168,7 +169,7 @@ abstract class Controller
      */
     protected function getPostParam(string $key): mixed
     {
-        return $this->getPostParams()->get($key);
+        return $this->getPostParams()[$key];
     }
 
     /**
@@ -213,7 +214,7 @@ abstract class Controller
      */
     protected function getHeader(string $key): ?string
     {
-        return $this->getHeaders()->get($key);
+        return $this->getHeaders()[$key];
     }
 
     /**
