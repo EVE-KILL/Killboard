@@ -110,12 +110,12 @@ class ProcessKillmail extends Jobs
         }
 
         // Solo
-        if (count($parsedKillmail['is_solo']) === true) {
+        if ($parsedKillmail['is_solo'] === true) {
             $routingKeys[] = 'solo';
         }
 
         // NPC
-        if (count($parsedKillmail['is_npc']) === true) {
+        if ($parsedKillmail['is_npc'] === true) {
             $routingKeys[] = 'npc';
         }
 
