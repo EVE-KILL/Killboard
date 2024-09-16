@@ -140,8 +140,10 @@ class Stats extends Controller
             ]
         );
 
-        $this->cache->set($cacheKey, iterator_to_array($kills), 300);
-        return $this->json(iterator_to_array($kills), 300);
+        $kills = iterator_to_array($kills);
+        $kills = $this->cleanupTimestamps($kills);
+        $this->cache->set($cacheKey, $kills, 300);
+        return $this->json($kills, 300);
     }
 
     #[RouteAttribute("/stats/mostvaluablestructures/{days:[0-9]+}[/{limit:[0-9]+}]", ["GET"], "Get most valuable structure kills")]
@@ -176,8 +178,10 @@ class Stats extends Controller
             ]
         );
 
-        $this->cache->set($cacheKey, iterator_to_array($kills), 300);
-        return $this->json(iterator_to_array($kills), 300);
+        $kills = iterator_to_array($kills);
+        $kills = $this->cleanupTimestamps($kills);
+        $this->cache->set($cacheKey, $kills, 300);
+        return $this->json($kills, 300);
     }
 
     #[RouteAttribute("/stats/mostvaluableships/{days:[0-9]+}[/{limit:[0-9]+}]", ["GET"], "Get most valuable ship kills")]
@@ -212,8 +216,10 @@ class Stats extends Controller
             ]
         );
 
-        $this->cache->set($cacheKey, iterator_to_array($kills), 300);
-        return $this->json(iterator_to_array($kills), 300);
+        $kills = iterator_to_array($kills);
+        $kills = $this->cleanupTimestamps($kills);
+        $this->cache->set($cacheKey, $kills, 300);
+        return $this->json($kills, 300);
     }
 
     #[RouteAttribute("/stats/killcount/[/{days:[0-9]+}]", ["GET"], "Get kill count")]

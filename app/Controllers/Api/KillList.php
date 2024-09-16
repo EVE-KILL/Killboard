@@ -19,13 +19,13 @@ class KillList extends Controller
     public function latest(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getLatest($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -34,13 +34,13 @@ class KillList extends Controller
     public function abyssal(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getAbyssal($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -49,13 +49,13 @@ class KillList extends Controller
     public function wspace(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getWspace($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -64,13 +64,13 @@ class KillList extends Controller
     public function highsec(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getHighsec($page, 100, 300);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -79,13 +79,13 @@ class KillList extends Controller
     public function lowsec(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getLowsec($page, 100, 300);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -94,13 +94,13 @@ class KillList extends Controller
     public function nullsec(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getNullsec($page, 100, 300);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -109,13 +109,13 @@ class KillList extends Controller
     public function big(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getBigKills($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -124,13 +124,13 @@ class KillList extends Controller
     public function solo(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getSolo($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -139,13 +139,13 @@ class KillList extends Controller
     public function npc(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getNpc($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -154,13 +154,13 @@ class KillList extends Controller
     public function fiveB(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->get5b($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -169,13 +169,13 @@ class KillList extends Controller
     public function tenB(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->get10b($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -184,13 +184,13 @@ class KillList extends Controller
     public function citadels(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getCitadels($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -199,13 +199,13 @@ class KillList extends Controller
     public function t1(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getT1($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -214,13 +214,13 @@ class KillList extends Controller
     public function t2(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getT2($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -229,13 +229,13 @@ class KillList extends Controller
     public function t3(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getT3($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -244,13 +244,13 @@ class KillList extends Controller
     public function frigate(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getFrigates($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -259,13 +259,13 @@ class KillList extends Controller
     public function destroyers(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getDestroyers($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -274,13 +274,13 @@ class KillList extends Controller
     public function cruisers(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getCruisers($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -289,13 +289,13 @@ class KillList extends Controller
     public function battlecruisers(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getBattlecruisers($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -304,13 +304,13 @@ class KillList extends Controller
     public function battleships(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getBattleships($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -319,13 +319,13 @@ class KillList extends Controller
     public function capitals(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getCapitals($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -334,13 +334,13 @@ class KillList extends Controller
     public function freighters(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getFreighters($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -349,13 +349,13 @@ class KillList extends Controller
     public function supercarriers(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getSupercarriers($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -364,13 +364,13 @@ class KillList extends Controller
     public function titans(int $page = 1): ResponseInterface
     {
         $data = $this->killlistHelper->getTitans($page, 100);
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
 
         return $this->json($data, 60);
     }
@@ -384,13 +384,13 @@ class KillList extends Controller
             $page,
             100
         );
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
         return $this->json($data, 60);
     }
 
@@ -403,13 +403,13 @@ class KillList extends Controller
             $page,
             100
         );
-        if ($data->has("error")) {
+        if (isset($data['error'])) {
             return $this->json($data, 300);
         }
 
-        $data = $data->map(function ($kill) {
+        $data = array_map(function ($kill) {
             return $this->cleanupTimestamps($kill);
-        });
+        }, $data);
         return $this->json($data, 60);
     }
 
