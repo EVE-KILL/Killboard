@@ -22,10 +22,12 @@ class Campaigns extends Cronjob
     public function handle(): void
     {
         // Find campaigns that have a last_modified older than 1 hour
-        $this->campaignsModel->find([
+        $campaignsCursor = $this->campaignsModel->find([
             'last_modified' => ['$lt' => new \MongoDB\BSON\UTCDateTime(strtotime('-1 hour') * 1000)]
-        ])->each(function ($campaign) {
+        ]);
+
+        $campaigns = [];
+        foreach ($campaignsCursor as $campaign) {
             $this->processCampaign->enqueue(['campaign_id' => $campaign['campaign_id']]);
-        });
-    }
+        }
 }
