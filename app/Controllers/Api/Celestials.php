@@ -28,7 +28,7 @@ class Celestials extends Controller
         $celestials = $this->celestials->find(
             ['solar_system_id' => $system_id],
             ['projection' => ['_id' => 0]]
-        )->toArray();
+        );
 
         $celestials = $this->cleanupTimestamps($celestials);
         return $this->json($celestials);
@@ -40,7 +40,7 @@ class Celestials extends Controller
         $celestials = $this->celestials->find(
             ['region_id' => $region_id],
             ['projection' => ['_id' => 0]]
-        )->toArray();
+        );
 
         $celestials = $this->cleanupTimestamps($celestials);
         return $this->json($celestials);
@@ -52,7 +52,7 @@ class Celestials extends Controller
         $celestial = $this->celestials->findOneOrNull(
             ['item_id' => $celestial_id],
             ['projection' => ['_id' => 0]]
-        )->toArray();
+        );
 
         if ($celestial === null) {
             return $this->json(

@@ -3,13 +3,14 @@
 namespace EK\ESI;
 
 use EK\Fetchers\ESI;
+use EK\Models\Alliances as ModelsAlliances;
 use League\Container\Container;
 
 class Alliances
 {
     public function __construct(
         protected Container $container,
-        protected \EK\Models\Alliances $alliances,
+        protected ModelsAlliances $alliances,
         protected ESI $esiFetcher
     ) {
     }

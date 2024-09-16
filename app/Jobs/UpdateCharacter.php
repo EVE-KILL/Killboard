@@ -165,7 +165,7 @@ class UpdateCharacter extends Jobs
         if ($factionId > 0) {
             return $this->factions->findOne([
                 "faction_id" => $factionId,
-            ])?->toArray();
+            ]);
         }
         return [];
     }

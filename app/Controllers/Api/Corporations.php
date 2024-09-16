@@ -26,13 +26,15 @@ class Corporations extends Controller
     #[RouteAttribute("/corporations[/]", ["GET"], "Get all corporations")]
     public function all(): ResponseInterface
     {
-        $corporations = $this->corporations
-            ->find([], ["projection" => ["corporation_id" => 1]], 300)
-            ->map(function ($corporation) {
-                return $corporation["corporation_id"];
-            });
+        $corporationsGenerator = $this->corporations
+            ->find([], ["projection" => ["corporation_id" => 1]], 300);
 
-        return $this->json($corporations->toArray(), 300);
+        $corporations = [];
+        foreach ($corporationsGenerator as $corp) {
+            $corporations[] = $corp["corporation_id"];
+        }
+
+        return $this->json($corporations, 300);
     }
 
     #[RouteAttribute("/corporations/count[/]", ["GET"], "Get the count of all corporations")]
@@ -48,12 +50,13 @@ class Corporations extends Controller
             ["corporation_id" => $corporation_id],
             ["projection" => ["_id" => 0]]
         );
-        if ($corporation->isEmpty()) {
+
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
         return $this->json(
-            $this->cleanupTimestamps($corporation->toArray()),
+            $this->cleanupTimestamps($corporation),
             300
         );
     }
@@ -73,16 +76,20 @@ class Corporations extends Controller
             return $this->json(["error" => "Too many IDs provided"], 300);
         }
 
-        $corporations = $this->corporations
+        $corporationsGenerator = $this->corporations
             ->find(
                 ["corporation_id" => ['$in' => $postData]],
-                ["projection" => ["_id" => 0], "limit" => 1000]
-            )
-            ->map(function ($corporation) {
-                return $this->cleanupTimestamps($corporation);
-            });
+                ["projection" => ["_id" => 0], "limit" => 1000],
+                300,
+                false
+            );
 
-        return $this->json($corporations->toArray(), 300);
+        $corporations = [];
+        foreach ($corporationsGenerator as $corp) {
+            $corporations[] = $this->cleanupTimestamps($corp);
+        }
+
+        return $this->json($corporations, 300);
     }
 
     #[RouteAttribute("/corporations/{corporation_id:[0-9]+}/alliancehistory[/]", ["GET"], "Get the alliance history of a corporation")]
@@ -92,13 +99,13 @@ class Corporations extends Controller
             "corporation_id" => $corporation_id,
         ]);
 
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
         $allianceHistory = $this->history->getFullAllianceHistory($corporation_id);
 
-        $this->corporations->collection->updateOne(
+        $this->corporations->update(
             ["corporation_id" => $corporation_id],
             ['$set' => ["history" => $allianceHistory]]
         );
@@ -112,11 +119,11 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
-        $killmails = $this->killmails
+        $killmailsGenerator = $this->killmails
             ->aggregate(
                 [
                     [
@@ -129,15 +136,14 @@ class Corporations extends Controller
                     ],
                     ['$project' => ["_id" => 0, "killmail_id" => 1]],
                 ],
-                [
-                    "allowDiskUse" => true,
-                    "maxTimeMS" => 60000,
-                ],
+                [],
                 3600
-            )
-            ->map(function ($killmail) {
-                return $killmail["killmail_id"];
-            });
+            );
+
+        $killmails = [];
+        foreach ($killmailsGenerator as $killmail) {
+            $killmails[] = $killmail["killmail_id"];
+        }
 
         return $this->json($killmails, 3600);
     }
@@ -148,17 +154,15 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
         $killCount = $this->killmails->count(
-            ["attackers.corporation_id" => $corporation_id],
-            []
+            ["attackers.corporation_id" => $corporation_id]
         );
         $lossCount = $this->killmails->count(
-            ["victim.corporation_id" => $corporation_id],
-            []
+            ["victim.corporation_id" => $corporation_id]
         );
 
         return $this->json(
@@ -181,11 +185,11 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
-        $killmails = $this->killmails
+        $killmailsGenerator = $this->killmails
             ->aggregate(
                 [
                     [
@@ -202,10 +206,12 @@ class Corporations extends Controller
                 ],
                 [],
                 3600
-            )
-            ->map(function ($killmail) {
-                return $killmail["killmail_id"];
-            });
+            );
+
+        $killmails = [];
+        foreach ($killmailsGenerator as $killmail) {
+            $killmails[] = $killmail["killmail_id"];
+        }
 
         return $this->json($killmails, 3600);
     }
@@ -216,21 +222,24 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
-        $members = $this->characters
+        $membersGenerator = $this->characters
             ->find(
                 ["corporation_id" => $corporation_id],
                 ["projection" => ["_id" => 0]],
-                300
-            )
-            ->map(function ($member) {
-                return $this->cleanupTimestamps($member);
-            });
+                300,
+                false
+            );
 
-        return $this->json($members->toArray(), 300);
+        $members = [];
+        foreach ($membersGenerator as $member) {
+            $members[] = $this->cleanupTimestamps($member);
+        }
+
+        return $this->json($members, 300);
     }
 
     #[RouteAttribute("/corporations/{corporation_id}/top/characters[/]", ["GET"], "Get the top characters of a corporation")]
@@ -239,7 +248,7 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
@@ -257,7 +266,7 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
@@ -275,7 +284,7 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
@@ -293,7 +302,7 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 
@@ -311,7 +320,7 @@ class Corporations extends Controller
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
-        if ($corporation->isEmpty()) {
+        if (empty($corporation)) {
             return $this->json(["error" => "Corporation not found"], 300);
         }
 

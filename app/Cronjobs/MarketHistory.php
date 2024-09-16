@@ -21,7 +21,7 @@ class MarketHistory extends Cronjob
 
     public function handle(): void
     {
-        $oldestDate = $this->prices->findOne(['date' => ['$exists' => true]], ['sort' => ['date' => -1]])->get('date')->toDateTime();
+        $oldestDate = $this->prices->findOne(['date' => ['$exists' => true]], ['sort' => ['date' => -1]])['date']->toDateTime();
         $daysSinceOldestDate = (new \DateTime())->diff($oldestDate)->days;
         $minDays = 7;
 

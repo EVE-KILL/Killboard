@@ -2,6 +2,7 @@
 
 namespace EK\Api\Abstracts;
 
+use Generator;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use Psr\Http\Message\ResponseInterface;
@@ -381,19 +382,19 @@ abstract class Controller
         return $response;
     }
 
-    protected function cleanupTimestamps(array $data): array
+    protected function cleanupTimestamps(array|Generator $data): array
     {
         foreach ($data as $key => $value) {
             // Check if the value is an instance of UTCDateTime
             if ($value instanceof UTCDateTime) {
-                $data[$key] = $value->toDateTime()->format('Y-m-d H:i:s');
+                $data[$key] = $value->toDateTime()->getTimestamp();
             }
 
             // Check if the value is an array
             if (is_array($value)) {
                 // If the array has the structure containing $date and $numberLong
                 if (isset($value['$date']['$numberLong'])) {
-                    $data[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->format('Y-m-d H:i:s');
+                    $data[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->getTimestamp();
                 } else {
                     // Recursively process nested arrays
                     $data[$key] = $this->cleanupTimestamps($value);

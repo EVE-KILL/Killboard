@@ -45,7 +45,7 @@ class History
                 ],
             ],
             300
-        )->toArray();
+        );
 
         $corporationsDataAssoc = [];
         foreach ($corporationsData as $corporationData) {
@@ -62,7 +62,7 @@ class History
             $corpData = $corporationsDataAssoc[$history["corporation_id"]] ?? null;
 
             if ($corpData === null) {
-                $corpData = $this->corporations->findOne(['corporation_id' => $history["corporation_id"]])->toArray();
+                $corpData = $this->corporations->findOne(['corporation_id' => $history["corporation_id"]]);
             }
 
             $allianceHistory = $this->getAllianceForPeriod($history["corporation_id"], $history["start_date"]);
@@ -120,7 +120,7 @@ class History
                     "alliance_id" => 1,
                     "name" => 1,
                 ]
-            ])->toArray();
+            ]);
 
             if ($allianceData === null) {
                 $allianceData = [
@@ -182,7 +182,7 @@ class History
                         "alliance_id" => 1,
                         "name" => 1,
                     ]
-                ])->toArray();
+                ]);
 
                 if ($allianceData) {
                     return [

@@ -26,11 +26,12 @@ class UpdateAlliances extends Cronjob
         // Find alliances that haven't been updated in the last 14 days
         $staleAlliances = $this->alliances->find([]);
 
-        $updates = array_map(function ($alliance) {
-            return [
-                "alliance_id" => $alliance["alliance_id"],
+        $updates = [];
+        foreach($staleAlliances as $alliance) {
+            $updates[] = [
+                'alliance_id' => $alliance['alliance_id'],
             ];
-        }, $staleAlliances->toArray());
+        }
 
         $this->logger->info("Updating " . count($updates) . " alliances");
         $this->updateAlliance->massEnqueue($updates);

@@ -36,7 +36,7 @@ class KillmailFetch extends Cronjob
             $expires = $user['sso_expires'];
             $characterId = $user['character_id'];
             $corporation = $this->charactersModel->findOne(['character_id' => $characterId]);
-            $corporationId = $corporation->get('corporation_id');
+            $corporationId = $corporation['corporation_id'];
             $fetchCorporation = true;
             if ($corporationId < 10000000) {
                 $fetchCorporation = false;

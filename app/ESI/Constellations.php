@@ -2,14 +2,17 @@
 
 namespace EK\ESI;
 
+use EK\ESI\Regions as ESIRegions;
 use EK\Fetchers\ESI;
+use EK\Models\Constellations as ModelsConstellations;
+use EK\Models\Regions;
 
 class Constellations
 {
     public function __construct(
-        protected \EK\Models\Constellations $constellations,
-        protected \EK\Models\Regions $regions,
-        protected \EK\ESI\Regions $esiRegions,
+        protected ModelsConstellations $constellations,
+        protected Regions $regions,
+        protected ESIRegions $esiRegions,
         protected ESI $esiFetcher
     ) {
     }

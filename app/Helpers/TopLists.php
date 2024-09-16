@@ -121,33 +121,35 @@ class TopLists
                     ['$limit' => $limit],
                 ];
 
-        $data = $this->killmails->aggregate($aggregateQuery, [
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
             "allowDiskUse" => true,
             "maxTimeMS" => 30000,
         ]);
 
-        foreach ($data as $key => $character) {
-            $data[$key] = array_merge(
+        $result = [];
+
+        foreach ($dataGenerator as $character) {
+            $characterInfo = $this->characters->findOne(
+                ["character_id" => $character["id"]],
+                [
+                    "projection" => [
+                        "_id" => 0,
+                        "last_modified" => 0,
+                        "history" => 0,
+                        "description" => 0,
+                    ],
+                ]
+            );
+
+            $result[] = array_merge(
                 ["count" => $character["count"]],
-                $this->characters
-                    ->findOne(
-                        ["character_id" => $character["id"]],
-                        [
-                            "projection" => [
-                                "_id" => 0,
-                                "last_modified" => 0,
-                                "history" => 0,
-                                "description" => 0,
-                            ],
-                        ]
-                    )
-                    ->toArray()
+                $characterInfo
             );
         }
 
-        $this->cache->set($cacheKey, $data, $cacheTime);
+        $this->cache->set($cacheKey, $result, $cacheTime);
 
-        return $data->toArray();
+        return $result;
     }
 
     public function topCorporations(?string $attackerType = null, int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
@@ -241,33 +243,35 @@ class TopLists
                     ['$limit' => $limit],
                 ];
 
-        $data = $this->killmails->aggregate($aggregateQuery, [
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
             "allowDiskUse" => true,
             "maxTimeMS" => 30000,
         ]);
 
-        foreach ($data as $key => $corporation) {
-            $data[$key] = array_merge(
+        $result = [];
+
+        foreach ($dataGenerator as $corporation) {
+            $corporationInfo = $this->corporations->findOne(
+                ["corporation_id" => $corporation["id"]],
+                [
+                    "projection" => [
+                        "_id" => 0,
+                        "last_modified" => 0,
+                        "history" => 0,
+                        "description" => 0,
+                    ],
+                ]
+            );
+
+            $result[] = array_merge(
                 ["count" => $corporation["count"]],
-                $this->corporations
-                    ->findOne(
-                        ["corporation_id" => $corporation["id"]],
-                        [
-                            "projection" => [
-                                "_id" => 0,
-                                "last_modified" => 0,
-                                "history" => 0,
-                                "description" => 0,
-                            ],
-                        ]
-                    )
-                    ->toArray()
+                $corporationInfo
             );
         }
 
-        $this->cache->set($cacheKey, $data, $cacheTime);
+        $this->cache->set($cacheKey, $result, $cacheTime);
 
-        return $data->toArray();
+        return $result;
     }
 
     public function topAlliances(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
@@ -287,6 +291,7 @@ class TopLists
             return $cacheResult;
         }
 
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
         $aggregateQuery =
             $attackerType && $typeId
                 ? [
@@ -295,9 +300,7 @@ class TopLists
                             "attackers.{$attackerType}" => $typeId,
                             "attackers.alliance_id" => ['$ne' => 0],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -332,9 +335,7 @@ class TopLists
                         '$match' => [
                             "attackers.alliance_id" => ['$ne' => 0],
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -364,26 +365,33 @@ class TopLists
                     ['$limit' => $limit],
                 ];
 
-        $data = $this->killmails->aggregate($aggregateQuery, [
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
             "allowDiskUse" => true,
             "maxTimeMS" => 30000,
         ]);
 
-        foreach ($data as $key => $alliance) {
-            $data[$key] = array_merge(
+        $result = [];
+
+        foreach ($dataGenerator as $alliance) {
+            $allianceInfo = $this->alliances->findOne(
+                ["alliance_id" => $alliance["id"]],
+                [
+                    "projection" => [
+                        "_id" => 0,
+                        "last_modified" => 0,
+                    ],
+                ]
+            );
+
+            $result[] = array_merge(
                 ["count" => $alliance["count"]],
-                $this->alliances
-                    ->findOne(
-                        ["alliance_id" => $alliance["id"]],
-                        ["projection" => ["_id" => 0, "last_modified" => 0]]
-                    )
-                    ->toArray()
+                $allianceInfo
             );
         }
 
-        $this->cache->set($cacheKey, $data, $cacheTime);
+        $this->cache->set($cacheKey, $result, $cacheTime);
 
-        return $data->toArray();
+        return $result;
     }
 
     public function topSolo(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
@@ -400,61 +408,54 @@ class TopLists
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
         ) {
-            //return $cacheResult;
+            // return $cacheResult;
         }
 
         $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
 
-        // Match filter based on the attackerType and typeId (if present)
         $matchFilter = [
-            "is_solo" => true, // Only solo kills
-            "kill_time" => ['$gte' => $calculatedTime], // Kill time within the range
+            "is_solo" => true,
+            "kill_time" => ['$gte' => $calculatedTime],
         ];
 
         if ($attackerType && $typeId) {
-            // Add a filter for the specific attacker type and type ID (corporation, alliance, etc.)
             $matchFilter["attackers.{$attackerType}"] = $typeId;
         }
 
-        // Aggregation query to calculate solo kills per character
         $aggregateQuery = [
-            ['$match' => $matchFilter], // Filter based on the above criteria
-            ['$unwind' => '$attackers'], // Unwind the attackers array
+            ['$match' => $matchFilter],
+            ['$unwind' => '$attackers'],
             [
                 '$match' => [
-                    'attackers.final_blow' => true, // Ensure that we consider the attacker who delivered the final blow
+                    'attackers.final_blow' => true,
                 ]
             ],
             [
                 '$group' => [
-                    "_id" => '$attackers.character_id', // Group by character ID
-                    "count" => ['$sum' => 1], // Count the solo kills per character
+                    "_id" => '$attackers.character_id',
+                    "count" => ['$sum' => 1],
                 ],
             ],
             [
                 '$project' => [
                     "_id" => 0,
-                    "count" => '$count', // Output the count of solo kills
-                    "character_id" => '$_id', // The character's ID
+                    "count" => '$count',
+                    "character_id" => '$_id',
                 ],
             ],
-            ['$sort' => ["count" => -1]], // Sort by count in descending order
-            ['$limit' => $limit], // Limit the results to the top $limit characters
+            ['$sort' => ["count" => -1]],
+            ['$limit' => $limit],
         ];
 
-        // Execute the aggregation query
-        $data = $this->killmails->aggregate($aggregateQuery, [
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
             "allowDiskUse" => true,
             "maxTimeMS" => 30000,
         ]);
 
-        // Prepare the final result array
         $result = [];
 
-        // Iterate over the aggregated data to fetch the character information
-        foreach ($data as $solo) {
-            // Fetch character information for each character ID
-            $characterData = $this->characters->findOne(
+        foreach ($dataGenerator as $solo) {
+            $characterInfo = $this->characters->findOne(
                 ["character_id" => $solo["character_id"]],
                 [
                     "projection" => [
@@ -466,16 +467,14 @@ class TopLists
                 ]
             );
 
-            if ($characterData) {
-                // Merge the solo kill count with the character data
+            if ($characterInfo) {
                 $result[] = array_merge(
                     ["count" => $solo["count"]],
-                    $characterData->toArray()
+                    $characterInfo
                 );
             }
         }
 
-        // Cache the result
         $this->cache->set($cacheKey, $result, $cacheTime);
 
         return $result;
@@ -498,6 +497,8 @@ class TopLists
             return $cacheResult;
         }
 
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
+
         $aggregateQuery =
             $attackerType && $typeId
                 ? [
@@ -505,9 +506,7 @@ class TopLists
                         '$match' => [
                             "attackers.{$attackerType}" => $typeId,
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -544,9 +543,7 @@ class TopLists
                     [
                         '$match' => [
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -579,33 +576,35 @@ class TopLists
                     ['$limit' => $limit],
                 ];
 
-        $data = $this->killmails->aggregate($aggregateQuery, [
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
             "allowDiskUse" => true,
             "maxTimeMS" => 30000,
         ]);
 
-        foreach ($data as $key => $ship) {
-            $data[$key] = array_merge(
+        $result = [];
+
+        foreach ($dataGenerator as $ship) {
+            $typeInfo = $this->typeIDs->findOne(
+                ["type_id" => $ship["id"]],
+                [
+                    "projection" => [
+                        "_id" => 0,
+                        "last_modified" => 0,
+                        "dogma_effects" => 0,
+                        "dogma_attributes" => 0,
+                    ],
+                ]
+            );
+
+            $result[] = array_merge(
                 ["count" => $ship["count"]],
-                $this->typeIDs
-                    ->findOne(
-                        ["type_id" => $ship["id"]],
-                        [
-                            "projection" => [
-                                "_id" => 0,
-                                "last_modified" => 0,
-                                "dogma_effects" => 0,
-                                "dogma_attributes" => 0,
-                            ],
-                        ]
-                    )
-                    ->toArray()
+                $typeInfo
             );
         }
 
-        $this->cache->set($cacheKey, $data, $cacheTime);
+        $this->cache->set($cacheKey, $result, $cacheTime);
 
-        return $data->toArray();
+        return $result;
     }
 
     public function topSystems(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
@@ -624,6 +623,8 @@ class TopLists
             return $cacheResult;
         }
 
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
+
         $aggregateQuery =
             $attackerType && $typeId
                 ? [
@@ -631,9 +632,7 @@ class TopLists
                         '$match' => [
                             "attackers.{$attackerType}" => $typeId,
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -667,9 +666,7 @@ class TopLists
                     [
                         '$match' => [
                             "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
+                                '$gte' => $calculatedTime,
                             ],
                         ],
                     ],
@@ -699,232 +696,154 @@ class TopLists
                     ['$limit' => $limit],
                 ];
 
-        $data = $this->killmails->aggregate($aggregateQuery, [
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
             "allowDiskUse" => true,
             "maxTimeMS" => 30000,
         ]);
 
-        foreach ($data as $key => $system) {
-            $data[$key] = array_merge(
+        $result = [];
+
+        foreach ($dataGenerator as $system) {
+            $systemInfo = $this->solarSystems->findOne(
+                ["system_id" => $system["id"]],
+                [
+                    "projection" => [
+                        "_id" => 0,
+                        "last_modified" => 0,
+                        "planets" => 0,
+                        "stargates" => 0,
+                        "stations" => 0,
+                        "position" => 0,
+                    ],
+                ]
+            );
+
+            $result[] = array_merge(
                 ["count" => $system["count"]],
-                $this->solarSystems
-                    ->findOne(
-                        ["system_id" => $system["id"]],
-                        [
-                            "projection" => [
-                                "_id" => 0,
-                                "last_modified" => 0,
-                                "planets" => 0,
-                                "stargates" => 0,
-                                "stations" => 0,
-                                "position" => 0,
-                            ],
-                        ]
-                    )
-                    ->toArray()
+                $systemInfo
             );
         }
 
-        $this->cache->set($cacheKey, $data, $cacheTime);
+        $this->cache->set($cacheKey, $result, $cacheTime);
 
-        return $data->toArray();
+        return $result;
     }
 
-public function topConstellations(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
-{
-    $cacheKey = $this->cache->generateKey(
-        "top_constellations",
-        $attackerType,
-        $typeId,
-        $limit,
-        $days
-    );
-    if (
-        $this->cache->exists($cacheKey) &&
-        !empty(($cacheResult = $this->cache->get($cacheKey)))
-    ) {
-        return $cacheResult;
-    }
-
-    // Get the constellations with their systems
-    $constellations = $this->constellations->find([])->toArray();
-    $systemsToConstellations = [];
-
-    foreach ($constellations as $constellation) {
-        foreach ($constellation['systems'] as $systemId) {
-            $systemsToConstellations[$systemId] = $constellation['constellation_id'];
-        }
-    }
-
-    $aggregateQuery =
-        $attackerType && $typeId
-            ? [
-                [
-                    '$match' => [
-                        "attackers.{$attackerType}" => $typeId,
-                        "kill_time" => [
-                            '$gte' => new UTCDateTime(
-                                (time() - ($days * 86400)) * 1000
-                            ),
-                        ],
-                    ],
-                ],
-                ['$unwind' => '$attackers'],
-                ['$match' => ["attackers.{$attackerType}" => $typeId]],
-                [
-                    '$group' => [
-                        "_id" => [
-                            'system_id' => '$system_id',
-                            'killmail_id' => '$killmail_id',
-                        ],
-                    ],
-                ],
-                [
-                    '$group' => [
-                        "_id" => '$_id.system_id',
-                        "count" => ['$sum' => 1],
-                    ],
-                ],
-                [
-                    '$addFields' => [
-                        'constellation_id' => [
-                            '$let' => [
-                                'vars' => ['system_id' => '$_id'],
-                                'in' => [
-                                    '$arrayElemAt' => [
-                                        ['$filter' => [
-                                            'input' => array_map(
-                                                fn($systemId) => [
-                                                    '_id' => $systemId,
-                                                    'constellation_id' => $systemsToConstellations[$systemId] ?? null
-                                                ],
-                                                array_keys($systemsToConstellations)
-                                            ),
-                                            'as' => 'item',
-                                            'cond' => [
-                                                '$eq' => ['$$item._id', '$$system_id']
-                                            ]
-                                        ]],
-                                        0
-                                    ],
-                                ]
-                            ],
-                        ]
-                    ],
-                ],
-                [
-                    '$group' => [
-                        "_id" => '$constellation_id.constellation_id',
-                        "count" => ['$sum' => '$count'],
-                    ],
-                ],
-                [
-                    '$project' => [
-                        "_id" => 0,
-                        "count" => '$count',
-                        "id" => '$_id',
-                    ],
-                ],
-                ['$sort' => ["count" => -1]],
-                ['$limit' => $limit],
-            ]
-            : [
-                [
-                    '$match' => [
-                        "kill_time" => [
-                            '$gte' => new UTCDateTime(
-                                (time() - ($days * 86400)) * 1000
-                            ),
-                        ],
-                    ],
-                ],
-                ['$unwind' => '$attackers'],
-                [
-                    '$group' => [
-                        "_id" => [
-                            'system_id' => '$system_id',
-                            'killmail_id' => '$killmail_id',
-                        ],
-                    ],
-                ],
-                [
-                    '$group' => [
-                        "_id" => '$_id.system_id',
-                        "count" => ['$sum' => 1],
-                    ],
-                ],
-                [
-                    '$addFields' => [
-                        'constellation_id' => [
-                            '$let' => [
-                                'vars' => ['system_id' => '$_id'],
-                                'in' => [
-                                    '$arrayElemAt' => [
-                                        ['$filter' => [
-                                            'input' => array_map(
-                                                fn($systemId) => [
-                                                    '_id' => $systemId,
-                                                    'constellation_id' => $systemsToConstellations[$systemId] ?? null
-                                                ],
-                                                array_keys($systemsToConstellations)
-                                            ),
-                                            'as' => 'item',
-                                            'cond' => [
-                                                '$eq' => ['$$item._id', '$$system_id']
-                                            ]
-                                        ]],
-                                        0
-                                    ],
-                                ]
-                            ],
-                        ]
-                    ],
-                ],
-                [
-                    '$group' => [
-                        "_id" => '$constellation_id.constellation_id',
-                        "count" => ['$sum' => '$count'],
-                    ],
-                ],
-                [
-                    '$project' => [
-                        "_id" => 0,
-                        "count" => '$count',
-                        "id" => '$_id',
-                    ],
-                ],
-                ['$sort' => ["count" => -1]],
-                ['$limit' => $limit],
-            ];
-
-    $data = $this->killmails->aggregate($aggregateQuery, [
-        'allowDiskUse' => true,
-        'maxTimeMS' => 30000,
-    ]);
-
-    foreach ($data as $key => $constellation) {
-        $data[$key] = array_merge(
-            ['count' => $constellation['count']],
-            $this->constellations
-                ->findOne(
-                    ['constellation_id' => $constellation['id']],
-                    [
-                        'projection' => [
-                            '_id' => 0,
-                            'last_modified' => 0,
-                            'systems' => 0,
-                            'position' => 0
-                        ],
-                    ]
-                )
-                ->toArray()
+    public function topConstellations(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
+    {
+        $cacheKey = $this->cache->generateKey(
+            "top_constellations",
+            $attackerType,
+            $typeId,
+            $limit,
+            $days
         );
+
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $cacheResult;
+        }
+
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
+
+        $matchFilter = [
+            "kill_time" => ['$gte' => $calculatedTime],
+        ];
+
+        if ($attackerType && $typeId) {
+            $matchFilter["attackers.{$attackerType}"] = $typeId;
+        }
+
+        $aggregateQuery = [
+            ['$match' => $matchFilter],
+            ['$unwind' => '$attackers'],
+        ];
+
+        if ($attackerType && $typeId) {
+            $aggregateQuery[] = ['$match' => ["attackers.{$attackerType}" => $typeId]];
+        }
+
+        $aggregateQuery = array_merge($aggregateQuery, [
+            [
+                '$group' => [
+                    "_id" => [
+                        'system_id' => '$system_id',
+                        'killmail_id' => '$killmail_id',
+                    ],
+                ],
+            ],
+            [
+                '$group' => [
+                    "_id" => '$_id.system_id',
+                    "count" => ['$sum' => 1],
+                ],
+            ],
+            [
+                '$project' => [
+                    "_id" => 0,
+                    "count" => '$count',
+                    "system_id" => '$_id',
+                ],
+            ],
+        ]);
+
+        // Fetch system to constellation mapping
+        $systemsGenerator = $this->solarSystems->find([], ["projection" => ["system_id" => 1, "constellation_id" => 1]]);
+        $systemToConstellation = [];
+        foreach ($systemsGenerator as $system) {
+            $systemToConstellation[$system['system_id']] = $system['constellation_id'];
+        }
+
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
+            'allowDiskUse' => true,
+            'maxTimeMS' => 30000,
+        ]);
+
+        $constellationCounts = [];
+
+        foreach ($dataGenerator as $item) {
+            $systemId = $item['system_id'];
+            $count = $item['count'];
+            $constellationId = $systemToConstellation[$systemId] ?? null;
+
+            if ($constellationId !== null) {
+                if (!isset($constellationCounts[$constellationId])) {
+                    $constellationCounts[$constellationId] = 0;
+                }
+                $constellationCounts[$constellationId] += $count;
+            }
+        }
+
+        // Sort constellations by count
+        arsort($constellationCounts);
+        $constellationCounts = array_slice($constellationCounts, 0, $limit, true);
+
+        $result = [];
+        foreach ($constellationCounts as $constellationId => $count) {
+            $constellationInfo = $this->constellations->findOne(
+                ['constellation_id' => $constellationId],
+                [
+                    'projection' => [
+                        '_id' => 0,
+                        'last_modified' => 0,
+                        'systems' => 0,
+                        'position' => 0,
+                    ],
+                ]
+            );
+
+            $result[] = array_merge(
+                ['count' => $count],
+                $constellationInfo
+            );
+        }
+
+        $this->cache->set($cacheKey, $result, $cacheTime);
+
+        return $result;
     }
-
-    $this->cache->set($cacheKey, $data, $cacheTime);
-
-    return $data->toArray();
-}
 
     public function topRegions(?string $attackerType = null, ?int $typeId = null, int $days = 30, int $limit = 10, int $cacheTime = 300): array
     {
@@ -935,6 +854,7 @@ public function topConstellations(?string $attackerType = null, ?int $typeId = n
             $limit,
             $days
         );
+
         if (
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
@@ -942,104 +862,101 @@ public function topConstellations(?string $attackerType = null, ?int $typeId = n
             return $cacheResult;
         }
 
-        $aggregateQuery =
-            $attackerType && $typeId
-                ? [
-                    [
-                        '$match' => [
-                            "attackers.{$attackerType}" => $typeId,
-                            "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
-                            ],
-                        ],
-                    ],
-                    ['$unwind' => '$attackers'],
-                    ['$match' => ["attackers.{$attackerType}" => $typeId]],
-                    [
-                        '$group' => [
-                            "_id" => [
-                                'region_id' => '$region_id',
-                                'killmail_id' => '$killmail_id',
-                            ],
-                        ],
-                    ],
-                    [
-                        '$group' => [
-                            "_id" => '$_id.region_id',
-                            "count" => ['$sum' => 1],
-                        ],
-                    ],
-                    [
-                        '$project' => [
-                            "_id" => 0,
-                            "count" => '$count',
-                            "id" => '$_id',
-                        ],
-                    ],
-                    ['$sort' => ["count" => -1]],
-                    ['$limit' => $limit],
-                ]
-                : [
-                    [
-                        '$match' => [
-                            "kill_time" => [
-                                '$gte' => new UTCDateTime(
-                                    (time() - ($days * 86400)) * 1000
-                                ),
-                            ],
-                        ],
-                    ],
-                    ['$unwind' => '$attackers'],
-                    [
-                        '$group' => [
-                            "_id" => [
-                                'region_id' => '$region_id',
-                                'killmail_id' => '$killmail_id',
-                            ],
-                        ],
-                    ],
-                    [
-                        '$group' => [
-                            "_id" => '$_id.region_id',
-                            "count" => ['$sum' => 1],
-                        ],
-                    ],
-                    [
-                        '$project' => [
-                            "_id" => 0,
-                            "count" => '$count',
-                            "id" => '$_id',
-                        ],
-                    ],
-                    ['$sort' => ["count" => -1]],
-                    ['$limit' => $limit],
-                ];
+        $calculatedTime = new UTCDateTime((time() - ($days * 86400)) * 1000);
 
-        $data = $this->killmails->aggregate($aggregateQuery, [
-            "allowDiskUse" => true,
-            "maxTimeMS" => 30000,
+        $matchFilter = [
+            "kill_time" => ['$gte' => $calculatedTime],
+        ];
+
+        if ($attackerType && $typeId) {
+            $matchFilter["attackers.{$attackerType}"] = $typeId;
+        }
+
+        $aggregateQuery = [
+            ['$match' => $matchFilter],
+            ['$unwind' => '$attackers'],
+        ];
+
+        if ($attackerType && $typeId) {
+            $aggregateQuery[] = ['$match' => ["attackers.{$attackerType}" => $typeId]];
+        }
+
+        $aggregateQuery = array_merge($aggregateQuery, [
+            [
+                '$group' => [
+                    "_id" => [
+                        'system_id' => '$system_id',
+                        'killmail_id' => '$killmail_id',
+                    ],
+                ],
+            ],
+            [
+                '$group' => [
+                    "_id" => '$_id.system_id',
+                    "count" => ['$sum' => 1],
+                ],
+            ],
+            [
+                '$project' => [
+                    "_id" => 0,
+                    "count" => '$count',
+                    "system_id" => '$_id',
+                ],
+            ],
         ]);
 
-        foreach ($data as $key => $region) {
-            $data[$key] = array_merge(
-                ["count" => $region["count"]],
-                $this->regions
-                    ->findOne(
-                        ["region_id" => $region["id"]],
-                        ["projection" => [
-                            "_id" => 0,
-                            "last_modified" => 0,
-                            "constellations" => 0,
-                        ]]
-                    )
-                    ->toArray()
+        // Fetch system to region mapping
+        $systemsGenerator = $this->solarSystems->find([], ["projection" => ["system_id" => 1, "region_id" => 1]]);
+        $systemToRegion = [];
+        foreach ($systemsGenerator as $system) {
+            $systemToRegion[$system['system_id']] = $system['region_id'];
+        }
+
+        $dataGenerator = $this->killmails->aggregate($aggregateQuery, [
+            'allowDiskUse' => true,
+            'maxTimeMS' => 30000,
+        ]);
+
+        $regionCounts = [];
+
+        foreach ($dataGenerator as $item) {
+            $systemId = $item['system_id'];
+            $count = $item['count'];
+            $regionId = $systemToRegion[$systemId] ?? null;
+
+            if ($regionId !== null) {
+                if (!isset($regionCounts[$regionId])) {
+                    $regionCounts[$regionId] = 0;
+                }
+                $regionCounts[$regionId] += $count;
+            }
+        }
+
+        // Sort regions by count
+        arsort($regionCounts);
+        $regionCounts = array_slice($regionCounts, 0, $limit, true);
+
+        $result = [];
+        foreach ($regionCounts as $regionId => $count) {
+            $regionInfo = $this->regions->findOne(
+                ['region_id' => $regionId],
+                [
+                    'projection' => [
+                        '_id' => 0,
+                        'last_modified' => 0,
+                        'constellations' => 0,
+                    ],
+                ]
+            );
+
+            $result[] = array_merge(
+                ['count' => $count],
+                $regionInfo
             );
         }
 
-        $this->cache->set($cacheKey, $data, $cacheTime);
+        $this->cache->set($cacheKey, $result, $cacheTime);
 
-        return $data->toArray();
+        return $result;
     }
 }

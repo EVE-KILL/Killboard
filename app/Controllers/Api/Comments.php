@@ -25,7 +25,7 @@ class Comments extends Controller
     #[RouteAttribute("/comments/{identifier}[/]", ["GET"], "Get all comments for a particular identifier")]
     public function getComments(string $identifier): ResponseInterface
     {
-        $comments = $this->comments->find(
+        $commentsCursor = $this->comments->find(
             [
                 "identifier" => $identifier
             ],
@@ -34,8 +34,11 @@ class Comments extends Controller
                 "projection" => ["_id" => 0, "last_modified" => 0]
             ],
             cacheTime: 0
-        )->toArray();
-        foreach($comments as $key => $comment) {
+        );
+
+        $comments = [];
+        foreach($commentsCursor as $key => $comment) {
+            $comments[$key] = $comment;
             $comments[$key] = $this->cleanupTimestamps($comment);
             $comments[$key]['character'] = $this->characters->findOne(['character_id' => $comment['character']['character_id']], [
                 'projection' => [

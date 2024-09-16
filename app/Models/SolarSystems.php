@@ -26,6 +26,6 @@ class SolarSystems extends Collection
         'desc' => [
             'constellation_id', 'name', 'star_id', 'security_class'
         ],
-        'text' => [ 'name' ]
+        'text' => []
     ];
 }

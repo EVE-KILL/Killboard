@@ -3,11 +3,12 @@
 namespace EK\ESI;
 
 use EK\Fetchers\ESI;
+use EK\Models\Regions as ModelsRegions;
 
 class Regions
 {
     public function __construct(
-        protected \EK\Models\Regions $regions,
+        protected ModelsRegions $regions,
         protected ESI $esiFetcher
     ) {
     }

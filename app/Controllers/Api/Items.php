@@ -52,7 +52,7 @@ class Items extends Controller
 
         $this->cache->set($cacheKey, $items, 3600);
 
-        return $this->json($items);
+        return $this->json(iterator_to_array($items));
     }
 
     #[RouteAttribute("/items/count[/]", ["GET"], "Get the count of all items")]
@@ -109,7 +109,7 @@ class Items extends Controller
             'sort' => ['date' => -1]
         ]);
 
-        $pricing = $this->cleanupTimestamps($pricing->toArray());
+        $pricing = $this->cleanupTimestamps($pricing);
 
         $this->cache->set($cacheKey, $pricing, 3600);
 
@@ -127,7 +127,7 @@ class Items extends Controller
             );
         }
 
-        $killmails = $this->killmails->find([
+        $killmailsGenerator = $this->killmails->find([
             '$or' => [
                 ['items.type_id' => $item_id],
                 ['victim.ship_id' => $item_id]
@@ -139,9 +139,15 @@ class Items extends Controller
             ],
             'sort' => ['kill_time' => -1],
             'limit' => $limit
-        ])->map(function ($killmail) {
+        ]);
+
+        // Convert generator to array
+        $killmailsArray = iterator_to_array($killmailsGenerator);
+
+        // Map to extract killmail_id
+        $killmails = array_map(function ($killmail) {
             return $killmail['killmail_id'] ?? $killmail;
-        });
+        }, $killmailsArray);
 
         $this->cache->set($cacheKey, $killmails, 3600);
 

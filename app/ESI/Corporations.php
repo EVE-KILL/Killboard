@@ -3,13 +3,14 @@
 namespace EK\ESI;
 
 use EK\Fetchers\ESI;
+use EK\Models\Corporations as ModelsCorporations;
 use League\Container\Container;
 
 class Corporations
 {
     public function __construct(
         protected Container $container,
-        protected \EK\Models\Corporations $corporations,
+        protected ModelsCorporations $corporations,
         protected ESI $esiFetcher
     ) {
     }

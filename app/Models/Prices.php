@@ -42,7 +42,7 @@ class Prices extends Collection
         $price = $this->findOne(['type_id' => $typeId, 'date' => $date, 'region_id' => $region_id]);
 
         // If $price is empty, we get it without date to get the latest price
-        if ($price->isEmpty()) {
+        if (empty($price)) {
             $price = $this->findOne(['type_id' => $typeId, 'region_id' => $region_id], ['sort' => ['date' => -1]]); // Always get the latest price
         }
 

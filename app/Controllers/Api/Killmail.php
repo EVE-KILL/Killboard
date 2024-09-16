@@ -50,7 +50,7 @@ class Killmail extends Controller
             );
         }
 
-        $killmail = $this->cleanupTimestamps($killmail->toArray());
+        $killmail = $this->cleanupTimestamps($killmail);
 
         // Add comment count to the killmail
         $commentCount = $this->comments->count(['identifier' => 'kill:' . $killmail['killmail_id']]);
@@ -75,7 +75,7 @@ class Killmail extends Controller
             );
         }
 
-        return $this->json($this->cleanupTimestamps($killmail->toArray()));
+        return $this->json($this->cleanupTimestamps($killmail));
     }
 
     #[RouteAttribute("/killmail/{killmail_id:[0-9]+}/inbattle[/]", ["GET"], "Check if a killmail is in a battle")]
@@ -175,7 +175,7 @@ class Killmail extends Controller
             ]
         ], ['allowDiskUse' => true, 'hint' => 'system_id_x_y_z']);
 
-        return $this->json($results);
+        return $this->json(iterator_to_array($results));
     }
 
     #[RouteAttribute("/killmail/near/{celestial_id:[0-9]+}/{distanceInMeters:[0-9]+}[/{days:[0-9]+}]", ["GET"], "Get killmails near a celestial")]
@@ -197,10 +197,10 @@ class Killmail extends Controller
         $results = $this->killmails->aggregate([
             [
                 '$match' => [
-                    'system_id' => $celestial->get('solar_system_id'),
-                    'x' => ['$gt' => $celestial->get('x') - $distanceInMeters, '$lt' => $celestial->get('x') + $distanceInMeters],
-                    'y' => ['$gt' => $celestial->get('y') - $distanceInMeters, '$lt' => $celestial->get('y') + $distanceInMeters],
-                    'z' => ['$gt' => $celestial->get('z') - $distanceInMeters, '$lt' => $celestial->get('z') + $distanceInMeters],
+                    'system_id' => $celestial['solar_system_id'],
+                    'x' => ['$gt' => $celestial['x'] - $distanceInMeters, '$lt' => $celestial['x'] + $distanceInMeters],
+                    'y' => ['$gt' => $celestial['y'] - $distanceInMeters, '$lt' => $celestial['y'] + $distanceInMeters],
+                    'z' => ['$gt' => $celestial['z'] - $distanceInMeters, '$lt' => $celestial['z'] + $distanceInMeters],
                     'kill_time' => ['$gte' => new \MongoDB\BSON\UTCDateTime((time() - ($days * 86400)) * 1000)]
                 ]
             ],
@@ -210,9 +210,9 @@ class Killmail extends Controller
                     'distance' => [
                         '$sqrt' => [
                             '$add' => [
-                                ['$pow' => [['$subtract' => ['$x', $celestial->get('x')]], 2]],
-                                ['$pow' => [['$subtract' => ['$y', $celestial->get('y')]], 2]],
-                                ['$pow' => [['$subtract' => ['$z', $celestial->get('z')]], 2]],
+                                ['$pow' => [['$subtract' => ['$x', $celestial['x']]], 2]],
+                                ['$pow' => [['$subtract' => ['$y', $celestial['y']]], 2]],
+                                ['$pow' => [['$subtract' => ['$z', $celestial['z']]], 2]],
                             ]
                         ]
                     ]
@@ -231,7 +231,7 @@ class Killmail extends Controller
             ]
         ], ['allowDiskUse' => true, 'hint' => 'system_id_x_y_z']);
 
-        return $this->json($results);
+        return $this->json(iterator_to_array($results));
     }
 
     #[RouteAttribute("/killmail/history[/]", ["GET"], "Get all the dates available to fetch from the history API")]

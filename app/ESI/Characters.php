@@ -3,6 +3,7 @@
 namespace EK\ESI;
 
 use EK\Fetchers\ESI;
+use EK\Models\Characters as ModelsCharacters;
 use League\Container\Container;
 use MongoDB\BSON\UTCDateTime;
 
@@ -17,7 +18,7 @@ class Characters
 
     public function __construct(
         protected Container $container,
-        protected \EK\Models\Characters $characters,
+        protected ModelsCharacters $characters,
         protected ESI $esiFetcher
     ) {
     }

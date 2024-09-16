@@ -42,8 +42,7 @@ class Battles extends Controller
             ->findOne(
                 ["battle_id" => $id],
                 ["hint" => "battle_id", "projection" => ["_id" => 0]]
-            )
-            ->toArray();
+            );
 
         return $this->json($this->cleanupTimestamps($battle));
     }

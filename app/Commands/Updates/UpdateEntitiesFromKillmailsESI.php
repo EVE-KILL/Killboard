@@ -6,7 +6,6 @@ use EK\Api\Abstracts\ConsoleCommand;
 use EK\Jobs\UpdateAlliance;
 use EK\Jobs\UpdateCharacter;
 use EK\Jobs\UpdateCorporation;
-use EK\Models\Characters;
 use EK\Models\KillmailsESI;
 
 class UpdateEntitiesFromKillmailsESI extends ConsoleCommand
@@ -30,10 +29,10 @@ class UpdateEntitiesFromKillmailsESI extends ConsoleCommand
     {
         ini_set('memory_limit', '-1');
         $types = ['character', 'corporation', 'alliance'];
-        foreach($types as $type) {
+        foreach ($types as $type) {
             $this->out("Processing {$type}");
 
-            $entities = $this->killmailsESI->aggregate([
+            $aggregateResult = $this->killmailsESI->aggregate([
                 ['$group' => ['_id' => '$victim.' . $type . '_id']],
                 // Filter out the IDs that exist in the $type .'s' collection
                 ['$lookup' => [
@@ -43,13 +42,16 @@ class UpdateEntitiesFromKillmailsESI extends ConsoleCommand
                     'as' => 'exists'
                 ]],
                 ['$match' => ['exists' => ['$eq' => []]]]
-            ])->map(function($item) {
-                return $item['_id'];
-            })->toArray();
+            ]);
+
+            $entities = [];
+            foreach ($aggregateResult as $item) {
+                $entities[] = $item['_id'];
+            }
 
             $this->out("Found " . count($entities) . " unique {$type} entities");
 
-            foreach($entities as $entity) {
+            foreach ($entities as $entity) {
                 $this->enqueue($type, $entity);
             }
         }

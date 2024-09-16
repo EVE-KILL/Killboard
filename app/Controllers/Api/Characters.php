@@ -33,21 +33,30 @@ class Characters extends Controller
 
         $cacheKey = "characters.all.$page";
         if ($this->cache->exists($cacheKey)) {
-            return $this->json(
-                $this->cache->get($cacheKey),
-                $this->cache->getTTL($cacheKey)
-            );
+            $cachedResult = $this->cache->get($cacheKey);
+            return $this->json($cachedResult, $this->cache->getTTL($cacheKey));
         }
 
-        $characters = $this->characters
-            ->find([], ['limit' => $limit, 'skip' => $skip, 'sort' => ['character_id' => 1], "projection" => ["character_id" => 1]], 300)
-            ->map(function ($character) {
-                return $character["character_id"];
-            });
+        $charactersGenerator = $this->characters->find(
+            [],
+            [
+                'limit' => $limit,
+                'skip' => $skip,
+                'sort' => ['character_id' => 1],
+                'projection' => ['character_id' => 1]
+            ],
+            300,
+            false
+        );
 
-        $this->cache->set($cacheKey, $characters->toArray(), 3600);
+        $characters = [];
+        foreach ($charactersGenerator as $character) {
+            $characters[] = $character["character_id"];
+        }
 
-        return $this->json($characters->toArray(), 3600);
+        $this->cache->set($cacheKey, $characters, 3600);
+
+        return $this->json($characters, 3600);
     }
 
     #[RouteAttribute("/characters/count[/]", ["GET"], "Get the amount of characters")]
@@ -63,25 +72,24 @@ class Characters extends Controller
             ["character_id" => $character_id],
             ["projection" => ["_id" => 0, 'error' => 0]]
         );
-        if ($character->isEmpty()) {
+
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 
         return $this->json(
-            $this->cleanupTimestamps($character->toArray()),
+            $this->cleanupTimestamps($character),
             300
         );
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/shortstats[/{days:[0-9]+}]", ["GET"], "Get the stats of a character")]
+    #[RouteAttribute("/characters/shortstats/{character_id:[0-9]+}[/{days:[0-9]+}]", ["GET"], "Get the stats of a character")]
     public function shortStats(int $character_id, int $days = 0): ResponseInterface
     {
         $cacheKey = "characters.shortstats.$character_id.$days";
         if ($this->cache->exists($cacheKey)) {
-            return $this->json(
-                $this->cache->get($cacheKey),
-                $this->cache->getTTL($cacheKey)
-            );
+            $cachedResult = $this->cache->get($cacheKey);
+            return $this->json($cachedResult, $this->cache->getTTL($cacheKey));
         }
 
         $stats = $this->stats->calculateShortStats("character_id", $character_id, $days);
@@ -90,15 +98,13 @@ class Characters extends Controller
         return $this->json($stats, 300);
     }
 
-    #[RouteAttribute("/characters/{character_id:[0-9]+}/stats[/{days:[0-9]+}]", ["GET"], "Get the stats of a character")]
+    #[RouteAttribute("/characters/stats/{character_id:[0-9]+}[/{days:[0-9]+}]", ["GET"], "Get the stats of a character")]
     public function stats(int $character_id, int $days = 0): ResponseInterface
     {
         $cacheKey = "characters.fullstats.$character_id.$days";
         if ($this->cache->exists($cacheKey)) {
-            return $this->json(
-                $this->cache->get($cacheKey),
-                $this->cache->getTTL($cacheKey)
-            );
+            $cachedResult = $this->cache->get($cacheKey);
+            return $this->json($cachedResult, $this->cache->getTTL($cacheKey));
         }
 
         $stats = $this->stats->calculateFullStats("character_id", $character_id, $days);
@@ -122,17 +128,19 @@ class Characters extends Controller
             return $this->json(["error" => "Too many IDs provided"], 300);
         }
 
-        $characters = $this->characters
-            ->find(
-                ["character_id" => ['$in' => $postData]],
-                ["projection" => ["_id" => 0, 'error' => 0]],
-                300
-            )
-            ->map(function ($character) {
-                return $this->cleanupTimestamps($character);
-            });
+        $charactersGenerator = $this->characters->find(
+            ["character_id" => ['$in' => $postData]],
+            ["projection" => ["_id" => 0, 'error' => 0]],
+            300,
+            false
+        );
 
-        return $this->json($characters->toArray(), 300);
+        $characters = [];
+        foreach ($charactersGenerator as $character) {
+            $characters[] = $this->cleanupTimestamps($character);
+        }
+
+        return $this->json($characters, 300);
     }
 
     #[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"], "Get the corporation history of a character")]
@@ -141,13 +149,14 @@ class Characters extends Controller
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);
-        if ($character->isEmpty()) {
+
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 
         $corporationHistory = $this->history->generateCorporationHistory($character_id);
 
-        $this->characters->collection->updateOne(
+        $this->characters->update(
             ["character_id" => $character_id],
             ['$set' => ["history" => $corporationHistory]]
         );
@@ -155,39 +164,36 @@ class Characters extends Controller
         return $this->json($corporationHistory, 3600);
     }
 
-
     #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails[/]", ["GET"], "Get all killmails of a character")]
     public function killmails(int $character_id): ResponseInterface
     {
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);
-        if ($character->isEmpty()) {
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 
-        $killmails = $this->killmails
-            ->aggregate(
+        $killmailsGenerator = $this->killmails->aggregate(
+            [
                 [
-                    [
-                        '$match' => [
-                            '$or' => [
-                                ["victim.character_id" => $character_id],
-                                ["attackers.character_id" => $character_id],
-                            ],
+                    '$match' => [
+                        '$or' => [
+                            ["victim.character_id" => $character_id],
+                            ["attackers.character_id" => $character_id],
                         ],
                     ],
-                    ['$project' => ["_id" => 0, "killmail_id" => 1]],
                 ],
-                [
-                    "allowDiskUse" => true,
-                    "maxTimeMS" => 60000,
-                ],
-                3600
-            )
-            ->map(function ($killmail) {
-                return $killmail["killmail_id"];
-            });
+                ['$project' => ["_id" => 0, "killmail_id" => 1]],
+            ],
+            [],
+            3600
+        );
+
+        $killmails = [];
+        foreach ($killmailsGenerator as $killmail) {
+            $killmails[] = $killmail["killmail_id"];
+        }
 
         return $this->json($killmails, 3600);
     }
@@ -198,17 +204,15 @@ class Characters extends Controller
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);
-        if ($character->isEmpty()) {
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 
         $killCount = $this->killmails->count(
-            ["attackers.character_id" => $character_id],
-            []
+            ["attackers.character_id" => $character_id]
         );
         $lossCount = $this->killmails->count(
-            ["victim.character_id" => $character_id],
-            []
+            ["victim.character_id" => $character_id]
         );
 
         return $this->json(
@@ -231,31 +235,32 @@ class Characters extends Controller
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);
-        if ($character->isEmpty()) {
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 
-        $killmails = $this->killmails
-            ->aggregate(
+        $killmailsGenerator = $this->killmails->aggregate(
+            [
                 [
-                    [
-                        '$match' => [
-                            '$or' => [
-                                ["victim.character_id" => $character_id],
-                                ["attackers.character_id" => $character_id],
-                            ],
+                    '$match' => [
+                        '$or' => [
+                            ["victim.character_id" => $character_id],
+                            ["attackers.character_id" => $character_id],
                         ],
                     ],
-                    ['$sort' => ["kill_time" => -1]],
-                    ['$limit' => $limit],
-                    ['$project' => ["_id" => 0, "killmail_id" => 1]],
                 ],
-                [],
-                3600
-            )
-            ->map(function ($killmail) {
-                return $killmail["killmail_id"];
-            });
+                ['$sort' => ["kill_time" => -1]],
+                ['$limit' => $limit],
+                ['$project' => ["_id" => 0, "killmail_id" => 1]],
+            ],
+            [],
+            3600
+        );
+
+        $killmails = [];
+        foreach ($killmailsGenerator as $killmail) {
+            $killmails[] = $killmail["killmail_id"];
+        }
 
         return $this->json($killmails, 3600);
     }
@@ -266,7 +271,7 @@ class Characters extends Controller
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);
-        if ($character->isEmpty()) {
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 
@@ -281,7 +286,7 @@ class Characters extends Controller
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);
-        if ($character->isEmpty()) {
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 
@@ -299,7 +304,7 @@ class Characters extends Controller
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);
-        if ($character->isEmpty()) {
+        if (empty($character)) {
             return $this->json(["error" => "Character not found"], 300);
         }
 

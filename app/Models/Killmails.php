@@ -71,7 +71,7 @@ class Killmails extends Collection
         ]
     ];
 
-    public function getRandom(): \Illuminate\Support\Collection
+    public function getRandom(): array
     {
         // Use the aggregate function with the $sample operator
         $result = $this->aggregate([
@@ -79,8 +79,8 @@ class Killmails extends Collection
         ]);
 
         // The result is an array of documents, get the first one
-        $document = $result->first();
+        $document = $result[0];
 
-        return collect($document);
+        return $document;
     }
 }

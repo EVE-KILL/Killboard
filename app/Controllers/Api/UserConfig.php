@@ -18,6 +18,6 @@ class UserConfig extends Controller
     #[RouteAttribute("/config/get/{identifier}[/]", ["GET"], "Get user config by identifier")]
     public function getConfigForIdentifier(string $identifier): ResponseInterface
     {
-
+        return $this->json([]);
     }
 }

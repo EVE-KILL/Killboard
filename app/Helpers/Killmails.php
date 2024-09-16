@@ -4,6 +4,29 @@ declare(strict_types=1);
 
 namespace EK\Helpers;
 
+use EK\Models\Killmails as KillmailsModel;
+use EK\Models\KillmailsESI as KillmailsESIModel;
+use EK\ESI\Killmails as ESIKillmails;
+use EK\Models\SolarSystems as SolarSystemsModel;
+use EK\ESI\SolarSystems as ESISolarSystems;
+use EK\Models\Regions as RegionsModel;
+use EK\ESI\Regions as ESIRegions;
+use EK\Models\Constellations as ConstellationsModel;
+use EK\ESI\Constellations as ESIConstellations;
+use EK\Models\Prices as PricesModel;
+use EK\Models\TypeIDs as TypeIDsModel;
+use EK\ESI\TypeIDs as ESITypeIDs;
+use EK\Models\GroupIDs as GroupIDsModel;
+use EK\ESI\GroupIDs as ESIGroupIDs;
+use EK\Models\Celestials as CelestialsModel;
+use EK\Models\InvFlags as InvFlagsModel;
+use EK\Models\Characters as CharactersModel;
+use EK\Models\Corporations as CorporationsModel;
+use EK\Models\Alliances as AlliancesModel;
+use EK\Models\Factions as FactionsModel;
+use EK\ESI\Characters as ESICharacters;
+use EK\ESI\Corporations as ESICorporations;
+use EK\ESI\Alliances as ESIAlliances;
 use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use RuntimeException;
@@ -13,42 +36,43 @@ class Killmails
     protected string $imageServerUrl = 'https://images.evetech.net';
 
     public function __construct(
-        protected \EK\Models\Killmails      $killmails,
-        protected \EK\Models\KillmailsESI   $killmailsESI,
-        protected \EK\ESI\Killmails         $esiKillmails,
-        protected \EK\Models\SolarSystems   $solarSystems,
-        protected \EK\ESI\SolarSystems      $esiSolarSystems,
-        protected \EK\Models\Regions        $regions,
-        protected \EK\ESI\Regions           $esiRegions,
-        protected \EK\Models\Constellations $constellations,
-        protected \EK\ESI\Constellations    $esiConstellations,
-        protected \EK\Models\Prices         $prices,
-        protected \EK\Models\TypeIDs        $typeIDs,
-        protected \EK\ESI\TypeIDs           $esiTypeIDs,
-        protected \EK\Models\GroupIDs       $groupIDs,
-        protected \EK\ESI\GroupIDs          $esiGroupIDs,
-        protected \EK\Models\Celestials     $celestials,
-        protected \EK\Models\InvFlags       $invFlags,
-        protected \EK\Models\Characters     $characters,
-        protected \EK\Models\Corporations   $corporations,
-        protected \EK\Models\Alliances      $alliances,
-        protected \EK\Models\Factions       $factions,
-        protected \EK\ESI\Characters        $esiCharacters,
-        protected \EK\ESI\Corporations      $esiCorporations,
-        protected \EK\ESI\Alliances         $esiAlliances,
+        protected KillmailsModel $killmails,
+        protected KillmailsESIModel $killmailsESI,
+        protected ESIKillmails $esiKillmails,
+        protected SolarSystemsModel $solarSystems,
+        protected ESISolarSystems $esiSolarSystems,
+        protected RegionsModel $regions,
+        protected ESIRegions $esiRegions,
+        protected ConstellationsModel $constellations,
+        protected ESIConstellations $esiConstellations,
+        protected PricesModel $prices,
+        protected TypeIDsModel $typeIDs,
+        protected ESITypeIDs $esiTypeIDs,
+        protected GroupIDsModel $groupIDs,
+        protected ESIGroupIDs $esiGroupIDs,
+        protected CelestialsModel $celestials,
+        protected InvFlagsModel $invFlags,
+        protected CharactersModel $characters,
+        protected CorporationsModel $corporations,
+        protected AlliancesModel $alliances,
+        protected FactionsModel $factions,
+        protected ESICharacters $esiCharacters,
+        protected ESICorporations $esiCorporations,
+        protected ESIAlliances $esiAlliances,
     ) {}
 
     public function getKillMailHash(int $killmail_id): string
     {
-        return (string)$this->killmails->findOne(['killmail_id' => $killmail_id])->get('hash');
+        $killmail = $this->killmails->findOneOrNull(['killmail_id' => $killmail_id]);
+        return $killmail !== null ? (string)$killmail['hash'] : '';
     }
 
     public function getKillmail(int $killmail_id, string $hash = ''): array
     {
         // Check if we got the killmail
-        $killmail = $this->killmailsESI->findOne(['killmail_id' => $killmail_id]);
-        if ($killmail->isNotEmpty()) {
-            return $killmail->toArray();
+        $killmail = $this->killmailsESI->findOneOrNull(['killmail_id' => $killmail_id]);
+        if ($killmail !== null) {
+            return $killmail;
         }
 
         // Get killmail from ESI
@@ -59,7 +83,7 @@ class Killmails
         $this->killmailsESI->save();
 
         // Return the data from the model, because the model does stuff to it
-        return $this->killmailsESI->getData()->toArray();
+        return $this->killmailsESI->getData();
     }
 
     public function parseKillmail(int $killmail_id, string $hash = '', int $war_id = 0): array
@@ -77,8 +101,10 @@ class Killmails
 
     private function generateInfoTop(array $killmail, int $killmail_id, string $hash, int $war_id = 0): array
     {
-        $solarSystemData = $this->solarSystems->findOneOrNull(['system_id' => $killmail['solar_system_id']]) ??
-            $this->esiSolarSystems->getSolarSystem($killmail['solar_system_id']);
+        $solarSystemData = $this->solarSystems->findOneOrNull(['system_id' => $killmail['solar_system_id']]);
+        if ($solarSystemData === null) {
+            $solarSystemData = $this->esiSolarSystems->getSolarSystem($killmail['solar_system_id']);
+        }
         $killValue = $this->calculateKillValue($killmail);
         $pointValue = ceil($killValue['total_value'] === 0 ? 0 : ($killValue['total_value'] / 10000) / count($killmail['attackers']));
         $x = $killmail['victim']['position']['x'] ?? 0;
@@ -261,35 +287,8 @@ class Killmails
                 $percentDamage = (int)$attacker['damage_done'] / $totalDamage;
                 $points = ceil($pointValue * $percentDamage);
                 if ($points > 0) {
-                    $inner['points'] = $points;
-                    if ($characterId > 0) {
-                        $this->characters->update(
-                            ['character_id' => $characterId],
-                            ['$inc' => ['points' => $points]]
-                        );
-                    }
-                    if ($corporationId > 0) {
-                        $this->corporations->update(
-                            ['corporation_id' => $corporationId],
-                            ['$inc' => ['points' => $points]]
-                        );
-                    }
-                    if ($allianceId > 0) {
-                        $this->alliances->update(
-                            ['alliance_id' => $allianceId],
-                            ['$inc' => ['points' => $points]]
-                        );
-                    }
+                    $inner['points'] = (int) $points;
                 }
-            }
-            if ($characterId > 0) {
-                $this->characters->update(['character_id' => $characterId], ['$inc' => ['kills' => 1]]);
-            }
-            if ($corporationId > 0) {
-                $this->corporations->update(['corporation_id' => $corporationId], ['$inc' => ['kills' => 1]]);
-            }
-            if ($allianceId > 0) {
-                $this->alliances->update(['alliance_id' => $allianceId], ['$inc' => ['kills' => 1]]);
             }
 
             $return[] = $inner;
@@ -393,7 +392,7 @@ class Killmails
             return '';
         }
 
-        $celestials = $this->celestials->find(['solar_system_id' => $solarSystemId])->toArray();
+        $celestials = $this->celestials->find(['solar_system_id' => $solarSystemId]);
         $minimumDistance = null;
         $celestialName = '';
 
@@ -477,7 +476,7 @@ class Killmails
         $fittingString = $shipTypeID . ':';
 
         foreach ($items as $item) {
-            $flagName = $this->invFlags->findOne(['flag_id' => $item['flag']])->get('flag_name');
+            $flagName = $this->invFlags->findOne(['flag_id' => $item['flag']])['flag_name'] ?? '';
             $categoryID = $item['category_id'] ?? 0;
             if ($categoryID === 8 || in_array($flagName, $slots)) {
                 $typeID = $item['item_type_id'] ?? 0;

@@ -46,9 +46,7 @@ class ParseKillmails extends ConsoleCommand
                 ['$limit' => 1000]
             ]);
 
-            $this->out('Parsing killmails inline.. (' . $unparsedKillmails->count() . ' killmails)');
-            $progressBar = $this->progressBar($unparsedKillmails->count());
-            foreach ($this->getKillmails($unparsedKillmails) as $killmail) {
+            foreach ($$unparsedKillmails as $killmail) {
                 $hash = $killmail['hash'];
                 $startTime = microtime(true);
 
@@ -63,10 +61,7 @@ class ParseKillmails extends ConsoleCommand
                 $this->killmails->save();
                 $this->out('Parsed killmail ' . $killmail['killmail_id'] . ' in ' . round(microtime(true) - $startTime, 2) . ' seconds');
                 $this->out('https://eve-kill.com/api/v1/killmail/' . $killmail['killmail_id']);
-                $progressBar->advance();
             }
-
-            $progressBar->finish();
         } else {
             $this->out('Fetching unparsed killmail count...');
             // Get the count of killmails WITHOUT the updated field
@@ -82,20 +77,13 @@ class ParseKillmails extends ConsoleCommand
                 ['$project' => ['killmail_id' => 1, 'hash' => 1]],
             ]);
 
-            foreach ($this->getKillmails($unparsedKillmails) as $killmail) {
+            foreach ($unparsedKillmails as $killmail) {
                 $this->parseKillmailJob->enqueue([
                     'killmail_id' => $killmail['killmail_id'],
                     'hash' => $killmail['hash']
                 ]);
                 $progressBar->advance();
             }
-        }
-    }
-
-    private function getKillmails($unparsedKillmails): \Generator
-    {
-        foreach ($unparsedKillmails as $killmail) {
-            yield $killmail;
         }
     }
 }

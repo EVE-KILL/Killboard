@@ -43,7 +43,7 @@ class ProcessESI extends Jobs
                     'attackers' => ['$exists' => true]
                 ], [
                     'projection' => ['_id' => 1]
-                ])->toArray();
+                ]);
 
                 if (!empty($existingKillmail)) {
                     continue;

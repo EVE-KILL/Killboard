@@ -52,11 +52,11 @@ class UpdateMemberCount extends ConsoleCommand
             ]
         ];
 
-        $allianceMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'alliance_id'])->toArray();
+        $allianceMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'alliance_id']);
 
         $allianceUpdates = [];
         $historicalAllianceUpdates = [];
-        $progressBar = $this->progressBar(count($allianceMemberCounts));
+        $progressBar = $this->progressBar(count(iterator_to_array($allianceMemberCounts)));
         foreach ($allianceMemberCounts as $alliance) {
             $allianceUpdates[] = ['alliance_id' => $alliance['alliance_id'], 'member_count' => $alliance['member_count']];
             $historicalAllianceUpdates[] = [
@@ -106,11 +106,11 @@ class UpdateMemberCount extends ConsoleCommand
             ]
         ];
 
-        $corporationMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'corporation_id'])->toArray();
+        $corporationMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'corporation_id']);
 
         $corporationUpdates = [];
         $historicalCorporationUpdates = [];
-        $progressBar = $this->progressBar(count($corporationMemberCounts));
+        $progressBar = $this->progressBar(count(iterator_to_array($corporationMemberCounts)));
         foreach ($corporationMemberCounts as $corporation) {
             $corporationUpdates[] = ['corporation_id' => $corporation['corporation_id'], 'member_count' => $corporation['member_count']];
             $historicalCorporationUpdates[] = [

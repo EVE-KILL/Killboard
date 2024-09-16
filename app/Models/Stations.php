@@ -24,6 +24,6 @@ class Stations extends Collection
     public array $indexes = [
         'unique' => ['station_id'],
         'desc' => ['type_id', 'system_id'],
-        'text' => ['name']
+        'text' => []
     ];
 }

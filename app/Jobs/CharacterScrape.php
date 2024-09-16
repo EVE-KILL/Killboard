@@ -48,7 +48,7 @@ class CharacterScrape extends Jobs
 
         $existingCharacter = $this->characters->findOneOrNull([
             "character_id" => $characterId,
-        ], [], 0)?->toArray();
+        ], [], 0);
 
         if ($existingCharacter !== null) {
             return;
@@ -119,7 +119,7 @@ class CharacterScrape extends Jobs
         if ($factionId > 0) {
             return $this->factions->findOne([
                 "faction_id" => $factionId,
-            ])?->toArray();
+            ]);
         }
         return [];
     }

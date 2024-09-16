@@ -39,7 +39,7 @@ class Campaigns
                 'last_modified' => 0,
                 'user' => 0
             ]
-        ])->toArray();
+        ]);
 
         $entities = $campaign['entities'] ?? [];
         $locations = $campaign['locations'] ?? [];

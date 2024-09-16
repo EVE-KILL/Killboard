@@ -34,7 +34,7 @@ class Users extends Collection
     public function getUser(int $characterId): array
     {
         $currentTime = time();
-        $user = $this->findOne(['character_id' => $characterId])->toArray();
+        $user = $this->findOne(['character_id' => $characterId]);
 
         if ($user === null) {
             throw new RuntimeException('User not found');
@@ -50,7 +50,7 @@ class Users extends Collection
     public function getUserByIdentifier(string $identifier): array
     {
         $currentTime = time();
-        $user = $this->findOne(['identifier' => $identifier])->toArray();
+        $user = $this->findOne(['identifier' => $identifier]);
 
         if ($user === null) {
             throw new RuntimeException('User not found');
@@ -90,7 +90,7 @@ class Users extends Collection
         }
 
         $user['expiration'] = $expiration;
-        $this->setData($user->toArray());
+        $this->setData($user);
         return $this->save();
     }
 
@@ -105,7 +105,7 @@ class Users extends Collection
         return true;
     }
 
-    public function getUserConfig(string $identifier): SupportCollection
+    public function getUserConfig(string $identifier): array
     {
         $user = $this->findOneOrNull(['identifier' => $identifier], showHidden: true);
 
@@ -125,7 +125,7 @@ class Users extends Collection
         }
 
         $user['config'] = $config;
-        $this->setData($user->toArray());
+        $this->setData($user);
         return $this->save();
     }
 }

@@ -39,7 +39,7 @@ class Campaigns extends Controller
                 'limit' => $limit, // Limit the number of documents returned
                 'skip' => $offset   // Skip the documents based on the current page
             ]
-        )->toArray();
+        );
 
         // Cleanup timestamps if necessary
         $campaigns = $this->cleanupTimestamps($campaigns);
@@ -55,7 +55,7 @@ class Campaigns extends Controller
         $campaign = $this->campaigns->findOne(
             ['campaign_id' => $campaign_id],
             ['projection' => ['_id' => 0]]
-        )->toArray();
+        );
 
         // If the campaign does not exist, return a 404 (Not Found) response
         if ($campaign === null) {
@@ -76,6 +76,7 @@ class Campaigns extends Controller
         $postData = json_validate($this->getBody())
             ? json_decode($this->getBody(), true)
             : [];
+
         if (empty($postData)) {
             return $this->json(["error" => "No data provided"], 300);
         }

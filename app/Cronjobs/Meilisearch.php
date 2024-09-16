@@ -80,8 +80,6 @@ class Meilisearch extends Cronjob
             ["projection" => ["_id" => 0, "name" => 1, "region_id" => 1]]
         );
 
-        $this->logger->info("Found " . count($alliances) . " alliances, " . count($corporations) . " corporations, " . count($characters) . " characters, " . count($items) . " items, " . count($systems) . " systems, and " . count($regions) . " regions");
-
         $documents = [];
         foreach ($alliances as $alliance) {
             if (empty($alliance["name"])) {

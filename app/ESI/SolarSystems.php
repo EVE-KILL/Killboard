@@ -2,16 +2,21 @@
 
 namespace EK\ESI;
 
+use EK\ESI\Constellations as ESIConstellations;
+use EK\ESI\Regions as ESIRegions;
 use EK\Fetchers\ESI;
+use EK\Models\Constellations;
+use EK\Models\Regions;
+use EK\Models\SolarSystems as ModelsSolarSystems;
 
 class SolarSystems
 {
     public function __construct(
-        protected \EK\Models\SolarSystems $solarSystems,
-        protected \EK\Models\Constellations $constellations,
-        protected \EK\Models\Regions $regions,
-        protected \EK\ESI\Constellations $esiConstellations,
-        protected \EK\ESI\Regions $esiRegions,
+        protected ModelsSolarSystems $solarSystems,
+        protected Constellations $constellations,
+        protected Regions $regions,
+        protected ESIConstellations $esiConstellations,
+        protected ESIRegions $esiRegions,
         protected ESI $esiFetcher
     ) {
     }

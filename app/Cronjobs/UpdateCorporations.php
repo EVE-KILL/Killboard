@@ -34,11 +34,12 @@ class UpdateCorporations extends Cronjob
             ["limit" => 2000]
         );
 
-        $updates = array_map(function ($corporation) {
-            return [
+        $updates = [];
+        foreach ($staleCorporations as $corporation) {
+            $updates[] = [
                 "corporation_id" => $corporation["corporation_id"],
             ];
-        }, $staleCorporations->toArray());
+        }
 
         $this->logger->info("Updating " . count($updates) . " corporations");
         $this->updateCorporation->massEnqueue($updates);

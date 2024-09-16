@@ -49,7 +49,7 @@ class zkbRedisQ extends ConsoleCommand
 
                 if ($kill !== null && $kill['package'] !== null) {
                     // Check the killmail doesn't already exist
-                    if ($this->killmails->findOne(['killmail_id' => $kill['package']['killID']])->isNotEmpty()) {
+                    if (!empty($this->killmails->findOne(['killmail_id' => $kill['package']['killID']]))) {
                         $this->out('Killmail already exists: ' . $kill['package']['killID']);
                         continue;
                     }

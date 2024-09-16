@@ -41,9 +41,10 @@ class Battle
             ['$sort' => ['count' => -1]],
             ['$limit' => 1]
         ];
-        $battleData = $this->killmails->aggregate($pipeline);
 
-        if ($battleData->count() === 0) {
+        $battleData = iterator_to_array($this->killmails->aggregate($pipeline));
+
+        if (count($battleData) === 0) {
             return false;
         }
         return true;
@@ -113,7 +114,7 @@ class Battle
 
     public function processBattle(int $systemId, int $battleStartTime, int $battleEndTime): array
     {
-        $kills = $this->killmails->aggregate([
+        $kills = iterator_to_array($this->killmails->aggregate([
             ['$match' => [
                 'kill_time' => ['$gte' => new UTCDateTime($battleStartTime * 1000), '$lte' => new UTCDateTime($battleEndTime * 1000)],
                 'system_id' => $systemId
@@ -122,7 +123,7 @@ class Battle
                 '_id' => 0,
                 'items' => 0,
             ]],
-        ], ['hint' => 'kill_time_system_id']);
+        ], ['hint' => 'kill_time_system_id']));
 
         // Find the teams
         $teams = $this->findTeams($kills);
@@ -160,7 +161,7 @@ class Battle
         return $battle;
     }
 
-    private function findTeams(Collection $killmails): array
+    private function findTeams(array $killmails): array
     {
         $attackMatrix = [];
         $corporationNames = [];

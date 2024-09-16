@@ -115,7 +115,7 @@ class KillList
             return collect($cacheResult);
         }
 
-        $result = $this->killmails->find($find, $options)->toArray();
+        $result = $this->killmails->find($find, $options);
 
         // Add comment count to each killmail
         foreach ($result as $key => $killmail) {

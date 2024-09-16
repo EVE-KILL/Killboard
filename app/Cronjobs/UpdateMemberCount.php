@@ -53,7 +53,7 @@ class UpdateMemberCount extends Cronjob
             ]
         ];
 
-        $allianceMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'alliance_id'])->toArray();
+        $allianceMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'alliance_id']);
 
         $allianceUpdates = [];
         $historicalAllianceUpdates = [];
@@ -102,7 +102,7 @@ class UpdateMemberCount extends Cronjob
             ]
         ];
 
-        $corporationMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'corporation_id'])->toArray();
+        $corporationMemberCounts = $this->characters->aggregate($aggregationPipeline, ['hint' => 'corporation_id']);
 
         $corporationUpdates = [];
         $historicalCorporationUpdates = [];

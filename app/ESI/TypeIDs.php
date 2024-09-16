@@ -3,11 +3,12 @@
 namespace EK\ESI;
 
 use EK\Fetchers\ESI;
+use EK\Models\TypeIDs as ModelsTypeIDs;
 
 class TypeIDs
 {
     public function __construct(
-        protected \EK\Models\TypeIDs $typeIDs,
+        protected ModelsTypeIDs $typeIDs,
         protected ESI $esiFetcher
     ) {
     }

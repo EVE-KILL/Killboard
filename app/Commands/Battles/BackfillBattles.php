@@ -57,7 +57,7 @@ class BackfillBattles extends ConsoleCommand
             $potentialBattles = $this->killmails->aggregate($pipeline, ['hint' => 'kill_time']);
 
             // This is where we start looking for the battle in 5 minute segments
-            if ($potentialBattles->count() > 0) {
+            if (count(iterator_to_array($potentialBattles)) > 0) {
                 foreach($potentialBattles as $potentialBattle) {
                     $systemId = $potentialBattle['_id'];
                     //$this->out("Potential battle in system {$systemId}");
@@ -136,7 +136,7 @@ class BackfillBattles extends ConsoleCommand
         // Find the earliest killmail and get it's kill_time
         $earliestKillmail = $this->killmails->findOne([], ['hint' => 'kill_time', 'sort' => ['kill_time' => 1]]);
         /** @var UTCDateTime $earliestTime */
-        $earliestTime = $earliestKillmail->get('kill_time');
+        $earliestTime = $earliestKillmail['kill_time'];
         $calculatedStartTime = $earliestTime->toDateTime()->getTimestamp();
         $calculatedEndTime = time();
 

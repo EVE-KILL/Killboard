@@ -102,7 +102,7 @@ class Auth extends Controller
 
         $user['expiration'] = time() + 3600;
         $user['identifier'] = uniqid('', true);
-        $this->users->setData($user->toArray());
+        $this->users->setData($user);
         $this->users->save();
 
         return $this->json($user);

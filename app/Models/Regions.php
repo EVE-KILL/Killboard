@@ -24,6 +24,6 @@ class Regions extends Collection
     public array $indexes = [
         'unique' => ['region_id'],
         'desc' => ['constellations', 'name'],
-        'text' => ['name']
+        'text' => []
     ];
 }

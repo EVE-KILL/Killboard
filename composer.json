@@ -33,7 +33,6 @@
     "symfony/console": "*",
     "guzzlehttp/guzzle": "*",
     "kcs/class-finder": "*",
-    "illuminate/collections": "*",
     "predis/predis": "*",
     "psy/psysh": "*",
     "poliander/cron": "*",
