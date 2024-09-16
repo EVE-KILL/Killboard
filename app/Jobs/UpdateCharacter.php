@@ -5,7 +5,6 @@ namespace EK\Jobs;
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\EveWho;
 use EK\Meilisearch\Meilisearch;
-use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use EK\Models\Characters;
 use EK\Models\Alliances;
@@ -49,7 +48,7 @@ class UpdateCharacter extends Jobs
         $characterData = $this->characters->findOneOrNull([
             'character_id' => $characterId,
             'name' => ['$ne' => 'Unknown'],
-        ])?->toArray();
+        ]);
 
         // If the character has been deleted, and is flagged as deleted, we just skip it
         if ($characterData && isset($characterData['deleted']) && $characterData['deleted'] === true) {
@@ -110,8 +109,6 @@ class UpdateCharacter extends Jobs
 
     protected function updateCharacterData(array $characterData): void
     {
-        $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
-
         $allianceId = $characterData["alliance_id"] ?? 0;
         $corporationId = $characterData["corporation_id"] ?? 0;
         $factionId = $characterData["faction_id"] ?? 0;
@@ -145,7 +142,7 @@ class UpdateCharacter extends Jobs
         if ($allianceId > 0) {
             return $this->alliances->findOneOrNull([
                 "alliance_id" => $allianceId,
-            ])?->toArray() ?? $this->esiAlliances->getAllianceInfo($allianceId);
+            ]) ?? $this->esiAlliances->getAllianceInfo($allianceId);
         }
         return [];
     }
@@ -155,7 +152,7 @@ class UpdateCharacter extends Jobs
         if ($corporationId > 0) {
             return $this->corporations->findOneOrNull([
                 "corporation_id" => $corporationId,
-            ])?->toArray() ?? $this->esiCorporations->getCorporationInfo($corporationId);
+            ]) ?? $this->esiCorporations->getCorporationInfo($corporationId);
         }
         return [];
     }

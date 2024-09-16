@@ -118,21 +118,24 @@ class Killmail extends Controller
             return $this->json(["error" => "Too many IDs provided"], 300, 400);
         }
 
-        $killmails = $this->killmails
-            ->find(
-                ["killmail_id" => ['$in' => $postData]],
-                ["projection" => ["_id" => 0]],
-                300
-            )
-            ->map(function ($killmail) {
-                return $this->cleanupTimestamps($killmail);
-            })->map(function ($killmail) {
-                $commentCount = $this->comments->count(['identifier' => 'kill:' . $killmail['killmail_id']]);
-                $killmail['comment_count'] = $commentCount;
-                return $killmail;
-            });
+        $killmailsCursor = $this->killmails->find(
+            ["killmail_id" => ['$in' => $postData]],
+            ["projection" => ["_id" => 0]]
+        );
 
-        return $this->json($killmails->toArray(), 300);
+        $killmails = [];
+        foreach ($killmailsCursor as $killmail) {
+            // Clean up timestamps
+            $killmail = $this->cleanupTimestamps($killmail);
+
+            // Add comment count
+            $commentCount = $this->comments->count(['identifier' => 'kill:' . $killmail['killmail_id']]);
+            $killmail['comment_count'] = $commentCount;
+
+            $killmails[] = $killmail;
+        }
+
+        return $this->json($killmails, 300);
     }
 
     #[RouteAttribute("/killmail/near/{system_id:[0-9]+}/{distanceInMeters:[0-9]+}/{x}/{y}/{z}[/{days:[0-9]+}]", ["GET"], "Get killmails near coordinates")]

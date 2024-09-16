@@ -5,7 +5,6 @@ namespace EK\Helpers;
 use EK\Cache\Cache;
 use EK\Models\Comments;
 use EK\Models\Killmails;
-use Illuminate\Support\Collection as IlluminateCollection;
 
 class KillList
 {
@@ -16,7 +15,7 @@ class KillList
     ) {
     }
 
-    public function getLatest(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getLatest(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("latest_killlist", $page, $offset);
@@ -34,7 +33,7 @@ class KillList
         );
     }
 
-    public function getCombinedForType(string $type, int $value, int $page = 1, int $limit = 1000, int $cacheTime = 60): IlluminateCollection
+    public function getCombinedForType(string $type, int $value, int $page = 1, int $limit = 1000, int $cacheTime = 60): array
     {
         $validTypes = [
             'character_id',
@@ -67,7 +66,7 @@ class KillList
         );
     }
 
-    public function getKillsForType(string $type, int $value, int $page = 1, int $limit = 1000, int $cacheTime = 60): IlluminateCollection
+    public function getKillsForType(string $type, int $value, int $page = 1, int $limit = 1000, int $cacheTime = 60): array
     {
         $validTypes = [
             "attackers.character_id",
@@ -106,13 +105,13 @@ class KillList
         );
     }
 
-    private function fetchData(array $find = [], array $options = [], string $cacheKey = '', int $cacheTime = 60): IlluminateCollection
+    private function fetchData(array $find = [], array $options = [], string $cacheKey = '', int $cacheTime = 60): array
     {
         if (
             $this->cache->exists($cacheKey) &&
             !empty(($cacheResult = $this->cache->get($cacheKey)))
         ) {
-            return collect($cacheResult);
+            return $cacheResult;
         }
 
         $result = $this->killmails->find($find, $options);
@@ -123,10 +122,10 @@ class KillList
         }
 
         $this->cache->set($cacheKey, $result, $cacheTime);
-        return collect($result);
+        return $result;
     }
 
-    public function getAbyssal(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getAbyssal(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_abyssal", $page);
@@ -147,7 +146,7 @@ class KillList
         );
     }
 
-    public function getWSpace(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getWSpace(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_wspace", $page);
@@ -168,7 +167,7 @@ class KillList
         );
     }
 
-    public function getHighSec(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getHighSec(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_highsec", $page);
@@ -189,7 +188,7 @@ class KillList
         );
     }
 
-    public function getLowSec(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getLowSec(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_lowsec", $page);
@@ -210,7 +209,7 @@ class KillList
         );
     }
 
-    public function getNullSec(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getNullSec(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_nullsec", $page);
@@ -231,7 +230,7 @@ class KillList
         );
     }
 
-    public function getBigKills(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getBigKills(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_bigkills", $page);
@@ -252,7 +251,7 @@ class KillList
         );
     }
 
-    public function getSolo(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getSolo(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_solo", $page);
@@ -273,7 +272,7 @@ class KillList
         );
     }
 
-    public function getNPC(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getNPC(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_npc", $page);
@@ -294,7 +293,7 @@ class KillList
         );
     }
 
-    public function get5b(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function get5b(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_5b", $page);
@@ -315,7 +314,7 @@ class KillList
         );
     }
 
-    public function get10b(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function get10b(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_10b", $page);
@@ -336,7 +335,7 @@ class KillList
         );
     }
 
-    public function getCitadels(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getCitadels(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_citadels", $page);
@@ -357,7 +356,7 @@ class KillList
         );
     }
 
-    public function getT1(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getT1(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_t1", $page);
@@ -378,7 +377,7 @@ class KillList
         );
     }
 
-    public function getT2(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getT2(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_t2", $page);
@@ -399,7 +398,7 @@ class KillList
         );
     }
 
-    public function getT3(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getT3(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_t3", $page);
@@ -420,7 +419,7 @@ class KillList
         );
     }
 
-    public function getFrigates(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getFrigates(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_frigates", $page);
@@ -441,7 +440,7 @@ class KillList
         );
     }
 
-    public function getDestroyers(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getDestroyers(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_destroyers", $page);
@@ -462,7 +461,7 @@ class KillList
         );
     }
 
-    public function getCruisers(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getCruisers(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_cruisers", $page);
@@ -483,7 +482,7 @@ class KillList
         );
     }
 
-    public function getBattleCruisers(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getBattleCruisers(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_battlecruisers", $page);
@@ -504,7 +503,7 @@ class KillList
         );
     }
 
-    public function getBattleShips(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getBattleShips(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_battleships", $page);
@@ -525,7 +524,7 @@ class KillList
         );
     }
 
-    public function getCapitals(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getCapitals(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_capitals", $page);
@@ -546,7 +545,7 @@ class KillList
         );
     }
 
-    public function getFreighters(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getFreighters(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_freighters", $page);
@@ -567,7 +566,7 @@ class KillList
         );
     }
 
-    public function getSuperCarriers(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getSuperCarriers(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_supercarriers", $page);
@@ -588,7 +587,7 @@ class KillList
         );
     }
 
-    public function getTitans(int $page = 1, int $limit = 100, int $cacheTime = 60): IlluminateCollection
+    public function getTitans(int $page = 1, int $limit = 100, int $cacheTime = 60): array
     {
         $offset = $limit * ($page - 1);
         $cacheKey = $this->cache->generateKey("killlist_titans", $page);

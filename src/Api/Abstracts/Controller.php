@@ -3,7 +3,6 @@
 namespace EK\Api\Abstracts;
 
 use Generator;
-use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -17,7 +16,7 @@ abstract class Controller
     private array $preload = [];
     protected array $routes = [];
     protected Validator $validator;
-    protected Collection $arguments;
+    protected array $arguments;
 
     public function __construct(
     ) {
@@ -57,7 +56,7 @@ abstract class Controller
 
             try {
                 // Setup the controller with request, response, and arguments
-                $controller->arguments = new Collection($args);
+                $controller->arguments = $args;
                 $controller->setRequest($request);
                 $controller->setResponse($response);
                 $controller->setBody($request->getBody()->getContents());
@@ -121,18 +120,19 @@ abstract class Controller
      */
     protected function getArg(string $key): mixed
     {
-        if ($this->getArgs()->has($key)) {
-            return $this->getArgs()->get($key);
+        if (isset($this->arguments[$key])) {
+            return $this->arguments[$key];
         }
+
         return null;
     }
 
     /**
      * Get route arguments
      *
-     * @return Collection
+     * @return array
      */
-    protected function getArgs(): Collection
+    protected function getArgs(): array
     {
         return $this->arguments;
     }
@@ -152,11 +152,11 @@ abstract class Controller
     /**
      * Return all POST/GET Params
      *
-     * @return Collection
+     * @return array
      */
-    protected function getParams(): Collection
+    protected function getParams(): array
     {
-        return new Collection($this->request->getQueryParams());
+        return $this->request->getQueryParams();
     }
 
     /**
@@ -174,15 +174,15 @@ abstract class Controller
     /**
      * Return all POST Params
      *
-     * @return Collection
+     * @return array
      */
-    protected function getPostParams(): Collection
+    protected function getPostParams(): array
     {
         $post = array_diff_key($this->request->getParsedBody() ?? [], array_flip([
             '_METHOD',
         ]));
 
-        return new Collection($post);
+        return $post;
     }
 
     protected function getPostData(): string
@@ -193,15 +193,15 @@ abstract class Controller
     /**
      * Get the files posted
      *
-     * @return Collection
+     * @return array
      */
-    protected function getFiles(): Collection
+    protected function getFiles(): array
     {
         $files = array_diff_key($this->request->getUploadedFiles(), array_flip([
             '_METHOD',
         ]));
 
-        return new Collection($files);
+        return $files;
     }
 
     /**
@@ -219,11 +219,11 @@ abstract class Controller
     /**
      * Get all request headers
      *
-     * @return Collection
+     * @return array
      */
-    protected function getHeaders(): Collection
+    protected function getHeaders(): array
     {
-        return new Collection($this->request->getHeaders());
+        return $this->request->getHeaders();
     }
 
     /**
@@ -287,7 +287,7 @@ abstract class Controller
     /**
      * Render the data as json output
      *
-     * @param array|Collection $data
+     * @param array $data
      * @param int $status
      * @param String $contentType
      * @param int $cacheTime
@@ -295,7 +295,7 @@ abstract class Controller
      * @return ResponseInterface
      */
     protected function json(
-        array|Collection $data = [],
+        array $data = [],
         int $cacheTime = 30,
         int $status = 200,
         string $contentType = 'application/json; charset=UTF-8'

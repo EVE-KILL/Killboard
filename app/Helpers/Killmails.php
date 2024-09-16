@@ -27,7 +27,6 @@ use EK\Models\Factions as FactionsModel;
 use EK\ESI\Characters as ESICharacters;
 use EK\ESI\Corporations as ESICorporations;
 use EK\ESI\Alliances as ESIAlliances;
-use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 use RuntimeException;
 
@@ -146,14 +145,14 @@ class Killmails
 
             foreach ($entityIds as $id) {
                 $result = $this->fetchEntityInformation($entityType, $id) ?? [];
-                $information[$entityType][$id] = is_a($result, Collection::class) ? $result->toArray() : $result;
+                $information[$entityType][$id] = $result;
             }
         }
 
         return $information;
     }
 
-    private function fetchEntityInformation(string $entityType, int $id): Collection|array|null
+    private function fetchEntityInformation(string $entityType, int $id): array|null
     {
         return match ($entityType) {
             'character' => $this->characters->findOneOrNull(['character_id' => $id]) ?? $this->esiCharacters->getCharacterInfo($id),

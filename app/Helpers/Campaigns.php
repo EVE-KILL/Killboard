@@ -27,7 +27,7 @@ class Campaigns
             $campaigns[$key] = $this->generateCampaignStats($campaign);
         }
 
-        return $campaigns->toArray();
+        return $campaigns;
     }
 
     public function generateCampaignStats(string $campaignId): array

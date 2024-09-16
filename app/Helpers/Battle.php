@@ -4,7 +4,6 @@ namespace EK\Helpers;
 
 use EK\Models\Killmails;
 use EK\Models\SolarSystems;
-use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 
 class Battle

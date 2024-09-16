@@ -16,7 +16,6 @@ use EK\Fetchers\EveWho;
 use EK\Logger\Logger;
 use EK\RabbitMQ\RabbitMQ;
 use EK\Webhooks\Webhooks;
-use Illuminate\Support\Collection;
 use MongoDB\BSON\UTCDateTime;
 
 class CharacterScrape extends Jobs
@@ -68,8 +67,6 @@ class CharacterScrape extends Jobs
 
     protected function updateCharacterData(array $characterData): void
     {
-        $characterData = $characterData instanceof Collection ? $characterData->toArray() : $characterData;
-
         $allianceId = $characterData["alliance_id"] ?? 0;
         $corporationId = $characterData["corporation_id"] ?? 0;
         $factionId = $characterData["faction_id"] ?? 0;
@@ -99,7 +96,7 @@ class CharacterScrape extends Jobs
         if ($allianceId > 0) {
             return $this->alliances->findOneOrNull([
                 "alliance_id" => $allianceId,
-            ])?->toArray() ?? $this->esiAlliances->getAllianceInfo($allianceId);
+            ]) ?? $this->esiAlliances->getAllianceInfo($allianceId);
         }
         return [];
     }
@@ -109,7 +106,7 @@ class CharacterScrape extends Jobs
         if ($corporationId > 0) {
             return $this->corporations->findOneOrNull([
                 "corporation_id" => $corporationId,
-            ])?->toArray() ?? $this->esiCorporations->getCorporationInfo($corporationId);
+            ]) ?? $this->esiCorporations->getCorporationInfo($corporationId);
         }
         return [];
     }

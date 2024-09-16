@@ -3,7 +3,6 @@
 namespace EK\Models;
 
 use EK\Database\Collection;
-use Illuminate\Support\Collection as SupportCollection;
 use RuntimeException;
 
 class Users extends Collection
