@@ -81,16 +81,18 @@ class Killmail extends Controller
         // Get the victim character_id
         $victim = $killmail['victim']['character_id'];
         $systemId = $killmail['system_id'];
+        $killTimeStart = $killmail['kill_time']->toDateTime()->getTimestamp() - 3600;
+        $killTimeEnd = $killmail['kill_time']->toDateTime()->getTimestamp() + 3600;
 
         // Look for a killmail that has the same victim character_id, that is at most 1h old, in the same system
         $sibling = $this->killmails->findOneOrNull(
             [
                 "victim.character_id" => $victim,
                 "system_id" => $systemId,
-                "kill_time" => ['$gte' => new \MongoDB\BSON\UTCDateTime((time() - 3600) * 1000)],
+                "kill_time" => ['$gte' => new \MongoDB\BSON\UTCDateTime($killTimeStart * 1000), '$lt' => new \MongoDB\BSON\UTCDateTime($killTimeEnd * 1000)],
                 "killmail_id" => ['$ne' => $killmail_id]
             ],
-            ["projection" => ["_id" => 0,"killmail_id" => 1]]
+            ["projection" => ["_id" => 0,"killmail_id" => 1], "sort" => ["kill_time" => -1]]
         );
 
         if ($sibling === null) {
