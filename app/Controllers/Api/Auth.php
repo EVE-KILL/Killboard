@@ -9,6 +9,7 @@ use EK\Config\Config;
 use EK\Helpers\ESISSO;
 use EK\Models\Users;
 use Psr\Http\Message\ResponseInterface;
+use UnexpectedValueException;
 
 class Auth extends Controller
 {
@@ -33,7 +34,13 @@ class Auth extends Controller
     #[RouteAttribute("/auth/eve[/]", ["GET"], "EVE SSO Callback")]
     public function callback(): ResponseInterface
     {
-        $auth = $this->sso->getProvider()->validateAuthenticationV2($this->getParam('state'), $this->getParam('state'), $this->getParam('code'));
+        try {
+            $auth = $this->sso->getProvider()->validateAuthenticationV2($this->getParam('state'), $this->getParam('state'), $this->getParam('code'));
+        } catch(UnexpectedValueException $e) {
+            $auth = $this->sso->getProvider(true)->validateAuthenticationV2($this->getParam('state'), $this->getParam('state'), $this->getParam('code'));
+        } catch(\Exception $e) {
+            throw $e;
+        }
 
         $characterId = $auth->getCharacterId();
         $characterName = $auth->getCharacterName();
@@ -42,6 +49,7 @@ class Auth extends Controller
         $accessToken = $auth->getToken()->getToken();
         $expires = $auth->getToken()->getExpires();
         $scopes = $auth->getScopes();
+
         // Return a unique hash that the frontend can use to authenticate, this hash should be stored in the cache with a TTL of 5 seconds
         $loginHash = base64_encode(json_encode([
             'characterId' => $characterId,
