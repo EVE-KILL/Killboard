@@ -1,6 +1,6 @@
 # Killmail Query API Documentation
 
-This API endpoint allows you to query killmail data with various filters, sorting options, and projections.
+This API endpoint allows you to query killmail data with various filters, options and projections.
 
 ## Endpoint
 
@@ -17,9 +17,6 @@ json
     // Filter conditions
     },
     "options": {
-        "sort": {
-            // Sorting options
-        },
         "limit": 10,
         "skip": 0,
         "projection": {
@@ -43,7 +40,7 @@ The `filter` object specifies conditions that the killmails must meet. You can u
 - `$nin`: Not in array
 - `$exists`: Field exists
 
-### Valid Fields for Filtering and Sorting
+### Valid Fields for Filtering
 
 - `killmail_id`
 - `dna`
@@ -74,7 +71,6 @@ The `filter` object specifies conditions that the killmails must meet. You can u
 
 ### Options
 
-- `sort`: Specify the sorting order. Use 1 for ascending, -1 for descending.
 - `limit`: Maximum number of results to return.
 - `skip`: Number of results to skip (for pagination).
 - `projection`: Specify which fields to include or exclude in the results.
@@ -88,7 +84,6 @@ json
 {
     "filter": {},
     "options": {
-        "sort": {"kill_time": -1},
         "limit": 10
     }
 }
@@ -104,7 +99,6 @@ json
     },
     "options": {
         "limit": 20,
-        "sort": {"kill_time": -1}
     }
 }
 ```
@@ -119,7 +113,6 @@ json
         "kill_time": {"$gte": 1234567890} // Unix timestamp for 1 week ago
     },
     "options": {
-        "sort": {"total_value": -1},
         "limit": 50
     }
 }
@@ -135,8 +128,7 @@ json
         "system_security": {"$gte": 0.5}
     },
     "options": {
-        "limit": 30,
-        "sort": {"kill_time": -1}
+        "limit": 30
     }
 }
 ```
@@ -153,8 +145,7 @@ json
         ]
     },
     "options": {
-        "limit": 25,
-        "sort": {"kill_time": -1}
+        "limit": 25
     }
 }
 ```
@@ -169,7 +160,6 @@ json
     },
     "options": {
         "limit": 15,
-        "sort": {"kill_time": -1},
         "projection": {
             "killmail_id": 1,
             "kill_time": 1,
@@ -192,7 +182,6 @@ json
     },
     "options": {
         "limit": 50,
-        "sort": {"kill_time": -1},
         "projection": {
             "killmail_id": 1,
             "system_id": 1,
@@ -212,9 +201,6 @@ json
     },
     "options": {
         "limit": 40,
-        "sort": {
-            "kill_time": -1
-        },
         "projection": {
             "killmail_id": 1,
             "war_id": 1,
@@ -225,5 +211,8 @@ json
 }
 ```
 
-Remember, the API will always exclude `_id`, `last_modified`, and `kill_time_str` fields from the results. The `kill_time` field will be returned as a Unix timestamp.
-Also, the API will cache results for 5 minutes.
+Things to keep in mind:
+1. The API will always exclude `_id`, `last_modified`, and `kill_time_str` fields from the results. The `kill_time` field will be returned as a Unix timestamp.
+2. The API will cache results for 5 minutes.
+3. All timestamps are in UTC.
+4. The result is always sorted by `kill_time` in descending order.
