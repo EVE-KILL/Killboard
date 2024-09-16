@@ -384,24 +384,27 @@ abstract class Controller
 
     protected function cleanupTimestamps(array|Generator $data): array
     {
+        $returnData = [];
+
         foreach ($data as $key => $value) {
+            $returnData[$key] = $value;
             // Check if the value is an instance of UTCDateTime
             if ($value instanceof UTCDateTime) {
-                $data[$key] = $value->toDateTime()->getTimestamp();
+                $returnData[$key] = $value->toDateTime()->getTimestamp();
             }
 
             // Check if the value is an array
             if (is_array($value)) {
                 // If the array has the structure containing $date and $numberLong
                 if (isset($value['$date']['$numberLong'])) {
-                    $data[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->getTimestamp();
+                    $returnData[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->getTimestamp();
                 } else {
                     // Recursively process nested arrays
-                    $data[$key] = $this->cleanupTimestamps($value);
+                    $returnData[$key] = $this->cleanupTimestamps($value);
                 }
             }
         }
 
-        return $data;
+        return $returnData;
     }
 }
