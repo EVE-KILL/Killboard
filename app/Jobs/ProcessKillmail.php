@@ -70,6 +70,120 @@ class ProcessKillmail extends Jobs
             return;
         }
 
+        $totalValue = $parsedKillmail['total_value'] ?? 0;
+        if ($totalValue > 1000000000) {
+            $routingKeys[] = '10b';
+        }
+
+        if ($totalValue > 500000000) {
+            $routingKeys[] = '5b';
+        }
+
+        // Abyssal
+        if ($parsedKillmail['region_id'] >= 12000000 && $parsedKillmail['region_id'] <= 13000000) {
+            $routingKeys[] = 'abyssal';
+        }
+
+        // W-Space
+        if ($parsedKillmail['region_id'] >= 11000001 && $parsedKillmail['region_id'] <= 11000033) {
+            $routingKeys[] = 'wspace';
+        }
+
+        // High-sec
+        if ($parsedKillmail['system_security'] >= 0.45) {
+            $routingKeys[] = 'highsec';
+        }
+
+        // Low-sec
+        if ($parsedKillmail['system_security'] >= 0.0 && $parsedKillmail['system_security'] < 0.45) {
+            $routingKeys[] = 'lowsec';
+        }
+
+        // Null-sec
+        if ($parsedKillmail['system_security'] < 0.0) {
+            $routingKeys[] = 'nullsec';
+        }
+
+        // Big kills
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [547, 485, 513, 902, 941, 30, 659])) {
+            $routingKeys[] = 'bigkills';
+        }
+
+        // Solo
+        if (count($parsedKillmail['is_solo']) === true) {
+            $routingKeys[] = 'solo';
+        }
+
+        // NPC
+        if (count($parsedKillmail['is_npc']) === true) {
+            $routingKeys[] = 'npc';
+        }
+
+        // Citadel
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [1657, 1406, 1404, 1408, 2017, 2016])) {
+            $routingKeys[] = 'citadel';
+        }
+
+        // T1
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [419, 27, 29, 547, 26, 420, 25, 28, 941, 463, 237, 31])) {
+            $routingKeys[] = 't1';
+        }
+
+        // T2
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [324, 898, 906, 540, 830, 893, 543, 541, 833, 358, 894, 831, 902, 832, 900, 834, 380])) {
+            $routingKeys[] = 't2';
+        }
+
+        // T3
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [963, 1305])) {
+            $routingKeys[] = 't3';
+        }
+
+        // Frigates
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [324, 893, 25, 831, 237])) {
+            $routingKeys[] = 'frigates';
+        }
+
+        // Destroyers
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [420, 541])) {
+            $routingKeys[] = 'destroyers';
+        }
+
+        // Cruisers
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [906, 26, 833, 358, 894, 832, 963])) {
+            $routingKeys[] = 'cruisers';
+        }
+
+        // Battlecruisers
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [419, 540])) {
+            $routingKeys[] = 'battlecruisers';
+        }
+
+        // Battleships
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [27, 898, 900])) {
+            $routingKeys[] = 'battleships';
+        }
+
+        // Capitals
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [547, 485])) {
+            $routingKeys[] = 'capitals';
+        }
+
+        // Freighters
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [513, 902])) {
+            $routingKeys[] = 'freighters';
+        }
+
+        // Super Carriers
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [659])) {
+            $routingKeys[] = 'supercarriers';
+        }
+
+        // Titans
+        if (in_array($parsedKillmail['victim']['ship_group_id'], [30])) {
+            $routingKeys[] = 'titans';
+        }
+
         // Add routing keys based on the parsed killmail data
         $systemId = $parsedKillmail['system_id'] ?? null;
         if ($systemId) {
