@@ -59,6 +59,52 @@ class Killmail extends Controller
         return $this->json($killmail);
     }
 
+    #[RouteAttribute("/killmail/{killmail_id:[0-9]+}/sibling[/]", ["GET"], "Get the companion killmail to a pod mail")]
+    public function sibling(int $killmail_id): ResponseInterface
+    {
+        $killmail = $this->killmails->findOneOrNull(
+            ["killmail_id" => $killmail_id],
+            ["projection" => ["_id" => 0]]
+        );
+
+        // If the killmail is not a pod, return an error
+        $capsules = [670, 33328];
+        if (!in_array($killmail['victim']['ship_id'], $capsules)) {
+            return $this->json(
+                [
+                    "error" => "Killmail is not a capsule",
+                ],
+                300
+            );
+        }
+
+        // Get the victim character_id
+        $victim = $killmail['victim']['character_id'];
+        $systemId = $killmail['system_id'];
+
+        // Look for a killmail that has the same victim character_id, that is at most 1h old, in the same system
+        $sibling = $this->killmails->findOneOrNull(
+            [
+                "victim.character_id" => $victim,
+                "system_id" => $systemId,
+                "kill_time" => ['$gte' => new \MongoDB\BSON\UTCDateTime((time() - 3600) * 1000)],
+                "killmail_id" => ['$ne' => $killmail_id]
+            ],
+            ["projection" => ["_id" => 0,"killmail_id" => 1]]
+        );
+
+        if ($sibling === null) {
+            return $this->json(
+                [
+                    "error" => "No sibling killmail found",
+                ],
+                300
+            );
+        }
+
+        return $this->json([$sibling['killmail_id']]);
+    }
+
     #[RouteAttribute("/killmail/esi/{killmail_id:[0-9]+}[/]", ["GET"], "Get esi killmail by ID")]
     public function esi(int $killmail_id): ResponseInterface
     {
