@@ -326,6 +326,32 @@ class Query
 
     private function validateFilterValue(string $key, $value): mixed
     {
+        if ($key === 'kill_time') {
+            if (is_array($value)) {
+                $validatedValue = [];
+                foreach ($value as $operator => $operand) {
+                    if (in_array($operator, self::VALID_FILTERS)) {
+                        if (in_array($operator, ['$gt', '$gte', '$lt', '$lte', '$in'])) {
+                            if ($operator === '$in' && is_array($operand)) {
+                                $validatedValue[$operator] = array_map(function($timestamp) {
+                                    return new UTCDateTime($this->validatePositiveInteger($timestamp, 'kill_time') * 1000);
+                                }, $operand);
+                            } else {
+                                $validatedValue[$operator] = new UTCDateTime($this->validatePositiveInteger($operand, 'kill_time') * 1000);
+                            }
+                        } else {
+                            $validatedValue[$operator] = $operand;
+                        }
+                    } else {
+                        throw new InvalidArgumentException("Invalid filter operator: $operator");
+                    }
+                }
+                return $validatedValue;
+            } else {
+                return new UTCDateTime($this->validatePositiveInteger($value, 'kill_time') * 1000);
+            }
+        }
+
         if (str_contains($key, '_id') && is_numeric($value)) {
             return (int)$value; // Convert to integer for ID fields
         }
