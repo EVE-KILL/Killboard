@@ -261,31 +261,53 @@ class Query
 
     private function parseInvolvedEntity(array $entity): array
     {
-        $idField = $entity['entity_type'] . '_id';
-        $victimField = 'victim.' . $idField;
-        $attackerField = 'attackers.' . $idField;
-
         $filter = [];
 
-        if ($entity['involved_as'] === 'both') {
-            $filter['$or'] = [
-                [$victimField => $entity['entity_id']],
-                [$attackerField => $entity['entity_id']]
-            ];
-        } elseif ($entity['involved_as'] === 'victim') {
-            $filter[$victimField] = $entity['entity_id'];
-        } elseif ($entity['involved_as'] === 'attacker') {
-            $filter[$attackerField] = $entity['entity_id'];
+        // Handle entity-based filters if 'entity_type', 'entity_id', and 'involved_as' are present
+        if (isset($entity['entity_type'], $entity['entity_id'], $entity['involved_as'])) {
+            $idField = $entity['entity_type'] . '_id';
+            $victimField = 'victim.' . $idField;
+            $attackerField = 'attackers.' . $idField;
+
+            if ($entity['involved_as'] === 'both') {
+                $filter['$or'] = [
+                    [$victimField => $entity['entity_id']],
+                    [$attackerField => $entity['entity_id']]
+                ];
+            } elseif ($entity['involved_as'] === 'victim') {
+                $filter[$victimField] = $entity['entity_id'];
+            } elseif ($entity['involved_as'] === 'attacker') {
+                $filter[$attackerField] = $entity['entity_id'];
+            }
         }
 
+        // Handle specific fields like 'ship_id', 'ship_group_id', 'weapon_type_id' regardless of entity presence
         foreach (['ship_id', 'ship_group_id', 'weapon_type_id'] as $field) {
             if (isset($entity[$field]) && $entity[$field] !== null) {
-                if ($entity['involved_as'] === 'both') {
+                if (isset($filter['$or'])) {
+                    // Apply the filter to both victim and attackers if '$or' is present
                     $filter['$or'][0]['victim.' . $field] = $entity[$field];
                     $filter['$or'][1]['attackers.' . $field] = $entity[$field];
                 } else {
-                    $prefix = $entity['involved_as'] === 'victim' ? 'victim.' : 'attackers.';
-                    $filter[$prefix . $field] = $entity[$field];
+                    // Determine the prefix based on 'involved_as' if available
+                    if (isset($entity['involved_as'])) {
+                        $prefix = $entity['involved_as'] === 'victim' ? 'victim.' : 'attackers.';
+                        if ($entity['involved_as'] === 'both') {
+                            // If 'both', apply to both victim and attackers
+                            $filter['$or'] = [
+                                [$prefix . $field => $entity[$field]],
+                                [$prefix === 'victim.' ? 'attackers.' . $field : 'victim.' . $field => $entity[$field]]
+                            ];
+                            // Remove prefix to avoid duplication
+                            unset($prefix);
+                        } else {
+                            $filter[$prefix . $field] = $entity[$field];
+                        }
+                    } else {
+                        // If 'involved_as' is not set, apply the filter to both victim and attackers
+                        $filter['$or'][] = ['victim.' . $field => $entity[$field]];
+                        $filter['$or'][] = ['attackers.' . $field => $entity[$field]];
+                    }
                 }
             }
         }
@@ -333,7 +355,7 @@ class Query
                     if (in_array($operator, self::VALID_FILTERS)) {
                         if (in_array($operator, ['$gt', '$gte', '$lt', '$lte', '$in'])) {
                             if ($operator === '$in' && is_array($operand)) {
-                                $validatedValue[$operator] = array_map(function($timestamp) {
+                                $validatedValue[$operator] = array_map(function ($timestamp) {
                                     return new UTCDateTime($this->validatePositiveInteger($timestamp, 'kill_time') * 1000);
                                 }, $operand);
                             } else {
