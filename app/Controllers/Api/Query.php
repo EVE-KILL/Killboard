@@ -75,7 +75,7 @@ class Query extends Controller
                 $cursor = new ArrayIterator($results);
             }
 
-            return $this->prepareAndStreamResultsWithPagination($cursor, $queryData['pagination']);
+            return $this->prepareAndStreamResults($cursor);
         } catch (InvalidArgumentException $e) {
             return $this->json(["error" => $e->getMessage()], 400);
         } catch (\Exception $e) {
@@ -103,20 +103,12 @@ class Query extends Controller
         return $data;
     }
 
-    protected function prepareAndStreamResultsWithPagination($cursor, array $pagination): ResponseInterface
+    protected function prepareAndStreamResults($cursor): ResponseInterface
     {
         $response = $this->response->withHeader('Content-Type', 'application/json');
         $body = $response->getBody();
 
-        $paginationJson = json_encode([
-            'pagination' => [
-                'totalCount' => $pagination['totalCount'],
-                'limit' => $pagination['limit'],
-                'page' => $pagination['page']
-            ]
-        ]);
-
-        $body->write(substr($paginationJson, 0, -1) . ',"killmails":[');
+        $body->write('[');
         $first = true;
 
         foreach ($cursor as $document) {
@@ -128,7 +120,7 @@ class Query extends Controller
             $first = false;
         }
 
-        $body->write(']}');
+        $body->write(']');
 
         return $response;
     }

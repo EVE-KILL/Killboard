@@ -95,21 +95,9 @@ class Query
         // Set the sort to kill_time descending
         $pipeline[] = ['$sort' => ['kill_time' => -1]];
 
-        $pagination = [
-            'totalCount' => -1,
-            'limit' => $query['options']['limit'] ?? 1000,
-            'page' => floor(($query['options']['skip'] ?? 0) / $query['options']['limit']) + 1
-        ];
-
-        if (!empty($query['filter'])) {
-            $pagination['totalCount'] = $this->getQueryCount($query['filter']);
-            $pagination['page'] = floor(($query['options']['skip'] ?? 0) / $pagination['limit']) + 1;
-        }
-
         return [
             'query' => $query,
             'pipeline' => $pipeline,
-            'pagination' => $pagination
         ];
     }
 
@@ -179,21 +167,9 @@ class Query
         // Set the sort to kill_time descending
         $pipeline[] = ['$sort' => ['kill_time' => -1]];
 
-        $pagination = [
-            'totalCount' => -1,
-            'limit' => $query['options']['limit'] ?? 1000,
-            'page' => floor(($query['options']['skip'] ?? 0) / $query['options']['limit']) + 1
-        ];
-
-        if (!empty($query['filter'])) {
-            $pagination['totalCount'] = $this->getQueryCount($query['filter']);
-            $pagination['page'] = floor(($query['options']['skip'] ?? 0) / $pagination['limit']) + 1;
-        }
-
         return [
             'query' => $query,
             'pipeline' => $pipeline,
-            'pagination' => $pagination
         ];
     }
 
