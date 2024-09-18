@@ -13,6 +13,10 @@ class RouteAttribute
         protected string $route,
         protected array $type = ['GET'],
         protected string $description = '',
+        protected string $bodyExample = '',
+        protected string $successReturn = '',
+        protected string $errorReturn = '',
+        protected bool $isPrivate = false,
     ) {
         $this->type = array_map(
             function ($t) {

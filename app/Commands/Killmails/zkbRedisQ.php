@@ -53,8 +53,9 @@ class zkbRedisQ extends ConsoleCommand
                         $this->out('Killmail already exists: ' . $kill['package']['killID']);
                         continue;
                     }
-                    $this->out('Inserting killmail: ' . $kill['package']['killID']);
-                    $this->killmails->collection->insertOne($this->formatKillmail($kill));
+                    $this->out('Inserting killmail: ' . $kill['package']['killID'] . ' https://esi.evetech.net/latest/killmails/' . $kill['package']['killID'] . '/' . $kill['package']['zkb']['hash']);
+                    $this->killmails->setData($this->formatKillmail($kill));
+                    $this->killmails->save();
 
                     // Send to the queue
                     $this->processKillmail->enqueue([

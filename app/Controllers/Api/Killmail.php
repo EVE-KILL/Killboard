@@ -6,17 +6,20 @@ use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Cache\Cache;
 use EK\Helpers\Battle;
+use EK\Jobs\ProcessKillmail;
 use EK\Models\Celestials;
 use EK\Models\Comments;
 use EK\Models\Killmails;
 use EK\Models\KillmailsESI;
 use Psr\Http\Message\ResponseInterface;
+use Sirius\Validation\Validator;
 
 class Killmail extends Controller
 {
     public function __construct(
         protected Killmails $killmails,
         protected KillmailsESI $killmailsESI,
+        protected ProcessKillmail $processKillmail,
         protected Comments $comments,
         protected Celestials $celestials,
         protected Battle $battleHelper,
@@ -184,6 +187,45 @@ class Killmail extends Controller
         }
 
         return $this->json($killmails, 300);
+    }
+
+    #[RouteAttribute("/killmail/add[/]", ["POST"], "Add a killmail", '{"killmail_id": 123456, "hash": "abc123"}', '{"success": string}', '{"success": string}', false, true)]
+    public function add(): ResponseInterface
+    {
+        $postData = json_validate($this->getBody())
+            ? json_decode($this->getBody(), true)
+            : [];
+        if (empty($postData)) {
+            return $this->json(["error" => "No data provided"], 300, 400);
+        }
+
+        // Validate the input
+        $validator = new Validator();
+        $validator->add([
+            'killmail_id' => 'required | Number',
+            'hash' => 'required | AlphaNumeric',
+        ]);
+
+        try {
+            if (!$validator->validate($postData)) {
+                return $this->json(["error" => $validator->getMessages()], 300, 400);
+            }
+        } catch (\Exception $e) {
+            return $this->json(["error" => $e->getMessage()], 300, 400);
+        }
+
+        // Lets check if the killmail already exists
+        $existingKillmail = $this->killmails->findOneOrNull(
+            ["killmail_id" => $postData['killmail_id']],
+            ["projection" => ["_id" => 0]]
+        );
+
+        if ($existingKillmail !== null) {
+            return $this->json(["error" => "Killmail already exists"], 300, 400);
+        }
+
+        // Things seem to check out, throw the killmail to the queue
+        $this->processKillmail->enqueue(['killmail_id' => $postData['killmail_id'], 'hash' => $postData['hash']]);
     }
 
     #[RouteAttribute("/killmail/near/{system_id:[0-9]+}/{distanceInMeters:[0-9]+}/{x}/{y}/{z}[/{days:[0-9]+}]", ["GET"], "Get killmails near coordinates")]
