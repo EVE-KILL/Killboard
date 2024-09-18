@@ -62,7 +62,12 @@ class Query extends Controller
                 $cachedData = array_map([$this, 'prepareQueryResult'], $cachedData);
                 $cursor = new ArrayIterator($cachedData);
             } else {
-                $cursor = $this->killmails->collection->aggregate($queryData['pipeline'], ['hint' => ['kill_time' => -1]]);
+                // If the filter is empty, we set the hint to 'kill_time' => -1 to use the killmail index
+                if (empty($queryData['query']['filter'])) {
+                    $cursor = $this->killmails->collection->aggregate($queryData['pipeline'], ['hint' => ['kill_time' => -1]]);
+                } else {
+                    $cursor = $this->killmails->collection->aggregate($queryData['pipeline']);
+                }
 
                 $results = iterator_to_array($cursor);
                 $this->cache->set($cacheKey, $results, 300);
