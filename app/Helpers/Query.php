@@ -439,9 +439,9 @@ class Query
     {
         $intValue = filter_var($limit, FILTER_VALIDATE_INT);
         if ($intValue === false || $intValue < 1) {
-            return 1000; // Default to 1000 if the limit is invalid
+            return 10000; // Default to 10000 if the limit is invalid
         }
-        return min($intValue, 1000); // Ensure the limit doesn't exceed 1000
+        return min($intValue, 10000); // Ensure the limit doesn't exceed 10000
     }
 
     private function validateProjection($projection): array
