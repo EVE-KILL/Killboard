@@ -39,7 +39,6 @@ class Query extends Controller
             return $this->json(["error" => "No data provided"], 400);
         }
 
-        $cacheKey = $this->cache->generateKey("query", $rawBody);
         $simpleOrComplexQuery = 'complex';
         if (isset($postData['type']) && !in_array($postData['type'], ['simple', 'complex'])) {
             return $this->json(["error" => "Invalid query type: " . $postData['type']], 400);
@@ -57,6 +56,7 @@ class Query extends Controller
                 return $this->json(["error" => "Invalid query type: " . $simpleOrComplexQuery], 400);
             }
 
+            $cacheKey = $this->cache->generateKey("query", json_encode($queryData));
             if ($this->cache->exists($cacheKey)) {
                 $cachedData = $this->cache->get($cacheKey);
                 $cachedData = array_map([$this, 'prepareQueryResult'], $cachedData);
