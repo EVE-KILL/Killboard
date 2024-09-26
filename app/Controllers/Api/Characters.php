@@ -146,6 +146,7 @@ class Characters extends Controller
     #[RouteAttribute("/characters/{character_id:[0-9]+}/corporationhistory[/]", ["GET"], "Get the corporation history of a character")]
     public function corporationHistory(int $character_id): ResponseInterface
     {
+        return $this->json(['down' => true]);
         $character = $this->characters->findOne([
             "character_id" => $character_id,
         ]);

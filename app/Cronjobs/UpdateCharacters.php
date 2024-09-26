@@ -22,7 +22,7 @@ class UpdateCharacters extends Cronjob
 
     public function handle(): void
     {
-        $this->logger->info("Updating characters that haven't been updated in the last 7 days");
+        $this->logger->info("Updating characters that haven't been updated in the last 30 days");
 
         $queueLength = $this->updateCharacter->queueLength();
         if ($queueLength > 0) {
@@ -30,10 +30,10 @@ class UpdateCharacters extends Cronjob
             return;
         }
 
-        $daysAgo = new UTCDateTime((time() - (7 * 86400)) * 1000);
+        $daysAgo = new UTCDateTime((time() - (30 * 86400)) * 1000);
         $characterCount = $this->characters->aproximateCount();
         // Get the amount to add every five minutes
-        $limit = (int) round(((($characterCount / 7) / 24)/ 60) * 5, 0);
+        $limit = (int) round(((($characterCount / 30) / 24)/ 60) * 5, 0);
 
         // Find characters that haven't been updated in the last 14 days, but ignore them if they have deleted = true
         $staleCharacters = $this->characters->find(

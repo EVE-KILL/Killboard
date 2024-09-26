@@ -95,6 +95,7 @@ class Corporations extends Controller
     #[RouteAttribute("/corporations/{corporation_id:[0-9]+}/alliancehistory[/]", ["GET"], "Get the alliance history of a corporation")]
     public function allianceHistory(int $corporation_id): ResponseInterface
     {
+        return $this->json(['down' => true]);
         $corporation = $this->corporations->findOne([
             "corporation_id" => $corporation_id,
         ]);
