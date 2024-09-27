@@ -18,11 +18,21 @@ class Intel extends Controller
 
     }
 
-    #[RouteAttribute("/intel/metenox", ["GET"], "Get Metenox moon locations based on killmails")]
+    #[RouteAttribute("/intel/metenox", ["GET"], "Get Metenox moon locations based on killmails", params: ['system_id' => 'The system ID', 'region_id' => 'The region ID'])]
     public function metenoxMoons(): ResponseInterface
     {
         $metenoxId = 81826;
-        $killmails = $this->killmails->find(['victim.ship_id' => $metenoxId]);
+        $systemId = (int) $this->getParam('system_id') ?? null;
+        $regionId = (int) $this->getParam('region_id') ?? null;
+
+        if ($systemId) {
+            $killmails = $this->killmails->find(['victim.ship_id' => $metenoxId, 'system_id' => $systemId]);
+        } else if ($regionId) {
+            $killmails = $this->killmails->find(['victim.ship_id' => $metenoxId, 'region_id' => $regionId]);
+        } else {
+            $killmails = $this->killmails->find(['victim.ship_id' => $metenoxId]);
+        }
+
         $killmails = $this->cleanupTimestamps($killmails);
         $return = [];
 
