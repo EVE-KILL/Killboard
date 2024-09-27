@@ -69,7 +69,7 @@ class Intel extends Controller
                 'moon_name' => $celestial['item_name'],
                 'moon_id' => (int) $celestial['item_id'],
                 'killmail_id' => (int) $killmail['killmail_id'],
-                'moonType' => $this->classifyGoos($killmail),
+                'moonType' => $this->classifyGoos($killmail) ?? [],
                 'items' => $killmail['items'] ?? [],
             ];
         }
@@ -77,7 +77,7 @@ class Intel extends Controller
         return $this->json($return);
     }
 
-    private function classifyGoos(array $killmail): string
+    private function classifyGoos(array $killmail): array
     {
         $gooTypes = [
             'R4' => [
@@ -112,15 +112,20 @@ class Intel extends Controller
             ],
         ];
 
-        // Loop through the gooTypes and check if any of the names are in the $killmail['items'] array - if there are, return the R4, R8, R16, R32 or R64 identifier (Or unknown if there are no matches)
+        $return = [];
+
+        // Loop through the items in the killmail
+        // And check if any of the names are in the gooTypes array
+        // Moons can have multiple types, so we need to check each one
+        // And the return should be an array of the types with count of the amount of R4, R8, R32 etc. there are
         foreach($killmail['items'] as $item) {
-            foreach ($gooTypes as $type => $names) {
+            foreach($gooTypes as $type => $names) {
                 if (in_array($item['type_name'], $names)) {
-                    return $type;
+                    $return[$type] = ($return[$type] ?? 0) + 1;
                 }
             }
         }
 
-        return 'Unknown';
+        return $return;
     }
 }
