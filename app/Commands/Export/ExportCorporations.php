@@ -4,6 +4,7 @@ namespace EK\Commands\Export;
 
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Models\Corporations;
+use Generator;
 use MongoDB\Driver\Cursor;
 use SplFileObject;
 
@@ -31,7 +32,7 @@ class ExportCorporations extends ConsoleCommand
         $corporations = $this->corporations->collection->find([], ['projection' => ['_id' => 0, 'kills' => 0, 'losses' => 0, 'points' => 0, 'last_modified' => 0, 'last_updated' => 0]]);
 
         // Export the corporations to the JSON file
-        $this->exportToJson($corporations, $path);
+        $this->exportToJson($this->cleanupTimestampsInline($corporations), $path);
 
         $this->out('Export completed successfully.');
     }
@@ -47,7 +48,7 @@ class ExportCorporations extends ConsoleCommand
         }
     }
 
-    private function exportToJson(Cursor $corporations, string $path): void
+    private function exportToJson(Generator $corporations, string $path): void
     {
         $file = new SplFileObject($path, 'w');
         $file->fwrite('[');
@@ -62,5 +63,38 @@ class ExportCorporations extends ConsoleCommand
         }
 
         $file->fwrite(']');
+    }
+
+    private function cleanupTimestampsInline(Cursor $cursor): Generator
+    {
+        foreach ($cursor as $document) {
+            yield $this->cleanupTimestamps($document);
+        }
+    }
+
+    private function cleanupTimestamps(array|Generator $data): array
+    {
+        $returnData = [];
+
+        foreach ($data as $key => $value) {
+            $returnData[$key] = $value;
+            // Check if the value is an instance of UTCDateTime
+            if ($value instanceof UTCDateTime) {
+                $returnData[$key] = $value->toDateTime()->getTimestamp();
+            }
+
+            // Check if the value is an array
+            if (is_array($value)) {
+                // If the array has the structure containing $date and $numberLong
+                if (isset($value['$date']['$numberLong'])) {
+                    $returnData[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->getTimestamp();
+                } else {
+                    // Recursively process nested arrays
+                    $returnData[$key] = $this->cleanupTimestamps($value);
+                }
+            }
+        }
+
+        return $returnData;
     }
 }
