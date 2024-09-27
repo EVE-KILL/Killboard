@@ -16,8 +16,7 @@ class RouteAttribute
         protected string $bodyExample = '',
         protected string $successReturn = '',
         protected string $errorReturn = '',
-        protected array $params = [],
-        protected bool $isPrivate = false,
+        protected bool $isPrivate = false
     ) {
         $this->type = array_map(
             function ($t) {

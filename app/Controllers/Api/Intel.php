@@ -4,6 +4,7 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
+use EK\Cache\Cache;
 use EK\Models\Celestials;
 use EK\Models\Killmails;
 use Psr\Http\Message\ResponseInterface;
@@ -12,18 +13,31 @@ class Intel extends Controller
 {
     public function __construct(
         protected Killmails $killmails,
-        protected Celestials $celestials
+        protected Celestials $celestials,
+        protected Cache $cache
     ) {
         parent::__construct();
 
     }
 
-    #[RouteAttribute("/intel/metenox", ["GET"], "Get Metenox moon locations based on killmails", params: ['system_id' => 'The system ID', 'region_id' => 'The region ID'])]
+    #[RouteAttribute(
+        "/intel/metenox",
+        ["GET"],
+        "Get Metenox moon locations based on killmails",
+    )]
     public function metenoxMoons(): ResponseInterface
     {
         $metenoxId = 81826;
         $systemId = (int) $this->getParam('system_id') ?? null;
         $regionId = (int) $this->getParam('region_id') ?? null;
+
+        $cacheKey = $this->cache->generateKey('metenox_moons', ['system_id' => $systemId, 'region_id' => $regionId]);
+        if (
+            $this->cache->exists($cacheKey) &&
+            !empty(($cacheResult = $this->cache->get($cacheKey)))
+        ) {
+            return $this->json($cacheResult, $this->cache->getTTL($cacheKey));
+        }
 
         if ($systemId) {
             $killmails = $this->killmails->find(['victim.ship_id' => $metenoxId, 'system_id' => $systemId]);
@@ -84,7 +98,9 @@ class Intel extends Controller
             ];
         }
 
-        return $this->json($return);
+        $this->cache->set($cacheKey, $return, 3600);
+
+        return $this->json($return, 3600);
     }
 
     private function classifyGoos(array $killmail): array
