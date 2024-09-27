@@ -391,37 +391,44 @@ class Killmails
             return '';
         }
 
-        $celestials = $this->celestials->find(['solar_system_id' => $solarSystemId]);
-        $minimumDistance = null;
-        $celestialName = '';
+        // Limit the distance to 1000 AU in meters
+        $distance = 1000 * 3.086e16;
 
-        foreach ($celestials as $celestial) {
-            $distance = sqrt((($celestial['x'] - $x) ** 2) + (($celestial['y'] - $y) ** 2) + (($celestial['z'] - $z) ** 2));
+        $celestials = $this->celestials->aggregate([
+            ['$match' => [
+                'solar_system_id' => $solarSystemId,
+                'x' => ['$gt' => $x - $distance, '$lt' => $x + $distance],
+                'y' => ['$gt' => $y - $distance, '$lt' => $y + $distance],
+                'z' => ['$gt' => $z - $distance, '$lt' => $z + $distance],
+            ]],
+            ['$project' => [
+                'item_id' => 1,
+                'item_name' => 1,
+                'constellation_id' => 1,
+                'solar_system_id' => 1,
+                'solar_system_name' => 1,
+                'region_id' => 1,
+                'region_name' => 1,
+                'distance' => [
+                    '$sqrt' => [
+                        '$add' => [
+                            ['$pow' => [['$subtract' => ['$x', $x]], 2]],
+                            ['$pow' => [['$subtract' => ['$y', $y]], 2]],
+                            ['$pow' => [['$subtract' => ['$z', $z]], 2]],
+                        ]
+                    ]
+                ]
+            ]],
+            ['$sort' => ['distance' => 1]],
+            ['$limit' => 1],
+        ]);
 
-            if ($minimumDistance === null || $distance >= $minimumDistance) {
-                $minimumDistance = $distance;
-                $celestialName = $this->fillInCelestialName($celestial);
-            }
+        $celestial = iterator_to_array($celestials);
+        if (empty($celestial)) {
+            return '';
         }
 
-        return $celestialName;
-    }
-
-    private function fillInCelestialName(array $celestial): string
-    {
-        $celestialName = '';
-        $types = ['Stargate', 'Moon', 'Planet', 'Asteroid Belt', 'Sun'];
-        foreach ($types as $type) {
-            if (isset($celestial['type_name']) && str_contains($celestial['type_name'], $type)) {
-                $string = $type;
-                $string .= ' (';
-                $string .= $celestial['item_name'] ?? $celestial['solar_system_name'];
-                $string .= ')';
-                $celestialName = $string;
-            }
-        }
-
-        return $celestialName;
+        return $celestial[0]['item_name'];
     }
 
     public function generateDNA(array $items, $shipTypeID): string

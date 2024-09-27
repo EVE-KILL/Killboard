@@ -16,7 +16,7 @@ class Intel extends Controller
 
     }
 
-    #[RouteAttribute("/intel/metenoxMoons", ["GET"], "Get Metenox moon locations based on killmails")]
+    #[RouteAttribute("/intel/metenox", ["GET"], "Get Metenox moon locations based on killmails")]
     public function metenoxMoons(): ResponseInterface
     {
         $metenoxId = 81826;

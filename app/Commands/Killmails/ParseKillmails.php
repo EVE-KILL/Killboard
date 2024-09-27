@@ -33,7 +33,8 @@ class ParseKillmails extends ConsoleCommand
             $parsedKillmail = $this->killmailsHelper->parseKillmail($killmail_id, $hash);
 
             if ($this->debug === true) {
-                dd($parsedKillmail);
+                echo json_encode($parsedKillmail, JSON_PRETTY_PRINT);
+                die();
             }
 
             $this->killmails->setData($parsedKillmail);
