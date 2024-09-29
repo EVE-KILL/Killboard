@@ -50,7 +50,7 @@ class ValidateProxy extends Jobs
         // And then compare the data gotten from the proxy, against the known data
         // If it all checks out, we can validate the proxy and set it into rotation
         foreach ($this->knownData as $testPath => $knownData) {
-            $response = $this->esiFetcher->fetch($testPath);
+            $response = $this->esiFetcher->fetch($testPath, proxy_id: $proxyId);
             $body = json_decode($response['body'], true);
             $status = 'inactive';
 
