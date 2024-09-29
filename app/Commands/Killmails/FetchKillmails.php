@@ -32,19 +32,14 @@ class FetchKillmails extends ConsoleCommand
         $date = new \DateTime($this->fromDate ?? 'now');
         $direction = in_array($this->direction, ['latest', 'oldest']) ? $this->direction : 'latest';
 
-        $totalKillmails = 0;
-        $killmailsProcessed = 0;
-
         $totalData = $this->zkbFetcher->fetch('https://zkillboard.com/api/history/totals.json');
-        $totalData = json_validate($totalData['body']) ? collect(json_decode($totalData['body'], true)) : collect([]);
+        $totalData = json_validate($totalData['body']) ? json_decode($totalData['body'], true) : [];
 
-        $oldestDate = new \DateTime($totalData->keys()->first());
-        $latestDate = new \DateTime($totalData->keys()->last());
-        $totalData->each(function ($row) use (&$totalKillmails) {
-            $totalKillmails += $row;
-        });
+        $oldestDate = new \DateTime(array_key_first($totalData));
+        $latestDate = new \DateTime(array_key_last($totalData));
+        $totalKillmails = array_sum($totalData);
 
-        $this->out('Iterating over ' . $totalData->count() . ' individual days');
+        $this->out('Iterating over ' . count($totalData) . ' individual days');
 
         // Iterate over all days from $date either going forward to the latest date from $totalData, or going backwards to the oldest date from $totalData
         while(true) {
@@ -71,11 +66,11 @@ class FetchKillmails extends ConsoleCommand
     {
         $date = $date->format('Ymd');
         $killmails = $this->zkbFetcher->fetch("https://zkillboard.com/api/history/{$date}.json");
-        $killmails = json_validate($killmails['body']) ? collect(json_decode($killmails['body'], true)) : collect([]);
+        $killmails = json_validate($killmails['body']) ? json_decode($killmails['body'], true) : [];
 
         $this->out("Processing {$date} with " . count($killmails) . " killmails");
 
-        if ($killmails->count() > 0) {
+        if (!empty($killmails)) {
             $killmailBatch = [];
             foreach ($killmails as $killmail_id => $hash) {
                 // Emit the killmail to the processKillmail job as well

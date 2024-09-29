@@ -4,7 +4,6 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\ESI;
-use EK\Http\Fetcher;
 use EK\Logger\Logger;
 use EK\Models\Proxies;
 use EK\RabbitMQ\RabbitMQ;
@@ -13,6 +12,7 @@ use MongoDB\BSON\UTCDateTime;
 class ValidateProxy extends Jobs
 {
     protected string $defaultQueue = 'high';
+    protected bool $retry = false;
     protected array $knownData = [
         '/latest/characters/268946627' => [
             "bloodline_id" => 1,
@@ -26,7 +26,7 @@ class ValidateProxy extends Jobs
         protected Proxies $proxies,
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
-        protected Fetcher $fetcher
+        protected ESI $esiFetcher
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -51,7 +51,7 @@ class ValidateProxy extends Jobs
         // And then compare the data gotten from the proxy, against the known data
         // If it all checks out, we can validate the proxy and set it into rotation
         foreach($this->knownData as $testPath => $knownData) {
-            $response = $this->fetcher->fetch($testPath, proxy_id: $proxyId);
+            $response = $this->esiFetcher->fetch($testPath, proxy_id: $proxyId);
             $body = json_decode($response['body'], true);
             $status = 'inactive';
 

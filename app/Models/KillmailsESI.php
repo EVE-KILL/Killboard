@@ -37,7 +37,7 @@ class KillmailsESI extends Collection
     public function setData(array $data = []): void
     {
         if (!isset($data['killmail_id'])) {
-            throw new \Exception('Missing killmail_id');
+            throw new \Exception('Missing killmail_id / ' . json_encode($data));
         }
 
         $data['last_modified'] = new UTCDateTime();
