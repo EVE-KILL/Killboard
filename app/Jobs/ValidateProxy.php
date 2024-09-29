@@ -4,6 +4,7 @@ namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
 use EK\Fetchers\ESI;
+use EK\Http\Fetcher;
 use EK\Logger\Logger;
 use EK\Models\Proxies;
 use EK\RabbitMQ\RabbitMQ;
@@ -25,7 +26,7 @@ class ValidateProxy extends Jobs
         protected Proxies $proxies,
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
-        protected ESI $esiFetcher
+        protected Fetcher $fetcher
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -50,7 +51,7 @@ class ValidateProxy extends Jobs
         // And then compare the data gotten from the proxy, against the known data
         // If it all checks out, we can validate the proxy and set it into rotation
         foreach($this->knownData as $testPath => $knownData) {
-            $response = $this->esiFetcher->fetch($testPath, proxy_id: $proxyId);
+            $response = $this->fetcher->fetch($testPath, proxy_id: $proxyId);
             $body = json_decode($response['body'], true);
             $status = 'inactive';
 
@@ -63,7 +64,7 @@ class ValidateProxy extends Jobs
                 }
             }
 
-            $data = array_merge($proxyData->toArray(), [
+            $data = array_merge($proxyData, [
                 'last_modified' => new UTCDateTime(),
                 'last_validated' => new UTCDateTime(),
                 'status' => $status

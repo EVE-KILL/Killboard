@@ -76,8 +76,8 @@ class Fetcher
 
         // If Proxy usage is enabled, and proxy_id isn't null, we need to fetch a proxy to use
         $proxy = null;
-        if ($proxy_id !== null && $this->useProxy === true) {
-            $proxy = $this->proxies->findOne(["proxy_id" => $proxy_id]);
+        if ($proxy_id !== null) {
+            $proxy = $this->proxies->findOne(["proxy_id" => $proxy_id], cacheTime: 0);
         } elseif ($this->useProxy === true) {
             $proxy = $this->proxies->getRandomProxy();
             if (empty($proxy)) {

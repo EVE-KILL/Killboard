@@ -42,8 +42,8 @@ class ProcessKillmail extends Jobs
         $this->killmails->save();
 
         // Load the killmail from the collection
-        $loadedKillmail = $this->killmails->findOne(['killmail_id' => $killmail_id], showHidden: true);
-        if ($loadedKillmail['emitted'] === true) {
+        $loadedKillmail = $this->killmails->findOne(['killmail_id' => $killmail_id], ['projection' => ['emitted' => 1, '_id' => 0]], showHidden: true);
+        if (isset($loadedKillmail['emitted']) && $loadedKillmail['emitted'] === true) {
             return;
         }
 

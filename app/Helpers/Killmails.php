@@ -428,7 +428,7 @@ class Killmails
             return '';
         }
 
-        return $celestial[0]['item_name'];
+        return $celestial[0]['item_name'] ?? '';
     }
 
     public function generateDNA(array $items, $shipTypeID): string
