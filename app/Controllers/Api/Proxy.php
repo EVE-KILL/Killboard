@@ -20,7 +20,7 @@ class Proxy extends Controller
     public function listAll(): ResponseInterface
     {
         $proxies = $this->proxiesModel->find();
-        return $this->json($proxies->toArray());
+        return $this->json(iterator_to_array($proxies));
     }
 
     #[RouteAttribute("/proxy/add[/]", ["GET", "POST"], "Add a proxy")]
@@ -61,6 +61,6 @@ class Proxy extends Controller
     public function listByName(?string $proxy_id = null): ResponseInterface
     {
         $proxies = $this->proxiesModel->findOne(["proxy_id" => $proxy_id]);
-        return $this->json($proxies->toArray());
+        return $this->json(iterator_to_array($proxies));
     }
 }

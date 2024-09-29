@@ -5,6 +5,7 @@ namespace EK\Fetchers;
 use EK\Cache\Cache;
 use EK\Http\Fetcher;
 use EK\Logger\Logger;
+use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use EK\Webhooks\Webhooks;
 use Psr\Http\Message\ResponseInterface;
