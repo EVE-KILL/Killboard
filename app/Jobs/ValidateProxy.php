@@ -16,7 +16,6 @@ class ValidateProxy extends Jobs
     protected array $knownData = [
         '/latest/characters/268946627' => [
             "bloodline_id" => 1,
-            "corporation_id" => 1000167,
             "gender" => "male",
             "name" => "Karbowiak",
         ]
@@ -50,12 +49,12 @@ class ValidateProxy extends Jobs
         // For each knownData we need to fetch the data using the proxy
         // And then compare the data gotten from the proxy, against the known data
         // If it all checks out, we can validate the proxy and set it into rotation
-        foreach($this->knownData as $testPath => $knownData) {
-            $response = $this->esiFetcher->fetch($testPath, proxy_id: $proxyId);
+        foreach ($this->knownData as $testPath => $knownData) {
+            $response = $this->esiFetcher->fetch($testPath);
             $body = json_decode($response['body'], true);
             $status = 'inactive';
 
-            foreach($knownData as $key => $value) {
+            foreach ($knownData as $key => $value) {
                 if ($body[$key] === $value) {
                     $status = 'active';
                 } else {
@@ -77,6 +76,5 @@ class ValidateProxy extends Jobs
                 ]
             );
         }
-
     }
 }
