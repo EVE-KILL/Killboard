@@ -28,9 +28,10 @@ class KillmailFetch extends Cronjob
     {
         $users = $this->usersModel->find([
             'last_fetched' => ['$lt' => new \MongoDB\BSON\UTCDateTime(strtotime('-5 minutes') * 1000)]
-        ]);
+        ], showHidden: true);
 
         foreach ($users as $user) {
+
             $accessToken = $user['access_token'];
             $refreshToken = $user['refresh_token'];
             $expires = $user['sso_expires'];
