@@ -226,6 +226,8 @@ class Killmail extends Controller
 
         // Things seem to check out, throw the killmail to the queue
         $this->processKillmail->enqueue(['killmail_id' => $postData['killmail_id'], 'hash' => $postData['hash']]);
+
+        return $this->json(["success" => "Killmail added to queue"]);
     }
 
     #[RouteAttribute("/killmail/near/{system_id:[0-9]+}/{distanceInMeters:[0-9]+}/{x}/{y}/{z}[/{days:[0-9]+}]", ["GET"], "Get killmails near coordinates")]
