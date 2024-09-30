@@ -7,6 +7,7 @@ use EK\Logger\Logger;
 use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use GuzzleHttp\Client;
+use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Sentry\SentrySdk;
 use Sentry\Tracing\SpanContext;
@@ -203,7 +204,12 @@ class Fetcher
         }
 
         $client = new Client([
-            "base_uri" => $this->useProxy === true ? $proxy['url'] : $this->baseUri,
+            RequestOptions::TIMEOUT => $this->timeout,
+            RequestOptions::HTTP_ERRORS => false,
+            RequestOptions::HEADERS => [
+                "User-Agent" => $this->userAgent,
+            ],
+            'base_uri' => $this->useProxy ? $proxy["url"] : $this->baseUri
         ]);
 
         $span->finish();
