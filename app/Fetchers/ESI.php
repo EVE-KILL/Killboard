@@ -15,7 +15,7 @@ class ESI extends Fetcher
     protected string $baseUri = 'https://esi.evetech.net/latest/';
     protected string $bucketName = 'esi_global';
     protected int $rateLimit = 1000;
-    protected bool $useProxy = false;
+    protected bool $useProxy = true;
 
     public function __construct(
         protected Cache $cache,
