@@ -225,7 +225,7 @@ class Killmail extends Controller
         }
 
         // Things seem to check out, throw the killmail to the queue
-        $this->processKillmail->enqueue(['killmail_id' => $postData['killmail_id'], 'hash' => $postData['hash']]);
+        $this->processKillmail->enqueue(['killmail_id' => $postData['killmail_id'], 'hash' => $postData['hash']], priority: 10);
 
         return $this->json(["success" => "Killmail added to queue"]);
     }
