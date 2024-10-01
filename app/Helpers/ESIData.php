@@ -32,7 +32,7 @@ class ESIData
         protected Corporations $corporations,
         protected Alliances $alliances,
         protected Factions $factions,
-        protected Celestials $celestials,
+        protected Celestials $celestials
     ) {
 
     }
@@ -231,7 +231,7 @@ class ESIData
         }
     }
 
-    public function getAllianceInfo(int $allianceId, bool $forceUpdate = false, bool $updateHistory = false): array
+    public function getAllianceInfo(int $allianceId, bool $forceUpdate = false): array
     {
         // Check if alliance is already being processed
         if (in_array($allianceId, $this->processingAlliances, true)) {

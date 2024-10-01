@@ -3,6 +3,7 @@
 namespace EK\ESI;
 
 use EK\Fetchers\ESI;
+use EK\Fetchers\History;
 use EK\Models\Corporations as ModelsCorporations;
 use League\Container\Container;
 
@@ -11,7 +12,8 @@ class Corporations
     public function __construct(
         protected Container $container,
         protected ModelsCorporations $corporations,
-        protected ESI $esiFetcher
+        protected ESI $esiFetcher,
+        protected History $history
     ) {
     }
 
@@ -42,7 +44,7 @@ class Corporations
 
     public function getCorporationHistory(int $corporationId, int $cacheTime = 300): array
     {
-        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId . '/alliancehistory', cacheTime: $cacheTime);
+        $data = $this->history->fetch('/latest/corporations/' . $corporationId . '/alliancehistory', cacheTime: $cacheTime);
         $corporationHistory = json_validate($data['body']) ? json_decode($data['body'], true) : [];
 
         ksort($corporationHistory);

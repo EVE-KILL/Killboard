@@ -3,16 +3,17 @@
 namespace EK\ESI;
 
 use EK\Fetchers\ESI;
+use EK\Fetchers\History;
 use EK\Models\Characters as ModelsCharacters;
 use League\Container\Container;
-use MongoDB\BSON\UTCDateTime;
 
 class Characters
 {
     public function __construct(
         protected Container $container,
         protected ModelsCharacters $characters,
-        protected ESI $esiFetcher
+        protected ESI $esiFetcher,
+        protected History $history
     ) {
     }
 
@@ -39,7 +40,7 @@ class Characters
 
     public function getCharacterHistory(int $characterId, int $cacheTime = 300): array
     {
-        $characterHistory = $this->esiFetcher->fetch('/latest/characters/' . $characterId . '/corporationhistory', cacheTime: $cacheTime);
+        $characterHistory = $this->history->fetch('/latest/characters/' . $characterId . '/corporationhistory', cacheTime: $cacheTime);
         $characterHistory = json_validate($characterHistory['body']) ? json_decode($characterHistory['body'], true) : [];
 
         ksort($characterHistory);
