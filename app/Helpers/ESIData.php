@@ -243,17 +243,17 @@ class ESIData
             $creatorData = [];
             $creatorCorporationData = [];
             $executorCorporationData = [];
-            if ($allianceData['creator_id'] !== 0) {
+            if (isset($allianceData['creator_id']) && $allianceData['creator_id'] !== 0) {
                 $creatorData = $this->getCharacterInfo($allianceData['creator_id'], $forceUpdate, $updateHistory);
             }
-            if ($allianceData['creator_corporation_id'] !== 0) {
+
+            if (isset($allianceData['creator_corporation_id']) && $allianceData['creator_corporation_id'] !== 0) {
                 $creatorCorporationData = $this->getCorporationInfo($allianceData['creator_corporation_id'], $forceUpdate, $updateHistory);
             }
 
-            if ($allianceData['executor_corporation_id'] !== 0) {
+            if (isset($allianceData['executor_corporation_id']) && $allianceData['executor_corporation_id'] !== 0) {
                 $executorCorporationData = $this->getCorporationInfo($allianceData['executor_corporation_id'], $forceUpdate, $updateHistory);
             }
-
 
             $allianceInfo = [
                 'alliance_id' => $allianceData['alliance_id'],

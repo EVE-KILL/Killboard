@@ -18,7 +18,15 @@ class Corporations
     public function getCorporationInfo(int $corporationId, int $cacheTime = 300): array
     {
         if ($corporationId < 10000) {
-            return [];
+            return [
+                'corporation_id' => $corporationId,
+                'name' => 'Unknown',
+                'alliance_id' => 0,
+                'faction_id' => 0,
+                'creator_id' => 0,
+                'creator_corporation_id' => 0,
+                'executor_corporation_id' => 0,
+            ];
         }
 
         $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId, cacheTime: $cacheTime);

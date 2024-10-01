@@ -24,9 +24,6 @@ use EK\Models\Characters as CharactersModel;
 use EK\Models\Corporations as CorporationsModel;
 use EK\Models\Alliances as AlliancesModel;
 use EK\Models\Factions as FactionsModel;
-use EK\ESI\Characters as ESICharacters;
-use EK\ESI\Corporations as ESICorporations;
-use EK\ESI\Alliances as ESIAlliances;
 use MongoDB\BSON\UTCDateTime;
 use RuntimeException;
 
@@ -55,9 +52,7 @@ class Killmails
         protected CorporationsModel $corporations,
         protected AlliancesModel $alliances,
         protected FactionsModel $factions,
-        protected ESICharacters $esiCharacters,
-        protected ESICorporations $esiCorporations,
-        protected ESIAlliances $esiAlliances,
+        protected ESIData $esiData
     ) {}
 
     public function getKillMailHash(int $killmail_id): string
@@ -154,11 +149,15 @@ class Killmails
 
     private function fetchEntityInformation(string $entityType, int $id): array|null
     {
+        if ($id === 0) {
+            return [];
+        }
+
         return match ($entityType) {
-            'character' => $this->characters->findOneOrNull(['character_id' => $id]) ?? $this->esiCharacters->getCharacterInfo($id),
-            'corporation' => $this->corporations->findOneOrNull(['corporation_id' => $id]) ?? $this->esiCorporations->getCorporationInfo($id),
-            'alliance' => $this->alliances->findOneOrNull(['alliance_id' => $id]) ?? $this->esiAlliances->getAllianceInfo($id),
-            'faction' => $this->factions->findOneOrNull(['$or' => [['corporation_id' => $id], ['faction_id' => $id]]]),
+            'character' => $this->esiData->getCharacterInfo($id),
+            'corporation' => $this->esiData->getCorporationInfo($id),
+            'alliance' => $this->esiData->getAllianceInfo($id),
+            'faction' => $this->esiData->getFactionInfo($id),
             'solarSystem' => $this->solarSystems->findOneOrNull(['system_id' => $id]) ?? $this->esiSolarSystems->getSolarSystem($id),
             'region' => $this->regions->findOneOrNull(['region_id' => $id]) ?? $this->esiRegions->getRegion($id),
             'constellation' => $this->constellations->findOneOrNull(['constellation_id' => $id]) ?? $this->esiConstellations->getConstellation($id),

@@ -18,7 +18,13 @@ class Alliances
     public function getAllianceInfo(int $allianceId, int $cacheTime = 300): array
     {
         if ($allianceId < 10000) {
-            return [];
+            return [
+                'alliance_id' => $allianceId,
+                'name' => 'Unknown',
+                'creator_corporation_id' => 0,
+                'executor_corporation_id' => 0,
+                'faction_id' => 0,
+            ];
         }
 
         $allianceData = $this->esiFetcher->fetch('/latest/alliances/' . $allianceId, cacheTime: $cacheTime);
