@@ -9,7 +9,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliances extends ConsoleCommand
 {
-    protected string $signature = 'update:alliances { --all } { --forceUpdate } { --updateHistory }';
+    protected string $signature = 'update:alliances { --all } { --forceUpdate }';
     protected string $description = 'Update the alliances in the database';
 
     public function __construct(
@@ -31,12 +31,12 @@ class UpdateAlliances extends ConsoleCommand
         $alliancesToUpdate = [];
 
         foreach ($this->alliances->find($this->all ? [] : $updated) as $alliance) {
-            $alliancesToUpdate[] = ['alliance_id' => $alliance['alliance_id']];
+            $alliancesToUpdate[] = ['alliance_id' => $alliance['alliance_id'], 'force_update' => $forceUpdate];
             $progress->advance();
         }
 
         if (!empty($alliancesToUpdate)) {
-            $this->updateAlliance->massEnqueue($alliancesToUpdate, $forceUpdate, $updateHistory);
+            $this->updateAlliance->massEnqueue($alliancesToUpdate);
         }
 
         $progress->finish();

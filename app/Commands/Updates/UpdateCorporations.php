@@ -31,19 +31,19 @@ class UpdateCorporations extends ConsoleCommand
         $corporationsToUpdate = [];
 
         foreach ($this->corporations->find($this->all ? [] : $updated) as $corporation) {
-            $corporationsToUpdate[] = ['corporation_id' => $corporation['corporation_id']];
+            $corporationsToUpdate[] = ['corporation_id' => $corporation['corporation_id', 'force_update' => $forceUpdate, 'update_history' => $updateHistory]];
             $progress->advance();
 
             // If we have collected 1000 corporations, enqueue them
             if (count($corporationsToUpdate) >= 1000) {
-                $this->updateCorporation->massEnqueue($corporationsToUpdate, $forceUpdate, $updateHistory);
+                $this->updateCorporation->massEnqueue($corporationsToUpdate);
                 $corporationsToUpdate = []; // Reset the array
             }
         }
 
         // Enqueue any remaining corporations
         if (!empty($corporationsToUpdate)) {
-            $this->updateCorporation->massEnqueue($corporationsToUpdate, $forceUpdate, $updateHistory);
+            $this->updateCorporation->massEnqueue($corporationsToUpdate);
         }
 
         $progress->finish();

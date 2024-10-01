@@ -70,7 +70,7 @@ class ESIData
 
             $corporationId = $characterData['corporation_id'];
             if ($corporationId !== 0) {
-                $corporationData = $this->getCorporationInfo($corporationId, $forceUpdate, $updateHistory);
+                $corporationData = $this->getCorporationInfo($corporationId);
             }
 
             $factionId = $characterData['faction_id'] ?? 0;
@@ -79,7 +79,7 @@ class ESIData
             }
             $allianceId = $characterData['alliance_id'] ?? 0;
             if ($allianceId !== 0) {
-                $allianceData = $this->getAllianceInfo($allianceId, $forceUpdate);
+                $allianceData = $this->getAllianceInfo($allianceId);
             }
 
             $characterInfo = [
@@ -156,18 +156,18 @@ class ESIData
                 $factionData = $this->getFactionInfo($corporationData['faction_id']);
             }
             if (isset($corporationData['alliance_id']) && $corporationData['alliance_id'] !== 0) {
-                $allianceData = $this->getAllianceInfo($corporationData['alliance_id'], $forceUpdate);
+                $allianceData = $this->getAllianceInfo($corporationData['alliance_id']);
             }
 
-            if ($corporationData['ceo_id'] !== 0) {
-                $ceoData = $this->getCharacterInfo($corporationData['ceo_id'], $forceUpdate, $updateHistory);
+            if (isset($corporationData['ceo_id']) && $corporationData['ceo_id'] !== 0) {
+                $ceoData = $this->getCharacterInfo($corporationData['ceo_id']);
             }
 
-            if ($corporationData['creator_id'] !== 0) {
-                $creatorData = $this->getCharacterInfo($corporationData['creator_id'], $forceUpdate, $updateHistory);
+            if (isset($corporationData['creator_id']) && $corporationData['creator_id'] !== 0) {
+                $creatorData = $this->getCharacterInfo($corporationData['creator_id']);
             }
 
-            if ($corporationData['home_station_id'] !== 0) {
+            if (isset($corporationData['home_station_id']) && $corporationData['home_station_id'] !== 0) {
                 $locationData = $this->celestials->findOneOrNull(['item_id' => $corporationData['home_station_id']]);
             }
 
@@ -188,9 +188,9 @@ class ESIData
                 'home_station_id' => $corporationData['home_station_id'] ?? 0,
                 'home_station_name' => $locationData['item_name'] ?? '',
                 'member_count' => $corporationData['member_count'] ?? 0,
-                'shares' => $corporationData['shares'],
-                'tax_rate' => $corporationData['tax_rate'],
-                'url' => $corporationData['url'],
+                'shares' => $corporationData['shares'] ?? 0,
+                'tax_rate' => $corporationData['tax_rate'] ?? 0,
+                'url' => $corporationData['url'] ?? '',
                 'history' => $this->getCorporationHistory($corporationId),
                 'last_updated' => new UTCDateTime(),
             ];
@@ -244,15 +244,15 @@ class ESIData
             $creatorCorporationData = [];
             $executorCorporationData = [];
             if (isset($allianceData['creator_id']) && $allianceData['creator_id'] !== 0) {
-                $creatorData = $this->getCharacterInfo($allianceData['creator_id'], $forceUpdate, $updateHistory);
+                $creatorData = $this->getCharacterInfo($allianceData['creator_id']);
             }
 
             if (isset($allianceData['creator_corporation_id']) && $allianceData['creator_corporation_id'] !== 0) {
-                $creatorCorporationData = $this->getCorporationInfo($allianceData['creator_corporation_id'], $forceUpdate, $updateHistory);
+                $creatorCorporationData = $this->getCorporationInfo($allianceData['creator_corporation_id']);
             }
 
             if (isset($allianceData['executor_corporation_id']) && $allianceData['executor_corporation_id'] !== 0) {
-                $executorCorporationData = $this->getCorporationInfo($allianceData['executor_corporation_id'], $forceUpdate, $updateHistory);
+                $executorCorporationData = $this->getCorporationInfo($allianceData['executor_corporation_id']);
             }
 
             $allianceInfo = [

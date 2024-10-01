@@ -35,19 +35,19 @@ class UpdateCharacters extends ConsoleCommand
         );
 
         foreach ($cursor as $character) {
-            $charactersToUpdate[] = ['character_id' => $character['character_id']];
+            $charactersToUpdate[] = ['character_id' => $character['character_id'], 'force_update' => $forceUpdate, 'update_history' => $updateHistory];
             $progress->advance();
 
             // If we have collected 1000 characters, enqueue them
             if (count($charactersToUpdate) >= 1000) {
-                $this->updateCharacter->massEnqueue($charactersToUpdate, $forceUpdate, $updateHistory);
+                $this->updateCharacter->massEnqueue($charactersToUpdate);
                 $charactersToUpdate = []; // Reset the array
             }
         }
 
         // Enqueue any remaining characters
         if (!empty($charactersToUpdate)) {
-            $this->updateCharacter->massEnqueue($charactersToUpdate, $forceUpdate, $updateHistory);
+            $this->updateCharacter->massEnqueue($charactersToUpdate);
         }
 
         $progress->finish();

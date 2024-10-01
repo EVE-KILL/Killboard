@@ -26,6 +26,8 @@ class Corporations
                 'creator_id' => 0,
                 'creator_corporation_id' => 0,
                 'executor_corporation_id' => 0,
+                'home_station_id' => 0,
+                'ceo_id' => 0,
             ];
         }
 
