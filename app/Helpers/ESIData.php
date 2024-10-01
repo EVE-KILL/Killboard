@@ -60,7 +60,25 @@ class ESIData
             ];
 
             $characterData = $this->characters->findOneOrNull($query) ?? $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 3600);
+            $error = isset($characterData['error']) ? $characterData['error'] : null;
 
+            if ($error) {
+                switch ($error) {
+                    case 'Character has been deleted!':
+                        return [
+                            'character_id' => $characterId,
+                            'name' => 'Unknown',
+                            'corporation_id' => 0,
+                            'alliance_id' => 0,
+                            'faction_id' => 0,
+                            'deleted' => true
+                        ];
+                        break;
+                    default:
+                        throw new \Exception($error);
+                        break;
+                }
+            }
             // Store the character name early to assist in recursive calls
             $this->characterNames[$characterId] = $characterData['name'] ?? 'Unknown';
 
