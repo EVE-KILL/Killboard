@@ -3,33 +3,19 @@
 namespace EK\Jobs;
 
 use EK\Api\Abstracts\Jobs;
-use EK\Fetchers\EveWho;
+use EK\Helpers\ESIData;
 use EK\Logger\Logger;
-use EK\Meilisearch\Meilisearch;
 use EK\RabbitMQ\RabbitMQ;
-use Illuminate\Support\Collection;
-use League\Container\Container;
-use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliance extends Jobs
 {
     protected string $defaultQueue = "alliance";
 
     public function __construct(
-        protected \EK\Models\Alliances $alliances,
-        protected \EK\Models\Corporations $corporations,
-        protected \EK\Models\Characters $characters,
-        protected \EK\Models\Factions $factions,
-        protected \EK\ESI\Alliances $esiAlliances,
-        protected \EK\ESI\Corporations $esiCorporations,
-        protected \EK\ESI\Characters $esiCharacters,
-        protected Meilisearch $meilisearch,
-        protected EveWho $eveWhoFetcher,
-        protected UpdateCharacter $updateCharacter,
         protected RabbitMQ $rabbitMQ,
         protected Logger $logger,
-        protected Container $container,
-        protected UpdateMeilisearch $updateMeilisearch
+        protected UpdateMeilisearch $updateMeilisearch,
+        protected ESIData $esiData
     ) {
         parent::__construct($rabbitMQ, $logger);
     }
@@ -37,74 +23,18 @@ class UpdateAlliance extends Jobs
     public function handle(array $data): void
     {
         $allianceId = $data["alliance_id"];
+        $forceUpdate = $data["force_update"] ?? false;
         if ($allianceId === 0) {
             return;
         }
 
-        $allianceData = $this->fetchAllianceData($allianceId);
-
-        $this->updateAllianceData($allianceData);
-
-        $evewhoAllianceJob = $this->container->get(EVEWhoCharactersInAlliance::class);
-        $evewhoAllianceJob->enqueue(["alliance_id" => $allianceId]);
-    }
-
-    protected function fetchAllianceData($allianceId)
-    {
-        $alliance = $this->esiAlliances->getAllianceInfo($allianceId);
-
-        return $alliance;
-    }
-
-    protected function updateAllianceData($allianceData)
-    {
-        $allianceData = $allianceData instanceof Collection ? $allianceData->toArray() : $allianceData;
-
-        $allianceData["creator_corporation_name"] = $this->fetchCorporationName($allianceData["creator_corporation_id"]);
-        $allianceData["executor_corporation_name"] = $this->fetchCorporationName($allianceData["executor_corporation_id"]);
-        $allianceData["creator_name"] = $this->fetchCharacterName($allianceData["creator_id"]);
-        $allianceData["faction_name"] = $this->fetchFactionName($allianceData["faction_id"] ?? 0);
-        $allianceData["last_updated"] = new UTCDateTime(time() * 1000);
-
-        ksort($allianceData);
-
-        $this->alliances->setData($allianceData);
-        $this->alliances->save();
+        $allianceData = $this->esiData->getAllianceInfo($allianceId, $forceUpdate);
 
         $this->updateMeilisearch->enqueue([
-            "id" => $allianceData["alliance_id"],
-            "name" => $allianceData["name"],
-            "ticker" => $allianceData["ticker"],
-            "type" => "alliance",
+            'id' => $allianceId,
+            'name' => $allianceData['name'],
+            'ticker' => $allianceData['ticker'],
+            'type' => 'alliance'
         ]);
-    }
-
-    protected function fetchCorporationName($corporationId)
-    {
-        if ($corporationId > 0) {
-            $corporationData = $this->corporations->findOneOrNull(["corporation_id" => $corporationId]) ??
-                               $this->esiCorporations->getCorporationInfo($corporationId);
-            return $corporationData["name"] ?? "";
-        }
-        return "";
-    }
-
-    protected function fetchCharacterName($characterId)
-    {
-        if ($characterId > 0) {
-            $characterData = $this->characters->findOneOrNull(["character_id" => $characterId]) ??
-                             $this->esiCharacters->getCharacterInfo($characterId);
-            return $characterData["name"] ?? "";
-        }
-        return "";
-    }
-
-    protected function fetchFactionName($factionId)
-    {
-        if ($factionId > 0) {
-            $factionData = $this->factions->findOne(["faction_id" => $factionId]);
-            return $factionData["name"] ?? "";
-        }
-        return "";
     }
 }

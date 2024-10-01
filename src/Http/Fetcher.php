@@ -45,7 +45,7 @@ class Fetcher
         array $headers = [],
         array $options = [],
         ?string $proxy_id = null,
-        ?int $cacheTime = null,
+        ?int $cacheTime = 300,
         bool $ignorePause = false
     ): array {
         // Start a Sentry span for the fetch operation

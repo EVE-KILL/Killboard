@@ -23,24 +23,34 @@ class Characters
     ) {
     }
 
-    public function getCharacterInfo(int $characterID): array
+    public function getCharacterInfo(int $characterId, int $cacheTime = 300): array
     {
-        if ($characterID < 10000) {
-            return [];
+        if ($characterId < 10000) {
+            return [
+                'character_id' => $characterId,
+                'name' => 'Unknown',
+                'corporation_id' => 0,
+                'alliance_id' => 0,
+                'faction_id' => 0,
+            ];
         }
 
-        $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterID);
+        $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterId, cacheTime: $cacheTime);
         $characterData = json_validate($characterData['body']) ? json_decode($characterData['body'], true) : [];
-        $characterData['character_id'] = $characterID;
-        if (isset($characterData['birthday'])) {
-            $characterData['birthday'] = new UTCDateTime(strtotime($characterData['birthday']) * 1000);
-        }
+        $characterData['character_id'] = $characterId;
 
         ksort($characterData);
 
-        $this->characters->setData($characterData);
-        $this->characters->save();
-
         return $characterData;
+    }
+
+    public function getCharacterHistory(int $characterId, int $cacheTime = 300): array
+    {
+        $characterHistory = $this->esiFetcher->fetch('/latest/characters/' . $characterId . '/corporationhistory', cacheTime: $cacheTime);
+        $characterHistory = json_validate($characterHistory['body']) ? json_decode($characterHistory['body'], true) : [];
+
+        ksort($characterHistory);
+
+        return $characterHistory;
     }
 }

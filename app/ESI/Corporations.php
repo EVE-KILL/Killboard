@@ -15,21 +15,28 @@ class Corporations
     ) {
     }
 
-    public function getCorporationInfo(int $corporationId): array
+    public function getCorporationInfo(int $corporationId, int $cacheTime = 300): array
     {
         if ($corporationId < 10000) {
             return [];
         }
 
-        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId);
+        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId, cacheTime: $cacheTime);
         $corporationData = json_validate($data['body']) ? json_decode($data['body'], true) : [];
         $corporationData['corporation_id'] = $corporationId;
 
         ksort($corporationData);
 
-        $this->corporations->setData($corporationData);
-        $this->corporations->save();
-
         return $corporationData;
+    }
+
+    public function getCorporationHistory(int $corporationId, int $cacheTime = 300): array
+    {
+        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId . '/alliancehistory', cacheTime: $cacheTime);
+        $corporationHistory = json_validate($data['body']) ? json_decode($data['body'], true) : [];
+
+        ksort($corporationHistory);
+
+        return $corporationHistory;
     }
 }

@@ -10,7 +10,7 @@ use MongoDB\BSON\UTCDateTime;
 class UpdateCharacters extends ConsoleCommand
 {
     protected string $signature = 'update:characters { --all }';
-    protected string $description = 'Update the characters in the database';
+    protected string $description = 'Update the characters in the database (Default 30 days)';
 
     public function __construct(
         protected Characters $characters,
@@ -21,7 +21,7 @@ class UpdateCharacters extends ConsoleCommand
 
     final public function handle(): void
     {
-        $updated = ['updated' => ['$lt' => new UTCDateTime(strtotime('-7 days') * 1000)]];
+        $updated = ['last_updated' => ['$lt' => new UTCDateTime(strtotime('-30 days') * 1000)]];
         $characterCount = $this->characters->count($this->all ? [] : $updated);
         $this->out('Characters to update: ' . $characterCount);
         $progress = $this->progressBar($characterCount);
