@@ -9,7 +9,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliances extends ConsoleCommand
 {
-    protected string $signature = 'update:alliances { --all }';
+    protected string $signature = 'update:alliances { --all } { --forceUpdate } { --updateHistory }';
     protected string $description = 'Update the alliances in the database';
 
     public function __construct(
@@ -24,6 +24,8 @@ class UpdateAlliances extends ConsoleCommand
         $updated = ['updated' => ['$lt' => new UTCDateTime(strtotime('-7 days') * 1000)]];
         $allianceCount = $this->alliances->count($this->all ? [] : $updated);
         $this->out('Alliances to update: ' . $allianceCount);
+        $forceUpdate = $this->forceUpdate ?? false;
+        $updateHistory = $this->updateHistory ?? false;
 
         $progress = $this->progressBar($allianceCount);
         $alliancesToUpdate = [];
@@ -34,7 +36,7 @@ class UpdateAlliances extends ConsoleCommand
         }
 
         if (!empty($alliancesToUpdate)) {
-            $this->updateAlliance->massEnqueue($alliancesToUpdate);
+            $this->updateAlliance->massEnqueue($alliancesToUpdate, $forceUpdate, $updateHistory);
         }
 
         $progress->finish();

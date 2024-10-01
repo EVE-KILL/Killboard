@@ -9,7 +9,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacters extends ConsoleCommand
 {
-    protected string $signature = 'update:characters { --all }';
+    protected string $signature = 'update:characters { --all } { --forceUpdate } { --updateHistory }';
     protected string $description = 'Update the characters in the database (Default 30 days)';
 
     public function __construct(
@@ -25,6 +25,8 @@ class UpdateCharacters extends ConsoleCommand
         $characterCount = $this->characters->count($this->all ? [] : $updated);
         $this->out('Characters to update: ' . $characterCount);
         $progress = $this->progressBar($characterCount);
+        $forceUpdate = $this->forceUpdate ?? false;
+        $updateHistory = $this->updateHistory ?? false;
 
         $charactersToUpdate = [];
         $cursor = $this->characters->collection->find(
@@ -38,14 +40,14 @@ class UpdateCharacters extends ConsoleCommand
 
             // If we have collected 1000 characters, enqueue them
             if (count($charactersToUpdate) >= 1000) {
-                $this->updateCharacter->massEnqueue($charactersToUpdate);
+                $this->updateCharacter->massEnqueue($charactersToUpdate, $forceUpdate, $updateHistory);
                 $charactersToUpdate = []; // Reset the array
             }
         }
 
         // Enqueue any remaining characters
         if (!empty($charactersToUpdate)) {
-            $this->updateCharacter->massEnqueue($charactersToUpdate);
+            $this->updateCharacter->massEnqueue($charactersToUpdate, $forceUpdate, $updateHistory);
         }
 
         $progress->finish();

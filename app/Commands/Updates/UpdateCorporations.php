@@ -9,7 +9,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCorporations extends ConsoleCommand
 {
-    protected string $signature = 'update:corporations { --all }';
+    protected string $signature = 'update:corporations { --all } { --forceUpdate } { --updateHistory }';
     protected string $description = 'Update the corporations in the database';
 
     public function __construct(
@@ -24,6 +24,8 @@ class UpdateCorporations extends ConsoleCommand
         $updated = ['updated' => ['$lt' => new UTCDateTime(strtotime('-7 days') * 1000)]];
         $corporationCount = $this->corporations->count($this->all ? [] : $updated);
         $this->out('Corporations to update: ' . $corporationCount);
+        $forceUpdate = $this->forceUpdate ?? false;
+        $updateHistory = $this->updateHistory ?? false;
 
         $progress = $this->progressBar($corporationCount);
         $corporationsToUpdate = [];
@@ -34,14 +36,14 @@ class UpdateCorporations extends ConsoleCommand
 
             // If we have collected 1000 corporations, enqueue them
             if (count($corporationsToUpdate) >= 1000) {
-                $this->updateCorporation->massEnqueue($corporationsToUpdate);
+                $this->updateCorporation->massEnqueue($corporationsToUpdate, $forceUpdate, $updateHistory);
                 $corporationsToUpdate = []; // Reset the array
             }
         }
 
         // Enqueue any remaining corporations
         if (!empty($corporationsToUpdate)) {
-            $this->updateCorporation->massEnqueue($corporationsToUpdate);
+            $this->updateCorporation->massEnqueue($corporationsToUpdate, $forceUpdate, $updateHistory);
         }
 
         $progress->finish();
