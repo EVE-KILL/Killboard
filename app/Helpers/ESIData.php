@@ -59,7 +59,7 @@ class ESIData
                 'last_updated' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
             ];
 
-            $characterData = $this->characters->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 3600);
+            $characterData = $this->characters->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 360000);
             $error = isset($characterData['error']) ? $characterData['error'] : null;
 
             if ($error) {
@@ -160,7 +160,7 @@ class ESIData
             ];
 
             // Get the corporation info from the database, unless it's over 7 days old
-            $corporationData = $this->corporations->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 3600);
+            $corporationData = $this->corporations->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 360000);
 
             // Store the corporation name early to assist in recursive calls
             $this->corporationNames[$corporationId] = $corporationData['name'] ?? 'Unknown';
@@ -253,7 +253,7 @@ class ESIData
                 'last_updated' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
             ];
 
-            $allianceData = $this->alliances->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 3600);
+            $allianceData = $this->alliances->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 360000);
 
             // Store the alliance name early to assist in recursive calls
             $this->allianceNames[$allianceId] = $allianceData['name'] ?? 'Unknown';

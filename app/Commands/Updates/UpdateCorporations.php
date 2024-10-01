@@ -31,7 +31,7 @@ class UpdateCorporations extends ConsoleCommand
         $corporationsToUpdate = [];
 
         foreach ($this->corporations->find($this->all ? [] : $updated) as $corporation) {
-            $corporationsToUpdate[] = ['corporation_id' => $corporation['corporation_id', 'force_update' => $forceUpdate, 'update_history' => $updateHistory]];
+            $corporationsToUpdate[] = ['corporation_id' => $corporation['corporation_id'], 'force_update' => $forceUpdate, 'update_history' => $updateHistory];
             $progress->advance();
 
             // If we have collected 1000 corporations, enqueue them
