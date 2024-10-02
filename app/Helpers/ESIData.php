@@ -65,6 +65,40 @@ class ESIData
             if ($error) {
                 switch ($error) {
                     case 'Character has been deleted!':
+                        $existingData = $this->characters->findOneOrNull([
+                            'character_id' => $characterId,
+                        ]);
+
+                        if ($existingData) {
+                            $deletedCharacter = [
+                                'character_id' => $characterId,
+                                'name' => $existingData['name'] ?? 'Unknown',
+                                'description' => $existingData['description'] ?? '',
+                                'birthday' => new UTCDateTime($this->handleDate($existingData['birthday'] ?? '2003-01-01 00:00:00') * 1000),
+                                'gender' => $existingData['gender'] ?? '',
+                                'race_id' => $existingData['race_id'] ?? 0,
+                                'security_status' => (float) number_format($existingData['security_status'], 2),
+                                'bloodline_id' => $existingData['bloodline_id'] ?? 0,
+                                'corporation_id' => $existingData['corporation_id'] ?? 0,
+                                'corporation_name' => $existingData['corporation_name'] ?? 'Unknown',
+                                'alliance_id' => $existingData['alliance_id'] ?? 0,
+                                'alliance_name' => $existingData['alliance_name'] ?? '',
+                                'faction_id' => $existingData['faction_id'] ?? 0,
+                                'faction_name' => $existingData['faction_name'] ?? '',
+                                'last_updated' => new UTCDateTime(),
+                            ];
+
+                            if ($existingData['history']) {
+                                $deletedCharacter['history'] = $existingData['history'];
+                            }
+
+                            $this->characters->collection->replaceOne([
+                                'character_id' => $characterId,
+                            ], $deletedCharacter, ['upsert' => true]);
+
+                            return $deletedCharacter;
+                        }
+
                         return [
                             'character_id' => $characterId,
                             'name' => 'Unknown',
