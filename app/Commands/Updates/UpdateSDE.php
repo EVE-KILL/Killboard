@@ -6,12 +6,7 @@ use EK\Api\Abstracts\ConsoleCommand;
 use EK\Models\Celestials;
 use EK\Models\Factions;
 use EK\Models\InvFlags;
-use EK\Models\Prices;
 use GuzzleHttp\Client;
-use League\Csv\Exception;
-use League\Csv\Reader;
-use League\Csv\UnavailableStream;
-use MongoDB\BSON\UTCDateTime;
 
 class UpdateSDE extends ConsoleCommand
 {

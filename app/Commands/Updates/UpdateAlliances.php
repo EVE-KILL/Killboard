@@ -25,7 +25,6 @@ class UpdateAlliances extends ConsoleCommand
         $allianceCount = $this->alliances->count($this->all ? [] : $updated);
         $this->out('Alliances to update: ' . $allianceCount);
         $forceUpdate = $this->forceUpdate ?? false;
-        $updateHistory = $this->updateHistory ?? false;
 
         $progress = $this->progressBar($allianceCount);
         $alliancesToUpdate = [];
