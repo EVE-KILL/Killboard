@@ -3,6 +3,7 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
+use EK\Helpers\ESIData;
 use EK\Jobs\UpdateCharacter;
 use EK\Models\Characters;
 use MongoDB\BSON\UTCDateTime;
@@ -14,14 +15,15 @@ class UpdateCharacters extends ConsoleCommand
 
     public function __construct(
         protected Characters $characters,
-        protected UpdateCharacter $updateCharacter
+        protected UpdateCharacter $updateCharacter,
+        protected ESIData $esiData
     ) {
         parent::__construct();
     }
 
     final public function handle(): void
     {
-        if (isset($this->characterId)) {
+        if ($this->characterId) {
             $this->handleSingleCharacter();
         } else {
             $this->handleAllCharacters();
@@ -33,16 +35,12 @@ class UpdateCharacters extends ConsoleCommand
      */
     protected function handleSingleCharacter(): void
     {
-        $characterId = $this->characterId;
+        $characterId = (int) $this->characterId;
         $forceUpdate = $this->forceUpdate ?? false;
         $updateHistory = $this->updateHistory ?? false;
 
         $this->out("Updating character with ID: {$characterId}");
-        $this->updateCharacter->enqueue([
-            'character_id' => $characterId,
-            'force_update' => $forceUpdate,
-            'update_history' => $updateHistory,
-        ]);
+        $this->esiData->getCharacterInfo($characterId, $forceUpdate, $updateHistory);
     }
 
     /**

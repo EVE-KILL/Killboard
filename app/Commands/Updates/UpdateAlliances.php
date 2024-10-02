@@ -23,7 +23,7 @@ class UpdateAlliances extends ConsoleCommand
 
     final public function handle(): void
     {
-        if (isset($this->allianceId)) {
+        if ($this->allianceId) {
             $this->handleSingleAlliance();
         } else {
             $this->handleAllAlliances();

@@ -3,6 +3,7 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
+use EK\Helpers\ESIData;
 use EK\Jobs\UpdateCorporation;
 use EK\Models\Corporations;
 use MongoDB\BSON\UTCDateTime;
@@ -14,14 +15,15 @@ class UpdateCorporations extends ConsoleCommand
 
     public function __construct(
         protected Corporations $corporations,
-        protected UpdateCorporation $updateCorporation
+        protected UpdateCorporation $updateCorporation,
+        protected ESIData $esiData
     ) {
         parent::__construct();
     }
 
     final public function handle(): void
     {
-        if (isset($this->corporationId)) {
+        if ($this->corporationId) {
             $this->handleSingleCorporation();
         } else {
             $this->handleAllCorporations();
@@ -38,11 +40,7 @@ class UpdateCorporations extends ConsoleCommand
         $updateHistory = $this->updateHistory ?? false;
 
         $this->out("Updating corporation with ID: {$corporationId}");
-        $this->updateCorporation->enqueue([
-            'corporation_id' => $corporationId,
-            'force_update' => $forceUpdate,
-            'update_history' => $updateHistory
-        ]);
+        $this->esiData->getCorporationInfo($corporationId, $forceUpdate, $updateHistory);
     }
 
     /**
