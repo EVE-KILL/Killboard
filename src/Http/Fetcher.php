@@ -241,9 +241,9 @@ class Fetcher
             "status" => 304,
             "headers" => array_merge($result["headers"], [
                 "Expires" => $expireTimeGMT->format("D, d M Y H:i:s \G\M\T"),
-                "Last-Modified" => $result["headers"]["Last-Modified"],
+                "Last-Modified" => $result["headers"]["Last-Modified"] ?? $currentTimeGMT->format("D, d M Y H:i:s \G\M\T"),
                 "Cache-Control" =>
-                    "public, max-age=" . $this->cache->getTTL($cacheKey),
+                    "public, max-age=" . $this->cache->getTTL($cacheKey) ?? 0,
                 "Date" => $currentTimeGMT->format("D, d M Y H:i:s \G\M\T"),
             ]),
             "body" => $result["body"],

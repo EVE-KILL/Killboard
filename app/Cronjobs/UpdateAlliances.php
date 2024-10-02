@@ -21,10 +21,9 @@ class UpdateAlliances extends Cronjob
 
     public function handle(): void
     {
-        return;
         $this->logger->info("Updating alliances");
 
-        // Find alliances that haven't been updated in the last 14 days
+        // Find all alliances, and update them
         $staleAlliances = $this->alliances->find([]);
 
         $updates = [];

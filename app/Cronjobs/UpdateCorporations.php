@@ -22,15 +22,14 @@ class UpdateCorporations extends Cronjob
 
     public function handle(): void
     {
-        return;
-        $this->logger->info("Updating corporations that haven't been updated in the last 14 days");
+        $this->logger->info("Updating corporations that haven't been updated in the last 7 days");
 
-        $fourteenDaysAgo = new UTCDateTime((time() - 14 * 86400) * 1000);
+        $sevenDaysAgo = new UTCDateTime((time() - 7 * 86400) * 1000);
 
         // Find corporations that haven't been updated in the last 14 days
         $staleCorporations = $this->corporations->find(
             [
-                "last_modified" => ['$lt' => $fourteenDaysAgo],
+                "last_modified" => ['$lt' => $sevenDaysAgo],
             ],
             ["limit" => 2000]
         );
