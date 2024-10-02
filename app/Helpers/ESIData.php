@@ -102,7 +102,8 @@ class ESIData
                         return [
                             'character_id' => $characterId,
                             'name' => 'Unknown',
-                            'corporation_id' => 0,
+                            'corporation_id' => 1000001,
+                            'corporation_name' => 'Doomheim',
                             'alliance_id' => 0,
                             'faction_id' => 0,
                             'deleted' => true
