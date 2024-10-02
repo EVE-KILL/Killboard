@@ -3,33 +3,59 @@
 namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
+use EK\Helpers\ESIData;
 use EK\Jobs\UpdateAlliance;
 use EK\Models\Alliances;
 use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliances extends ConsoleCommand
 {
-    protected string $signature = 'update:alliances { --all } { --forceUpdate }';
+    protected string $signature = 'update:alliances { allianceId? : Process a single allianceId } { --all } { --forceUpdate }';
     protected string $description = 'Update the alliances in the database';
 
     public function __construct(
         protected Alliances $alliances,
-        protected UpdateAlliance $updateAlliance
+        protected UpdateAlliance $updateAlliance,
+        protected ESIData $esiData
     ) {
         parent::__construct();
     }
 
     final public function handle(): void
     {
-        $updated = ['updated' => ['$lt' => new UTCDateTime(strtotime('-7 days') * 1000)]];
-        $allianceCount = $this->alliances->count($this->all ? [] : $updated);
+        if (isset($this->allianceId)) {
+            $this->handleSingleAlliance();
+        } else {
+            $this->handleAllAlliances();
+        }
+    }
+
+    /**
+     * Handle updating a single alliance.
+     */
+    protected function handleSingleAlliance(): void
+    {
+        $allianceId = $this->allianceId;
+        $forceUpdate = $this->forceUpdate ?? false;
+
+        $this->out("Updating alliance with ID: {$allianceId}");
+        $this->esiData->getAllianceInfo($allianceId, $forceUpdate);
+    }
+
+    /**
+     * Handle updating all alliances.
+     */
+    protected function handleAllAlliances(): void
+    {
+        $updatedCriteria = ['updated' => ['$lt' => new UTCDateTime(strtotime('-7 days') * 1000)]];
+        $allianceCount = $this->alliances->count($this->all ? [] : $updatedCriteria);
         $this->out('Alliances to update: ' . $allianceCount);
         $forceUpdate = $this->forceUpdate ?? false;
 
         $progress = $this->progressBar($allianceCount);
         $alliancesToUpdate = [];
 
-        foreach ($this->alliances->find($this->all ? [] : $updated) as $alliance) {
+        foreach ($this->alliances->find($this->all ? [] : $updatedCriteria) as $alliance) {
             $alliancesToUpdate[] = ['alliance_id' => $alliance['alliance_id'], 'force_update' => $forceUpdate];
             $progress->advance();
         }

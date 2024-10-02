@@ -9,7 +9,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacters extends ConsoleCommand
 {
-    protected string $signature = 'update:characters { --all } { --forceUpdate } { --updateHistory }';
+    protected string $signature = 'update:characters { characterId? : Process a single characterId } { --all } { --forceUpdate } { --updateHistory }';
     protected string $description = 'Update the characters in the database (Default 30 days)';
 
     public function __construct(
@@ -21,21 +21,55 @@ class UpdateCharacters extends ConsoleCommand
 
     final public function handle(): void
     {
-        $updated = ['last_updated' => ['$lt' => new UTCDateTime(strtotime('-30 days') * 1000)]];
-        $characterCount = $this->characters->count($this->all ? [] : $updated);
-        $this->out('Characters to update: ' . $characterCount);
-        $progress = $this->progressBar($characterCount);
+        if (isset($this->characterId)) {
+            $this->handleSingleCharacter();
+        } else {
+            $this->handleAllCharacters();
+        }
+    }
+
+    /**
+     * Handle updating a single character.
+     */
+    protected function handleSingleCharacter(): void
+    {
+        $characterId = $this->characterId;
         $forceUpdate = $this->forceUpdate ?? false;
         $updateHistory = $this->updateHistory ?? false;
 
+        $this->out("Updating character with ID: {$characterId}");
+        $this->updateCharacter->enqueue([
+            'character_id' => $characterId,
+            'force_update' => $forceUpdate,
+            'update_history' => $updateHistory,
+        ]);
+    }
+
+    /**
+     * Handle updating all characters.
+     */
+    protected function handleAllCharacters(): void
+    {
+        $updatedCriteria = ['last_updated' => ['$lt' => new UTCDateTime(strtotime('-30 days') * 1000)]];
+        $characterCount = $this->characters->count($this->all ? [] : $updatedCriteria);
+        $this->out('Characters to update: ' . $characterCount);
+        $forceUpdate = $this->forceUpdate ?? false;
+        $updateHistory = $this->updateHistory ?? false;
+
+        $progress = $this->progressBar($characterCount);
         $charactersToUpdate = [];
+
         $cursor = $this->characters->collection->find(
-            $this->all ? [] : $updated,
+            $this->all ? [] : $updatedCriteria,
             ['projection' => ['_id' => 0, 'character_id' => 1]]
         );
 
         foreach ($cursor as $character) {
-            $charactersToUpdate[] = ['character_id' => $character['character_id'], 'force_update' => $forceUpdate, 'update_history' => $updateHistory];
+            $charactersToUpdate[] = [
+                'character_id' => $character['character_id'],
+                'force_update' => $forceUpdate,
+                'update_history' => $updateHistory
+            ];
             $progress->advance();
 
             // If we have collected 1000 characters, enqueue them
