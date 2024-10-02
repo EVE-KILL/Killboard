@@ -120,6 +120,15 @@ class ESIData
 
             if ($updateHistory) {
                 $characterInfo['history'] = $this->getCharacterHistory($characterId);
+            } else {
+                // Get the character from the database and re-attach the history if it exists
+                $characterHistory = $this->characters->findOneOrNull([
+                    'character_id' => $characterId,
+                ], ['projection' => ['history' => 1]]);
+
+                if ($characterHistory && isset($characterHistory['history'])) {
+                    $characterInfo['history'] = $characterHistory['history'];
+                }
             }
 
             // Completely replace the character in the database (Remove the old data)
@@ -215,6 +224,15 @@ class ESIData
 
             if ($updateHistory) {
                 $corporationInfo['history'] = $this->getCorporationHistory($corporationId);
+            } else {
+                // Get the corporation from the database and re-attach the history if it exists
+                $corporationHistory = $this->corporations->findOneOrNull([
+                    'corporation_id' => $corporationId,
+                ], ['projection' => ['history' => 1]]);
+
+                if ($corporationHistory && isset($corporationHistory['history'])) {
+                    $corporationInfo['history'] = $corporationHistory['history'];
+                }
             }
 
             $this->corporations->collection->replaceOne([
