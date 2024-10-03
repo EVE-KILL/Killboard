@@ -73,8 +73,8 @@ class UpdateCharacters extends ConsoleCommand
 
             if ($this->updateHistory) {
                 $charactersToUpdateHistory[] = [
-                    'character_id' => $character['character_id'],
-                    'update_history' => $updateHistory
+                    'entity_id' => $character['character_id'],
+                    'entity_type' => 'character'
                 ];
             }
 

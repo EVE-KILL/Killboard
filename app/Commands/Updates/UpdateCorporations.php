@@ -72,8 +72,8 @@ class UpdateCorporations extends ConsoleCommand
 
             if ($this->updateHistory) {
                 $corporationsToUpdateHistory[] = [
-                    'corporation_id' => $corporation['corporation_id'],
-                    'update_history' => $updateHistory
+                    'entity_id' => $corporation['corporation_id'],
+                    'entity_type' => 'corporation'
                 ];
             }
 
