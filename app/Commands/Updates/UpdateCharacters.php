@@ -56,6 +56,7 @@ class UpdateCharacters extends ConsoleCommand
 
         $progress = $this->progressBar($characterCount);
         $charactersToUpdate = [];
+        $charactersToUpdateHistory = [];
 
         $cursor = $this->characters->collection->find(
             $this->all ? [] : $updatedCriteria,
@@ -65,9 +66,16 @@ class UpdateCharacters extends ConsoleCommand
         foreach ($cursor as $character) {
             $charactersToUpdate[] = [
                 'character_id' => $character['character_id'],
-                'force_update' => $forceUpdate,
-                'update_history' => $updateHistory
+                'force_update' => $forceUpdate
             ];
+
+            if ($this->updateHistory) {
+                $charactersToUpdateHistory[] = [
+                    'character_id' => $character['character_id'],
+                    'update_history' => $updateHistory
+                ];
+            }
+
             $progress->advance();
 
             // If we have collected 1000 characters, enqueue them
@@ -75,11 +83,22 @@ class UpdateCharacters extends ConsoleCommand
                 $this->updateCharacter->massEnqueue($charactersToUpdate);
                 $charactersToUpdate = []; // Reset the array
             }
+
+
+            if (count($charactersToUpdateHistory) >= 1000) {
+                $this->updateCharacter->massEnqueue($charactersToUpdateHistory);
+                $charactersToUpdateHistory = []; // Reset the array
+            }
+
         }
 
         // Enqueue any remaining characters
         if (!empty($charactersToUpdate)) {
             $this->updateCharacter->massEnqueue($charactersToUpdate);
+        }
+
+        if (!empty($charactersToUpdateHistory)) {
+            $this->updateCharacter->massEnqueue($charactersToUpdateHistory);
         }
 
         $progress->finish();

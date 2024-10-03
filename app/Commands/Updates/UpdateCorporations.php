@@ -55,6 +55,7 @@ class UpdateCorporations extends ConsoleCommand
         $updateHistory = $this->updateHistory ?? false;
         $progress = $this->progressBar($corporationCount);
         $corporationsToUpdate = [];
+        $corporationsToUpdateHistory = [];
 
         $cursor = $this->corporations->find(
             $this->all ? [] : $updatedCriteria,
@@ -64,9 +65,16 @@ class UpdateCorporations extends ConsoleCommand
         foreach ($cursor as $corporation) {
             $corporationsToUpdate[] = [
                 'corporation_id' => $corporation['corporation_id'],
-                'force_update' => $forceUpdate,
-                'update_history' => $updateHistory
+                'force_update' => $forceUpdate
             ];
+
+            if ($this->updateHistory) {
+                $corporationsToUpdateHistory[] = [
+                    'corporation_id' => $corporation['corporation_id'],
+                    'update_history' => $updateHistory
+                ];
+            }
+
             $progress->advance();
 
             // If we have collected 1000 corporations, enqueue them
@@ -74,11 +82,20 @@ class UpdateCorporations extends ConsoleCommand
                 $this->updateCorporation->massEnqueue($corporationsToUpdate);
                 $corporationsToUpdate = []; // Reset the array
             }
+
+            if (count($corporationsToUpdateHistory) >= 1000) {
+                $this->updateCorporation->massEnqueue($corporationsToUpdateHistory);
+                $corporationsToUpdateHistory = []; // Reset the array
+            }
         }
 
         // Enqueue any remaining corporations
         if (!empty($corporationsToUpdate)) {
             $this->updateCorporation->massEnqueue($corporationsToUpdate);
+        }
+
+        if (!empty($corporationsToUpdateHistory)) {
+            $this->updateCorporation->massEnqueue($corporationsToUpdateHistory);
         }
 
         $progress->finish();
