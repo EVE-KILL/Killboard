@@ -30,7 +30,7 @@ class ExportCharacters extends ConsoleCommand
         $this->checkAndCreatePath($path);
 
         // Use the MongoDB Cursor to get all characters
-        $characters = $this->characters->collection->find([], ['projection' => ['_id' => 0, 'kills' => 0, 'losses' => 0, 'points' => 0, 'last_modified' => 0, 'last_updated' => 0]]);
+        $characters = $this->characters->collection->find([], ['projection' => ['_id' => 0, 'kills' => 0, 'losses' => 0, 'points' => 0, 'last_modified' => 0, 'last_modified' => 0]]);
 
         // Export the characters to the JSON file
         $this->exportToJson($this->cleanupTimestampsInline($characters), $path);

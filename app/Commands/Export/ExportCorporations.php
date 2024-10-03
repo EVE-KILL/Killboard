@@ -29,7 +29,7 @@ class ExportCorporations extends ConsoleCommand
         $this->checkAndCreatePath($path);
 
         // Use the MongoDB Cursor to get all corporations
-        $corporations = $this->corporations->collection->find([], ['projection' => ['_id' => 0, 'kills' => 0, 'losses' => 0, 'points' => 0, 'last_modified' => 0, 'last_updated' => 0]]);
+        $corporations = $this->corporations->collection->find([], ['projection' => ['_id' => 0, 'kills' => 0, 'losses' => 0, 'points' => 0, 'last_modified' => 0, 'last_modified' => 0]]);
 
         // Export the corporations to the JSON file
         $this->exportToJson($this->cleanupTimestampsInline($corporations), $path);

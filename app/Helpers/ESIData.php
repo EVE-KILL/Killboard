@@ -56,7 +56,7 @@ class ESIData
                 'character_id' => $characterId,
             ] : [
                 'character_id' => $characterId,
-                'last_updated' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
+                'last_modified' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
             ];
 
             $characterData = $this->characters->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 360000);
@@ -85,7 +85,7 @@ class ESIData
                                 'alliance_name' => $existingData['alliance_name'] ?? '',
                                 'faction_id' => $existingData['faction_id'] ?? 0,
                                 'faction_name' => $existingData['faction_name'] ?? '',
-                                'last_updated' => new UTCDateTime(),
+                                'last_modified' => new UTCDateTime(),
                             ];
 
                             if ($existingData['history']) {
@@ -150,7 +150,7 @@ class ESIData
                 'alliance_name' => $allianceData['name'] ?? '',
                 'faction_id' => $factionData['faction_id'] ?? 0,
                 'faction_name' => $factionData['name'] ?? '',
-                'last_updated' => new UTCDateTime(),
+                'last_modified' => new UTCDateTime(),
             ];
 
             if ($updateHistory) {
@@ -200,7 +200,7 @@ class ESIData
                 'corporation_id' => $corporationId,
             ] : [
                 'corporation_id' => $corporationId,
-                'last_updated' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
+                'last_modified' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
             ];
 
             // Get the corporation info from the database, unless it's over 7 days old
@@ -254,7 +254,7 @@ class ESIData
                 'tax_rate' => $corporationData['tax_rate'] ?? 0,
                 'url' => $corporationData['url'] ?? '',
                 'history' => $this->getCorporationHistory($corporationId),
-                'last_updated' => new UTCDateTime(),
+                'last_modified' => new UTCDateTime(),
             ];
 
             if ($updateHistory) {
@@ -303,7 +303,7 @@ class ESIData
                 'alliance_id' => $allianceId,
             ] : [
                 'alliance_id' => $allianceId,
-                'last_updated' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
+                'last_modified' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
             ];
 
             $allianceData = $this->alliances->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 360000);
@@ -336,7 +336,7 @@ class ESIData
                 'creator_corporation_name' => $creatorCorporationData['name'] ?? 'Unknown',
                 'executor_corporation_id' => $allianceData['executor_corporation_id'],
                 'executor_corporation_name' => $executorCorporationData['name'] ?? 'Unknown',
-                'last_updated' => new UTCDateTime(),
+                'last_modified' => new UTCDateTime(),
             ];
 
             $this->alliances->collection->replaceOne([
@@ -372,7 +372,7 @@ class ESIData
             'solar_system_id' => $factionData['solar_system_id'],
             'station_count' => $factionData['station_count'],
             'station_system_count' => $factionData['station_system_count'],
-            'last_updated' => new UTCDateTime(),
+            'last_modified' => new UTCDateTime(),
         ];
 
         $this->factions->collection->updateOne([

@@ -30,7 +30,7 @@ class ExportAlliances extends ConsoleCommand
         $this->checkAndCreatePath($path);
 
         // Use the MongoDB Cursor to get all alliances
-        $alliances = $this->alliances->collection->find([], ['projection' => ['_id' => 0, 'kills' => 0, 'losses' => 0, 'stats' => 0, 'last_modified' => 0, 'last_updated' => 0]]);
+        $alliances = $this->alliances->collection->find([], ['projection' => ['_id' => 0, 'kills' => 0, 'losses' => 0, 'stats' => 0, 'last_modified' => 0, 'last_modified' => 0]]);
 
         // Export the alliances to the JSON file with inline timestamp cleanup
         $this->exportToJson($this->cleanupTimestampsInline($alliances), $path);

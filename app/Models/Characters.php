@@ -33,7 +33,6 @@ class Characters extends Collection
             "updated",
             "name",
             "deleted",
-            "last_updated",
             "birthday"
         ],
     ];

@@ -48,7 +48,7 @@ class UpdateCharacters extends ConsoleCommand
      */
     protected function handleAllCharacters(): void
     {
-        $updatedCriteria = ['last_updated' => ['$lt' => new UTCDateTime(strtotime('-30 days') * 1000)]];
+        $updatedCriteria = ['last_modified' => ['$lt' => new UTCDateTime(strtotime('-30 days') * 1000)]];
         $characterCount = $this->characters->count($this->all ? [] : $updatedCriteria);
         $this->out('Characters to update: ' . $characterCount);
         $forceUpdate = $this->forceUpdate ?? false;
