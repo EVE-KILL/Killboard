@@ -112,10 +112,14 @@ class Fetcher
             "body" => $body,
             "headers" => array_merge($headers, [
                 "User-Agent" => $this->userAgent,
+                'Connection' => 'close'
             ]),
             "options" => $options,
             "timeout" => $this->timeout,
             "http_errors" => false,
+            "curl" => [
+                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+            ],
         ]);
 
         $span
