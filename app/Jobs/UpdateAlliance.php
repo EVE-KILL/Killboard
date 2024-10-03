@@ -10,6 +10,7 @@ use EK\RabbitMQ\RabbitMQ;
 class UpdateAlliance extends Jobs
 {
     protected string $defaultQueue = "alliance";
+    protected string $exchange = 'alliance_exchange';
 
     public function __construct(
         protected RabbitMQ $rabbitMQ,
@@ -36,5 +37,16 @@ class UpdateAlliance extends Jobs
             'ticker' => $allianceData['ticker'],
             'type' => 'alliance'
         ]);
+
+        // Emit the just updated alliance to the alliance topic
+        $channel = $this->rabbitMQ->getChannel();
+        $channel->basic_publish(
+            new \PhpAmqpLib\Message\AMQPMessage(json_encode($allianceData), [
+                'content_type' => 'application/json',
+                'delivery_mode' => 2, // Persistent messages
+            ]),
+            $this->exchange, // Exchange name
+            'alliance' // Routing key
+        );
     }
 }

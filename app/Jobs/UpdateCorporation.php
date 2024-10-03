@@ -10,6 +10,7 @@ use EK\RabbitMQ\RabbitMQ;
 class UpdateCorporation extends Jobs
 {
     protected string $defaultQueue = "corporation";
+    protected string $exchange = 'corporation_exchange';
 
     public function __construct(
         protected RabbitMQ $rabbitMQ,
@@ -37,5 +38,16 @@ class UpdateCorporation extends Jobs
             'ticker' => $corporationData['ticker'],
             'type' => 'corporation'
         ]);
+
+        // Emit the just updated corporation to the corporation topic
+        $channel = $this->rabbitMQ->getChannel();
+        $channel->basic_publish(
+            new \PhpAmqpLib\Message\AMQPMessage(json_encode($corporationData), [
+                'content_type' => 'application/json',
+                'delivery_mode' => 2, // Persistent messages
+            ]),
+            $this->exchange, // Exchange name
+            'corporation' // Routing key
+        );
     }
 }

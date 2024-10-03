@@ -10,7 +10,7 @@ use EK\RabbitMQ\RabbitMQ;
 class UpdateCharacter extends Jobs
 {
     protected string $defaultQueue = "character";
-    public bool $requeue = false;
+    protected string $exchange = 'character_exchange';
 
     public function __construct(
         protected Logger $logger,
@@ -38,5 +38,15 @@ class UpdateCharacter extends Jobs
             'type' => 'character'
         ]);
 
+        // Emit the just updated character to the character topic
+        $channel = $this->rabbitMQ->getChannel();
+        $channel->basic_publish(
+            new \PhpAmqpLib\Message\AMQPMessage(json_encode($characterData), [
+                'content_type' => 'application/json',
+                'delivery_mode' => 2, // Persistent messages
+            ]),
+            $this->exchange, // Exchange name
+            'character' // Routing key
+        );
     }
 }
