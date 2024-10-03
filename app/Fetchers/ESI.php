@@ -42,13 +42,14 @@ class ESI extends Fetcher
         // Retrieve error limit remaining and reset time from headers
         $esiErrorLimitRemaining = (int) ($response->getHeader('X-Esi-Error-Limit-Remain')[0] ?? 100);
         $esiErrorLimitReset = (int) ($response->getHeader('X-Esi-Error-Limit-Reset')[0] ?? 0);
+        $sleptByProxy = (bool) ($response->getHeader('X-Slept-By-Proxy')[0] ?? false);
 
         // Cache the values
         $this->cache->set('esi_error_limit_remaining', $esiErrorLimitRemaining);
         $this->cache->set('esi_error_limit_reset', $esiErrorLimitReset);
 
         // Calculate progressive usleep time (in microseconds) based on inverse of error limit remaining
-        if ($esiErrorLimitRemaining < 100) {
+        if ($esiErrorLimitRemaining < 100 && $sleptByProxy === false) {
             // Error limit remaining should inversely affect the sleep time
             // The closer it is to zero, the longer the sleep
             $maxSleepTimeInMicroseconds = $esiErrorLimitReset * 1000000; // max sleep time, e.g., reset in seconds converted to microseconds
