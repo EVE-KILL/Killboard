@@ -4,6 +4,7 @@ namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Helpers\ESIData;
+use EK\Jobs\EntityHistoryUpdate;
 use EK\Jobs\UpdateCorporation;
 use EK\Models\Corporations;
 use MongoDB\BSON\UTCDateTime;
@@ -16,6 +17,7 @@ class UpdateCorporations extends ConsoleCommand
     public function __construct(
         protected Corporations $corporations,
         protected UpdateCorporation $updateCorporation,
+        protected EntityHistoryUpdate $entityHistoryUpdate,
         protected ESIData $esiData
     ) {
         parent::__construct();
@@ -84,7 +86,7 @@ class UpdateCorporations extends ConsoleCommand
             }
 
             if (count($corporationsToUpdateHistory) >= 1000) {
-                $this->updateCorporation->massEnqueue($corporationsToUpdateHistory);
+                $this->entityHistoryUpdate->massEnqueue($corporationsToUpdateHistory);
                 $corporationsToUpdateHistory = []; // Reset the array
             }
         }
@@ -95,7 +97,7 @@ class UpdateCorporations extends ConsoleCommand
         }
 
         if (!empty($corporationsToUpdateHistory)) {
-            $this->updateCorporation->massEnqueue($corporationsToUpdateHistory);
+            $this->entityHistoryUpdate->massEnqueue($corporationsToUpdateHistory);
         }
 
         $progress->finish();

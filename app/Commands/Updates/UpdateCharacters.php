@@ -4,6 +4,7 @@ namespace EK\Commands\Updates;
 
 use EK\Api\Abstracts\ConsoleCommand;
 use EK\Helpers\ESIData;
+use EK\Jobs\EntityHistoryUpdate;
 use EK\Jobs\UpdateCharacter;
 use EK\Models\Characters;
 use MongoDB\BSON\UTCDateTime;
@@ -16,6 +17,7 @@ class UpdateCharacters extends ConsoleCommand
     public function __construct(
         protected Characters $characters,
         protected UpdateCharacter $updateCharacter,
+        protected EntityHistoryUpdate $entityHistoryUpdate,
         protected ESIData $esiData
     ) {
         parent::__construct();
@@ -86,7 +88,7 @@ class UpdateCharacters extends ConsoleCommand
 
 
             if (count($charactersToUpdateHistory) >= 1000) {
-                $this->updateCharacter->massEnqueue($charactersToUpdateHistory);
+                $this->entityHistoryUpdate->massEnqueue($charactersToUpdateHistory);
                 $charactersToUpdateHistory = []; // Reset the array
             }
 
@@ -98,7 +100,7 @@ class UpdateCharacters extends ConsoleCommand
         }
 
         if (!empty($charactersToUpdateHistory)) {
-            $this->updateCharacter->massEnqueue($charactersToUpdateHistory);
+            $this->entityHistoryUpdate->massEnqueue($charactersToUpdateHistory);
         }
 
         $progress->finish();
