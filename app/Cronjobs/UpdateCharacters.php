@@ -22,6 +22,7 @@ class UpdateCharacters extends Cronjob
 
     public function handle(): void
     {
+        return;
         $this->logger->info("Updating characters that haven't been updated in the last 30 days");
         $timeAgo = new UTCDateTime((time() - 30 * 86400) * 1000);
 
