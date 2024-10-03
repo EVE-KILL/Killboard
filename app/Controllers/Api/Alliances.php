@@ -427,6 +427,7 @@ class Alliances extends Controller
     #[RouteAttribute("/alliances/{alliance_id}/alliancehistory[/]", ["GET"], "Get the alliance history of an alliance")]
     public function allianceHistory(int $alliance_id): ResponseInterface
     {
+        return $this->json(['down' => true]);
         $alliance = $this->alliances->findOne(
             ["alliance_id" => $alliance_id],
             ["projection" => ["_id" => 0]],
