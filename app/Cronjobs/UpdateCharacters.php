@@ -102,6 +102,15 @@ class UpdateCharacters extends Cronjob
                 }
             }
             $this->logger->info("Dispatched update jobs for " . count($updates) . " characters.");
+
+            // Update the rest of the characters to the current time
+            $currentTime = new UTCDateTime(time() * 1000);
+            $characterIdsMinusUpdates = array_diff(array_map(fn ($char) => $char['character_id'], $characters), array_column($updates, 'character_id'));
+            $this->characters->collection->updateMany(
+                ['character_id' => ['$in' => $characterIdsMinusUpdates]],
+                ['$set' => ['last_modified' => $currentTime]]
+            );
+            $this->logger->info("Updated last_modified for " . count($characterIdsMinusUpdates) . " characters.");
         } else {
             // If there are no updates, update the last_modified field to the current time
             $currentTime = new UTCDateTime(time() * 1000);
