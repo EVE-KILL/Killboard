@@ -110,16 +110,7 @@ class Fetcher
         $response = $client->request($requestMethod, $path, [
             "query" => $query,
             "body" => $body,
-            "headers" => array_merge($headers, [
-                "User-Agent" => $this->userAgent,
-                'Connection' => 'close'
-            ]),
             "options" => $options,
-            "timeout" => $this->timeout,
-            "http_errors" => false,
-            "curl" => [
-                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-            ],
         ]);
 
         $span
@@ -208,12 +199,16 @@ class Fetcher
         }
 
         $client = new Client([
-            RequestOptions::TIMEOUT => $this->timeout,
-            RequestOptions::HTTP_ERRORS => false,
-            RequestOptions::HEADERS => [
+            'base_uri' => $this->useProxy ? $proxy["url"] : $this->baseUri,
+            "headers" => [
                 "User-Agent" => $this->userAgent,
+                'Connection' => 'close'
             ],
-            'base_uri' => $this->useProxy ? $proxy["url"] : $this->baseUri
+            "timeout" => $this->timeout,
+            "http_errors" => false,
+            "curl" => [
+                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
+            ],
         ]);
 
         $span->finish();
