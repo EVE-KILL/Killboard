@@ -4,16 +4,15 @@ namespace EK\Cronjobs;
 
 use EK\Api\Abstracts\Cronjob;
 use EK\Cache\Cache;
-use EK\Http\Fetcher;
+use EK\Fetchers\ESI;
 use EK\Logger\StdOutLogger;
-use GuzzleHttp\Client;
 
 class TQStatus extends Cronjob
 {
     protected string $cronTime = '* * * * *';
 
     public function __construct(
-        protected Fetcher $fetcher,
+        protected ESI $esi,
         protected Cache $cache,
         protected StdOutLogger $logger
     ) {
@@ -22,9 +21,8 @@ class TQStatus extends Cronjob
 
     public function handle(): void
     {
-        return;
         // Get the status of TQ
-        $result = $this->fetcher->fetch('https://esi.evetech.net/latest/status/', ignorePause: true);
+        $result = $this->esi->fetch('https://esi.evetech.net/latest/status/', ignorePause: true);
         $status = $result['status'];
         $response = json_decode($result['body'], true);
         $status = $result['status'];
@@ -55,8 +53,5 @@ class TQStatus extends Cronjob
                 $this->cache->remove('fetcher_paused');
                 break;
         }
-
-        // Else update the player count, and whatnots
-        // @TODO
     }
 }
