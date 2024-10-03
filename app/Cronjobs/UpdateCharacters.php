@@ -10,7 +10,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacters extends Cronjob
 {
-    protected string $cronTime = "0 0 * * *";
+    protected string $cronTime = "0 * * * *";
 
     public function __construct(
         protected Characters $characters,
@@ -25,10 +25,10 @@ class UpdateCharacters extends Cronjob
         $this->logger->info("Updating characters that haven't been updated in the last 30 days");
         $timeAgo = new UTCDateTime((time() - 30 * 86400) * 1000);
 
-        // Find up to 1 million characters that haven't been updated in the last 30 days
+        // Find characters that haven't been updated in the last 30 days
         $staleCharacters = $this->characters->find([
             'last_modified' => ['$lt' => $timeAgo],
-        ], ['limit' => 1000000, 'projection' => ['_id' => 0, 'character_id' => 1]]);
+        ], ['limit' => 40000, 'projection' => ['_id' => 0, 'character_id' => 1]]);
 
         $updates = [];
         foreach ($staleCharacters as $character) {
