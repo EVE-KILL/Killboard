@@ -54,7 +54,7 @@ class ESIData
         try {
             $query = [
                 'character_id' => $characterId,
-                'last_modified' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
+                'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)],
             ];
 
             if ($forceUpdate) {
