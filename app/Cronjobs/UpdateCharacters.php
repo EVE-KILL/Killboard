@@ -37,7 +37,7 @@ class UpdateCharacters extends Cronjob
         $characters = $this->characters->find([
             'last_modified' => ['$lt' => new UTCDateTime((time() - 24 * 60 * 60) * 1000)],
             'deleted' => ['$ne' => true],
-        ], ['limit' => $limit, 'projection' => ['_id' => 0, 'character_id' => 1, 'corporation_id' => 1, 'alliance_id' => 1]]);
+        ], ['limit' => $limit, 'projection' => ['_id' => 0, 'character_id' => 1, 'corporation_id' => 1, 'alliance_id' => 1]], 0);
 
         // Convert the generator to an array
         $characters = iterator_to_array($characters);
