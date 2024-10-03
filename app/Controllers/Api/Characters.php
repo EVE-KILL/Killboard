@@ -5,7 +5,6 @@ namespace EK\Controllers\Api;
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
 use EK\Cache\Cache;
-use EK\Helpers\History;
 use EK\Helpers\Stats;
 use EK\Helpers\TopLists;
 use EK\Models\Characters as ModelsCharacters;
@@ -19,7 +18,6 @@ class Characters extends Controller
         protected Killmails $killmails,
         protected TopLists $topLists,
         protected Cache $cache,
-        protected History $history,
         protected Stats $stats
     ) {
         parent::__construct();
@@ -147,22 +145,6 @@ class Characters extends Controller
     public function corporationHistory(int $character_id): ResponseInterface
     {
         return $this->json(['down' => true]);
-        $character = $this->characters->findOne([
-            "character_id" => $character_id,
-        ]);
-
-        if (empty($character)) {
-            return $this->json(["error" => "Character not found"], 300);
-        }
-
-        $corporationHistory = $this->history->generateCorporationHistory($character_id);
-
-        $this->characters->update(
-            ["character_id" => $character_id],
-            ['$set' => ["history" => $corporationHistory]]
-        );
-
-        return $this->json($corporationHistory, 3600);
     }
 
     #[RouteAttribute("/characters/{character_id:[0-9]+}/killmails[/]", ["GET"], "Get all killmails of a character")]

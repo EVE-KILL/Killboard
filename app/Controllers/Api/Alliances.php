@@ -4,7 +4,6 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Helpers\History;
 use EK\Helpers\TopLists;
 use EK\Models\Corporations;
 use EK\Models\Characters;
@@ -21,7 +20,6 @@ class Alliances extends Controller
         protected Characters $characters,
         protected TopLists $topLists,
         protected Killmails $killmails,
-        protected History $history,
         protected Cache $cache
     ) {
         parent::__construct();
@@ -428,24 +426,5 @@ class Alliances extends Controller
     public function allianceHistory(int $alliance_id): ResponseInterface
     {
         return $this->json(['down' => true]);
-        $alliance = $this->alliances->findOne(
-            ["alliance_id" => $alliance_id],
-            ["projection" => ["_id" => 0]],
-            300,
-            false
-        );
-
-        if (empty($alliance)) {
-            return $this->json(["error" => "Alliance not found"], 300);
-        }
-
-        $allianceHistory = $this->history->getFullAllianceHistory($alliance_id);
-
-        $this->alliances->update(
-            ["alliance_id" => $alliance_id],
-            ['$set' => ["history" => $allianceHistory]]
-        );
-
-        return $this->json($allianceHistory, 300);
     }
 }

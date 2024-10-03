@@ -4,7 +4,6 @@ namespace EK\Controllers\Api;
 
 use EK\Api\Abstracts\Controller;
 use EK\Api\Attributes\RouteAttribute;
-use EK\Helpers\History;
 use EK\Helpers\TopLists;
 use EK\Models\Characters;
 use EK\Models\Corporations as ModelsCorporations;
@@ -18,7 +17,6 @@ class Corporations extends Controller
         protected Characters $characters,
         protected TopLists $topLists,
         protected Killmails $killmails,
-        protected History $history
     ) {
         parent::__construct();
     }
@@ -96,22 +94,6 @@ class Corporations extends Controller
     public function allianceHistory(int $corporation_id): ResponseInterface
     {
         return $this->json(['down' => true]);
-        $corporation = $this->corporations->findOne([
-            "corporation_id" => $corporation_id,
-        ]);
-
-        if (empty($corporation)) {
-            return $this->json(["error" => "Corporation not found"], 300);
-        }
-
-        $allianceHistory = $this->history->getFullAllianceHistory($corporation_id);
-
-        $this->corporations->update(
-            ["corporation_id" => $corporation_id],
-            ['$set' => ["history" => $allianceHistory]]
-        );
-
-        return $this->json($allianceHistory, 300);
     }
 
     #[RouteAttribute("/corporations/{corporation_id}/killmails[/]", ["GET"], "Get all killmails for a corporation")]
