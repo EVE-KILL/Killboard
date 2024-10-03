@@ -65,8 +65,7 @@ class ProcessKillmail extends Jobs
 
         // Do not emit out mails that are beyond 7 days older than the current time
         $currentTime = time();
-        $killmailTime = strtotime($parsedKillmail['kill_time']);
-        if ($currentTime - $killmailTime > (60*60*24*7)) {
+        if ($currentTime - $parsedKillmail['kill_time'] > (60*60*24*7)) {
             return;
         }
 
