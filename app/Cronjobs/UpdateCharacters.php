@@ -10,7 +10,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacters extends Cronjob
 {
-    protected string $cronTime = "0 * * * *";
+    protected string $cronTime = "0 0 * * *";
 
     public function __construct(
         protected Characters $characters,
