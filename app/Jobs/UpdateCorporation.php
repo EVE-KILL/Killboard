@@ -47,7 +47,7 @@ class UpdateCorporation extends Jobs
                 'delivery_mode' => 2, // Persistent messages
             ]),
             $this->exchange, // Exchange name
-            'corporation' // Routing key
+            'updates' // Routing key
         );
     }
 }

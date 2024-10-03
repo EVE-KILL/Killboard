@@ -46,7 +46,7 @@ class UpdateCharacter extends Jobs
                 'delivery_mode' => 2, // Persistent messages
             ]),
             $this->exchange, // Exchange name
-            'character' // Routing key
+            'updates' // Routing key
         );
     }
 }

@@ -46,7 +46,7 @@ class UpdateAlliance extends Jobs
                 'delivery_mode' => 2, // Persistent messages
             ]),
             $this->exchange, // Exchange name
-            'alliance' // Routing key
+            'updates' // Routing key
         );
     }
 }
