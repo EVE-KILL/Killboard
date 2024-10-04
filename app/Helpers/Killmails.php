@@ -211,12 +211,6 @@ class Killmails
             'faction_image_url' => $this->imageServerUrl . '/corporations/' . $factionId . '/logo',
         ];
 
-        $this->characters->update(['character_id' => $characterId], ['$inc' => ['losses' => 1]]);
-        $this->corporations->update(['corporation_id' => $corporationId], ['$inc' => ['losses' => 1]]);
-        if ($allianceId > 0) {
-            $this->alliances->update(['alliance_id' => $allianceId], ['$inc' => ['losses' => 1]]);
-        }
-
         return $victim;
     }
 
