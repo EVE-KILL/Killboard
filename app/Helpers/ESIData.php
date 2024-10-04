@@ -90,7 +90,7 @@ class ESIData
                                 'last_modified' => new UTCDateTime(),
                             ];
 
-                            if ($existingData['history']) {
+                            if (isset($existingData['history']) && is_array($existingData['history'])) {
                                 $deletedCharacter['history'] = $existingData['history'];
                             }
 
@@ -124,16 +124,16 @@ class ESIData
             $allianceData = [];
 
             $corporationId = $characterData['corporation_id'];
-            if ($corporationId !== 0) {
+            if ($corporationId !== 0 || $corporationId !== null) {
                 $corporationData = $this->getCorporationInfo($corporationId);
             }
 
             $factionId = $characterData['faction_id'] ?? 0;
-            if ($factionId !== 0) {
+            if ($factionId !== 0 || $factionId !== null) {
                 $factionData = $this->getFactionInfo($factionId);
             }
             $allianceId = $characterData['alliance_id'] ?? 0;
-            if ($allianceId !== 0) {
+            if ($allianceId !== 0 || $allianceId !== null) {
                 $allianceData = $this->getAllianceInfo($allianceId);
             }
 
