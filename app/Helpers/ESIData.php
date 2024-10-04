@@ -115,12 +115,6 @@ class ESIData
 
 
             $error = isset($characterData['error']) ? $characterData['error'] : null;
-            $deleted = $characterData['deleted'] ?? false;
-
-            if ($deleted === true) {
-
-            }
-
             if ($error) {
                 switch ($error) {
                     case 'Character has been deleted!':
