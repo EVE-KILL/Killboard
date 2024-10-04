@@ -37,6 +37,50 @@ class ESIData
 
     }
 
+    protected function deletedCharacterInfo(int $characterId): array
+    {
+        $existingData = $this->characters->findOneOrNull([
+            'character_id' => $characterId,
+        ]);
+
+        if ($existingData === null) {
+            return [
+                'character_id' => $characterId,
+                'name' => 'Unknown',
+                'corporation_id' => 1000001,
+                'corporation_name' => 'Doomheim',
+                'alliance_id' => 0,
+                'faction_id' => 0,
+                'deleted' => true
+            ];
+        }
+
+        $deletedCharacter = [
+            'character_id' => $characterId,
+            'name' => $existingData['name'] ?? 'Unknown',
+            'description' => $existingData['description'] ?? '',
+            'birthday' => new UTCDateTime($this->handleDate($existingData['birthday'] ?? '2003-01-01 00:00:00') * 1000),
+            'gender' => $existingData['gender'] ?? '',
+            'race_id' => $existingData['race_id'] ?? 0,
+            'security_status' => (float) number_format($existingData['security_status'], 2),
+            'bloodline_id' => $existingData['bloodline_id'] ?? 0,
+            'corporation_id' => $existingData['corporation_id'] ?? 0,
+            'corporation_name' => $existingData['corporation_name'] ?? 'Unknown',
+            'alliance_id' => $existingData['alliance_id'] ?? 0,
+            'alliance_name' => $existingData['alliance_name'] ?? '',
+            'faction_id' => $existingData['faction_id'] ?? 0,
+            'faction_name' => $existingData['faction_name'] ?? '',
+            'last_modified' => new UTCDateTime(),
+            'deleted' => true,
+        ];
+
+        $this->characters->collection->replaceOne([
+            'character_id' => $characterId,
+        ], $deletedCharacter, ['upsert' => true]);
+
+        return $deletedCharacter;
+    }
+
     public function getCharacterInfo(int $characterId, bool $forceUpdate = false, bool $updateHistory = false): array
     {
         // Check if character is already being processed
@@ -54,62 +98,33 @@ class ESIData
         try {
             $query = [
                 'character_id' => $characterId,
-                'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)],
+                'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)]
             ];
 
             if ($forceUpdate) {
                 $characterData = $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 360000);
             } else {
-                $characterData = $this->characters->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 360000);
+                $characterData = $this->characters->findOneOrNull($query, ['projection' => ['_id' => 0, 'error' => 0]]);
+                if (isset($characterData['deleted']) && $characterData['deleted'] === true) {
+                    return $this->deletedCharacterInfo($characterId);
+                } else if ($characterData === null) {
+                    $characterData = $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 360000);
+                }
             }
+
+
+
             $error = isset($characterData['error']) ? $characterData['error'] : null;
+            $deleted = $characterData['deleted'] ?? false;
+
+            if ($deleted === true) {
+
+            }
 
             if ($error) {
                 switch ($error) {
                     case 'Character has been deleted!':
-                        $existingData = $this->characters->findOneOrNull([
-                            'character_id' => $characterId,
-                        ]);
-
-                        if ($existingData) {
-                            $deletedCharacter = [
-                                'character_id' => $characterId,
-                                'name' => $existingData['name'] ?? 'Unknown',
-                                'description' => $existingData['description'] ?? '',
-                                'birthday' => new UTCDateTime($this->handleDate($existingData['birthday'] ?? '2003-01-01 00:00:00') * 1000),
-                                'gender' => $existingData['gender'] ?? '',
-                                'race_id' => $existingData['race_id'] ?? 0,
-                                'security_status' => (float) number_format($existingData['security_status'], 2),
-                                'bloodline_id' => $existingData['bloodline_id'] ?? 0,
-                                'corporation_id' => $existingData['corporation_id'] ?? 0,
-                                'corporation_name' => $existingData['corporation_name'] ?? 'Unknown',
-                                'alliance_id' => $existingData['alliance_id'] ?? 0,
-                                'alliance_name' => $existingData['alliance_name'] ?? '',
-                                'faction_id' => $existingData['faction_id'] ?? 0,
-                                'faction_name' => $existingData['faction_name'] ?? '',
-                                'last_modified' => new UTCDateTime(),
-                            ];
-
-                            if (isset($existingData['history']) && is_array($existingData['history'])) {
-                                $deletedCharacter['history'] = $existingData['history'];
-                            }
-
-                            $this->characters->collection->replaceOne([
-                                'character_id' => $characterId,
-                            ], $deletedCharacter, ['upsert' => true]);
-
-                            return $deletedCharacter;
-                        }
-
-                        return [
-                            'character_id' => $characterId,
-                            'name' => 'Unknown',
-                            'corporation_id' => 1000001,
-                            'corporation_name' => 'Doomheim',
-                            'alliance_id' => 0,
-                            'faction_id' => 0,
-                            'deleted' => true
-                        ];
+                        return $this->deletedCharacterInfo($characterId);
                         break;
                     default:
                         throw new \Exception($error);
@@ -139,12 +154,12 @@ class ESIData
 
             $characterInfo = [
                 'character_id' => $characterData['character_id'],
-                'name' => $characterData['name'],
+                'name' => $characterData['name'] ?? 'Unknown',
                 'description' => $characterData['description'] ?? '',
                 'birthday' => new UTCDateTime($this->handleDate($characterData['birthday'] ?? '2003-01-01 00:00:00') * 1000),
                 'gender' => $characterData['gender'] ?? '',
                 'race_id' => $characterData['race_id'] ?? 0,
-                'security_status' => (float) number_format($characterData['security_status'], 2),
+                'security_status' => (float) number_format($characterData['security_status'], 2) ?? 0,
                 'bloodline_id' => $characterData['bloodline_id'] ?? 0,
                 'corporation_id' => $characterData['corporation_id'] ?? 0,
                 'corporation_name' => $corporationData['name'] ?? 'Unknown',
