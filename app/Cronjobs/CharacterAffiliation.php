@@ -137,7 +137,7 @@ class CharacterAffiliation extends Cronjob
 
         try {
             // Send the characters to the affiliate endpoint
-            $url = '/latest/characters/affiliation/?rand=' . uniqid();
+            $url = '/latest/characters/affiliation';
             $request = $this->esi->fetch($url, 'POST', [], json_encode($characters), cacheTime: 0);
             $affiliationResponse = json_validate($request['body']) ? json_decode($request['body'], true) : null;
             $affiliations = array_merge($affiliations, $affiliationResponse);
