@@ -124,16 +124,16 @@ class ESIData
             $allianceData = [];
 
             $corporationId = $characterData['corporation_id'];
-            if ($corporationId !== 0 || $corporationId !== null) {
+            if (is_numeric($corporationId) && $corporationId > 0) {
                 $corporationData = $this->getCorporationInfo($corporationId);
             }
 
             $factionId = $characterData['faction_id'] ?? 0;
-            if ($factionId !== 0 || $factionId !== null) {
+            if (is_numeric($factionId) && $factionId > 0) {
                 $factionData = $this->getFactionInfo($factionId);
             }
             $allianceId = $characterData['alliance_id'] ?? 0;
-            if ($allianceId !== 0 || $allianceId !== null) {
+            if (is_numeric($allianceId) && $allianceId > 0) {
                 $allianceData = $this->getAllianceInfo($allianceId);
             }
 
@@ -217,23 +217,30 @@ class ESIData
             $ceoData = [];
             $creatorData = [];
             $locationData = [];
-            if (isset($corporationData['faction_id']) && $corporationData['faction_id'] !== 0) {
-                $factionData = $this->getFactionInfo($corporationData['faction_id']);
-            }
-            if (isset($corporationData['alliance_id']) && $corporationData['alliance_id'] !== 0) {
-                $allianceData = $this->getAllianceInfo($corporationData['alliance_id']);
+
+            $factionId = $corporationData['faction_id'] ?? 0;
+            if (is_numeric($factionId) && $factionId > 0) {
+                $factionData = $this->getFactionInfo($factionId);
             }
 
-            if (isset($corporationData['ceo_id']) && $corporationData['ceo_id'] !== 0) {
-                $ceoData = $this->getCharacterInfo($corporationData['ceo_id']);
+            $allianceId = $corporationData['alliance_id'] ?? 0;
+            if (is_numeric($allianceId) && $allianceId > 0) {
+                $allianceData = $this->getAllianceInfo($allianceId);
             }
 
-            if (isset($corporationData['creator_id']) && $corporationData['creator_id'] !== 0) {
-                $creatorData = $this->getCharacterInfo($corporationData['creator_id']);
+            $ceoId = $corporationData['ceo_id'] ?? 0;
+            if (is_numeric($ceoId) && $ceoId > 0) {
+                $ceoData = $this->getCharacterInfo($ceoId);
             }
 
-            if (isset($corporationData['home_station_id']) && $corporationData['home_station_id'] !== 0) {
-                $locationData = $this->celestials->findOneOrNull(['item_id' => $corporationData['home_station_id']]);
+            $creatorId = $corporationData['creator_id'] ?? 0;
+            if (is_numeric($creatorId) && $creatorId > 0) {
+                $creatorData = $this->getCharacterInfo($creatorId);
+            }
+
+            $homeStationId = $corporationData['home_station_id'] ?? 0;
+            if (is_numeric($homeStationId) && $homeStationId > 0) {
+                $locationData = $this->celestials->findOneOrNull(['item_id' => $homeStationId]);
             }
 
             $corporationInfo = [
@@ -319,16 +326,20 @@ class ESIData
             $creatorData = [];
             $creatorCorporationData = [];
             $executorCorporationData = [];
-            if (isset($allianceData['creator_id']) && $allianceData['creator_id'] !== 0) {
-                $creatorData = $this->getCharacterInfo($allianceData['creator_id']);
+
+            $creatorId = $allianceData['creator_id'] ?? 0;
+            if (is_numeric($creatorId) && $creatorId > 0) {
+                $creatorData = $this->getCharacterInfo($creatorId);
             }
 
-            if (isset($allianceData['creator_corporation_id']) && $allianceData['creator_corporation_id'] !== 0) {
-                $creatorCorporationData = $this->getCorporationInfo($allianceData['creator_corporation_id']);
+            $creatorCorporationId = $allianceData['creator_corporation_id'] ?? 0;
+            if (is_numeric($creatorCorporationId) && $creatorCorporationId > 0) {
+                $creatorCorporationData = $this->getCorporationInfo($creatorCorporationId);
             }
 
-            if (isset($allianceData['executor_corporation_id']) && $allianceData['executor_corporation_id'] !== 0) {
-                $executorCorporationData = $this->getCorporationInfo($allianceData['executor_corporation_id']);
+            $executorCorporationId = $allianceData['executor_corporation_id'] ?? 0;
+            if (is_numeric($executorCorporationId) && $executorCorporationId > 0) {
+                $executorCorporationData = $this->getCorporationInfo($executorCorporationId);
             }
 
             $allianceInfo = [
@@ -366,17 +377,17 @@ class ESIData
         ]);
 
         $factionInfo = [
-            'faction_id' => $factionData['faction_id'],
-            'name' => $factionData['name'],
-            'description' => $factionData['description'],
-            'militia_corporation_id' => $factionData['militia_corporation_id'],
-            'ceo_id' => 0,
-            'creator_id' => 0,
-            'home_station_id' => 0,
-            'size_factor' => $factionData['size_factor'],
-            'solar_system_id' => $factionData['solar_system_id'],
-            'station_count' => $factionData['station_count'],
-            'station_system_count' => $factionData['station_system_count'],
+            'faction_id' => $factionData['faction_id'] ?? 0,
+            'name' => $factionData['name'] ?? 'Unknown',
+            'description' => $factionData['description'] ?? '',
+            'militia_corporation_id' => $factionData['militia_corporation_id'] ?? 0,
+            'ceo_id' => $factionData['ceo_id'] ?? 0,
+            'creator_id' => $factionData['creator_id'] ?? 0,
+            'home_station_id' => $factionData['home_station_id'] ?? 0,
+            'size_factor' => $factionData['size_factor'] ?? 0,
+            'solar_system_id' => $factionData['solar_system_id'] ?? 0,
+            'station_count' => $factionData['station_count'] ?? 0,
+            'station_system_count' => $factionData['station_system_count'] ?? 0,
             'last_modified' => new UTCDateTime(),
         ];
 
