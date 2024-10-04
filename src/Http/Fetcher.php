@@ -4,10 +4,8 @@ namespace EK\Http;
 
 use EK\Cache\Cache;
 use EK\Logger\Logger;
-use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use GuzzleHttp\Client;
-use GuzzleHttp\RequestOptions;
 use Psr\Http\Message\ResponseInterface;
 use Sentry\SentrySdk;
 use Sentry\Tracing\SpanContext;
@@ -17,6 +15,7 @@ use Symfony\Component\RateLimiter\LimiterInterface;
 class Fetcher
 {
     protected string $baseUri = "";
+    protected string $proxyUrl = "https://esi.eve-kill.com/";
     protected string $userAgent = "EK/1.0";
     protected string $bucketName = "global";
     protected bool $useProxy = false;
@@ -26,7 +25,6 @@ class Fetcher
 
     public function __construct(
         protected Cache $cache,
-        protected Proxies $proxies,
         protected RateLimiter $rateLimiter,
         protected Logger $logger
     ) {
@@ -44,7 +42,6 @@ class Fetcher
         string $body = "",
         array $headers = [],
         array $options = [],
-        ?string $proxy_id = null,
         ?int $cacheTime = 300,
         bool $ignorePause = false
     ): array {
@@ -75,17 +72,6 @@ class Fetcher
             }
         }
 
-        // If Proxy usage is enabled, and proxy_id isn't null, we need to fetch a proxy to use
-        $proxy = null;
-        if ($proxy_id !== null) {
-            $proxy = $this->proxies->findOne(["proxy_id" => $proxy_id], cacheTime: 0);
-        } elseif ($this->useProxy === true) {
-            $proxy = $this->proxies->getRandomProxy();
-            if (empty($proxy)) {
-                throw new \Exception("No proxies available");
-            }
-        }
-
         // If the fetcher is paused, sleep for the paused time
         if ($ignorePause === false) {
             retrySleep:
@@ -104,7 +90,7 @@ class Fetcher
         $startTime = microtime(true);
 
         // Get the client
-        $client = $this->getClient($proxy);
+        $client = $this->getClient();
 
         // Execute the request
         $response = $client->request($requestMethod, $path, [
@@ -188,18 +174,12 @@ class Fetcher
         return $response;
     }
 
-    protected function getClient(?array $proxy = []): Client
+    protected function getClient(): Client
     {
         $span = $this->startSpan('http.getClient', 'Get the HTTP client');
 
-        if ($this->useProxy === true) {
-            if (!isset($proxy["url"])) {
-                throw new \Exception("Proxy URL not set");
-            }
-        }
-
         $client = new Client([
-            'base_uri' => $this->useProxy ? $proxy["url"] : $this->baseUri,
+            'base_uri' => $this->useProxy ? $this->proxyUrl : $this->baseUri,
             "headers" => [
                 "User-Agent" => $this->userAgent,
                 'Connection' => 'close'

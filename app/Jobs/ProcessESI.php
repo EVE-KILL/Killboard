@@ -11,6 +11,7 @@ use EK\RabbitMQ\RabbitMQ;
 class ProcessESI extends Jobs
 {
     protected string $defaultQueue = 'esi';
+
     public function __construct(
         protected ProcessKillmail $processKillmail,
         protected Killmails $killmails,

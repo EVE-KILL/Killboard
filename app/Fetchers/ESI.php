@@ -5,7 +5,6 @@ namespace EK\Fetchers;
 use EK\Cache\Cache;
 use EK\Http\Fetcher;
 use EK\Logger\Logger;
-use EK\Models\Proxies;
 use EK\RateLimiter\RateLimiter;
 use EK\Webhooks\Webhooks;
 use Psr\Http\Message\ResponseInterface;
@@ -19,12 +18,11 @@ class ESI extends Fetcher
 
     public function __construct(
         protected Cache $cache,
-        protected Proxies $proxies,
         protected RateLimiter $rateLimiter,
         protected Webhooks $webhooks,
         protected Logger $logger
     ) {
-        parent::__construct($cache, $proxies, $rateLimiter, $logger);
+        parent::__construct($cache, $rateLimiter, $logger);
     }
 
     public function handle(ResponseInterface $response): ResponseInterface
@@ -42,14 +40,15 @@ class ESI extends Fetcher
         // Retrieve error limit remaining and reset time from headers
         $esiErrorLimitRemaining = (int) ($response->getHeader('X-Esi-Error-Limit-Remain')[0] ?? 100);
         $esiErrorLimitReset = (int) ($response->getHeader('X-Esi-Error-Limit-Reset')[0] ?? 0);
-        $sleptByProxy = (bool) ($response->getHeader('X-Slept-By-Proxy')[0] ?? false);
+        // This will return HIT or MISS, but if it exists we don't have to sleep, since the proxy does it for us
+        $esiProxyCache = $response->getHeader('x-proxy-cache')[0] ?? null;
 
         // Cache the values
         $this->cache->set('esi_error_limit_remaining', $esiErrorLimitRemaining);
         $this->cache->set('esi_error_limit_reset', $esiErrorLimitReset);
 
         // Calculate progressive usleep time (in microseconds) based on inverse of error limit remaining
-        if ($esiErrorLimitRemaining < 100 && $sleptByProxy === false) {
+        if ($esiErrorLimitRemaining < 100 && $esiProxyCache !== null) {
             // Error limit remaining should inversely affect the sleep time
             // The closer it is to zero, the longer the sleep
             $maxSleepTimeInMicroseconds = $esiErrorLimitReset * 1000000; // max sleep time, e.g., reset in seconds converted to microseconds
