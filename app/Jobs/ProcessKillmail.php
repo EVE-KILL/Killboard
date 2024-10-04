@@ -30,6 +30,10 @@ class ProcessKillmail extends Jobs
         $war_id = $data['war_id'] ?? 0;
         $priority = $data['priority'] ?? 0;
 
+        if ($killmail_id === null || $hash === null) {
+            return;
+        }
+
         if (in_array($hash, ['CCP VERIFIED'])) {
             return;
         }
