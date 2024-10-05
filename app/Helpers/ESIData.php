@@ -219,6 +219,10 @@ class ESIData
                 }
             }
 
+            if (!isset($corporationData['name'])) {
+                throw new \Exception("Error occurred while fetching corporation info: " . $corporationData['error'] ?? 'Unknown error');
+            }
+
             // Store the corporation name early to assist in recursive calls
             $this->corporationNames[$corporationId] = $corporationData['name'] ?? 'Unknown';
 
@@ -331,6 +335,10 @@ class ESIData
                 if ($allianceData === null) {
                     $allianceData = $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 3600);
                 }
+            }
+
+            if (!isset($allianceData['name'])) {
+                throw new \Exception("Error occurred while fetching alliance info: " . $allianceData['error'] ?? 'Unknown error');
             }
 
             // Store the alliance name early to assist in recursive calls
