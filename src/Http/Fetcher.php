@@ -92,9 +92,6 @@ class Fetcher
         // Start time for the request
         $startTime = microtime(true);
 
-        // Get the client
-        //$client = $this->getClient();
-
         // Execute the request
         $response = $this->client->request($requestMethod, $path, [
             "query" => $query,
@@ -184,14 +181,10 @@ class Fetcher
         $client = new Client([
             'base_uri' => $this->baseUri,
             "headers" => [
-                "User-Agent" => $this->userAgent,
-                'Connection' => 'close'
+                "User-Agent" => $this->userAgent
             ],
             "timeout" => $this->timeout,
-            "http_errors" => false,
-            "curl" => [
-                CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4,
-            ],
+            "http_errors" => false
         ]);
 
         $span->finish();

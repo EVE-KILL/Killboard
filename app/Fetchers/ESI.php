@@ -14,7 +14,7 @@ class ESI extends Fetcher
     protected string $baseUri = 'https://esi.evetech.net/latest/';
     protected string $bucketName = 'esi_global';
     protected int $rateLimit = 1000;
-    protected bool $useProxy = true;
+    protected bool $useProxy = false;
 
     public function __construct(
         protected Cache $cache,
@@ -41,14 +41,14 @@ class ESI extends Fetcher
         $esiErrorLimitRemaining = (int) ($response->getHeader('X-Esi-Error-Limit-Remain')[0] ?? 100);
         $esiErrorLimitReset = (int) ($response->getHeader('X-Esi-Error-Limit-Reset')[0] ?? 0);
         // This will return HIT or MISS, but if it exists we don't have to sleep, since the proxy does it for us
-        $esiProxyCache = $response->getHeader('x-proxy-cache')[0] ?? null;
+        //$esiProxyCache = $response->getHeader('x-proxy-cache')[0] ?? null;
 
         // Cache the values
         $this->cache->set('esi_error_limit_remaining', $esiErrorLimitRemaining);
         $this->cache->set('esi_error_limit_reset', $esiErrorLimitReset);
 
         // Calculate progressive usleep time (in microseconds) based on inverse of error limit remaining
-        if ($esiErrorLimitRemaining < 100 && $esiProxyCache !== null) {
+        if ($esiErrorLimitRemaining < 100) { // && $esiProxyCache !== null) {
             // Error limit remaining should inversely affect the sleep time
             // The closer it is to zero, the longer the sleep
             $maxSleepTimeInMicroseconds = $esiErrorLimitReset * 1000000; // max sleep time, e.g., reset in seconds converted to microseconds
