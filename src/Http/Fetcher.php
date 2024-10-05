@@ -86,8 +86,8 @@ class Fetcher
         }
 
         // Use the rate limiter to prevent spamming the endpoint
-        //$limit = $this->limiter->reserve(1);
-        //$limit->wait();
+        $limit = $this->limiter->reserve(1);
+        $limit->wait();
 
         // Start time for the request
         $startTime = microtime(true);
