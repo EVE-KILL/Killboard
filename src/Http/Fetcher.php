@@ -22,6 +22,7 @@ class Fetcher
     protected int $rateLimit = 1000;
     protected int $timeout = 15;
     protected LimiterInterface $limiter;
+    protected Client $client;
 
     public function __construct(
         protected Cache $cache,
@@ -33,6 +34,8 @@ class Fetcher
             'sliding_window',
             $this->rateLimit
         );
+
+        $this->client = $this->getClient();
     }
 
     public function fetch(
@@ -90,10 +93,10 @@ class Fetcher
         $startTime = microtime(true);
 
         // Get the client
-        $client = $this->getClient();
+        //$client = $this->getClient();
 
         // Execute the request
-        $response = $client->request($requestMethod, $path, [
+        $response = $this->client->request($requestMethod, $path, [
             "query" => $query,
             "body" => $body,
             "options" => $options,
