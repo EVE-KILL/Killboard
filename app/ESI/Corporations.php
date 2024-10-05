@@ -17,23 +17,9 @@ class Corporations
     ) {
     }
 
-    public function getCorporationInfo(int $corporationId, int $cacheTime = 300): array
+    public function getCorporationInfo(int $corporationId): array
     {
-        if ($corporationId < 10000) {
-            return [
-                'corporation_id' => $corporationId,
-                'name' => 'Unknown',
-                'alliance_id' => 0,
-                'faction_id' => 0,
-                'creator_id' => 0,
-                'creator_corporation_id' => 0,
-                'executor_corporation_id' => 0,
-                'home_station_id' => 0,
-                'ceo_id' => 0,
-            ];
-        }
-
-        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId, cacheTime: $cacheTime);
+        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId);
         $corporationData = json_validate($data['body']) ? json_decode($data['body'], true) : [];
         $corporationData['corporation_id'] = $corporationId;
 

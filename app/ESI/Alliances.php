@@ -15,19 +15,9 @@ class Alliances
     ) {
     }
 
-    public function getAllianceInfo(int $allianceId, int $cacheTime = 300): array
+    public function getAllianceInfo(int $allianceId): array
     {
-        if ($allianceId < 10000) {
-            return [
-                'alliance_id' => $allianceId,
-                'name' => 'Unknown',
-                'creator_corporation_id' => 0,
-                'executor_corporation_id' => 0,
-                'faction_id' => 0,
-            ];
-        }
-
-        $allianceData = $this->esiFetcher->fetch('/latest/alliances/' . $allianceId, cacheTime: $cacheTime);
+        $allianceData = $this->esiFetcher->fetch('/latest/alliances/' . $allianceId);
         $allianceData = json_validate($allianceData['body']) ? json_decode($allianceData['body'], true) : [];
         $allianceData['alliance_id'] = $allianceId;
 

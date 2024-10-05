@@ -17,19 +17,9 @@ class Characters
     ) {
     }
 
-    public function getCharacterInfo(int $characterId, int $cacheTime = 300): array
+    public function getCharacterInfo(int $characterId): array
     {
-        if ($characterId < 10000) {
-            return [
-                'character_id' => $characterId,
-                'name' => 'Unknown',
-                'corporation_id' => 0,
-                'alliance_id' => 0,
-                'faction_id' => 0,
-            ];
-        }
-
-        $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterId, cacheTime: $cacheTime);
+        $characterData = $this->esiFetcher->fetch('/latest/characters/' . $characterId);
         $characterData = json_validate($characterData['body']) ? json_decode($characterData['body'], true) : [];
         $characterData['character_id'] = $characterId;
 
