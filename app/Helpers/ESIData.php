@@ -102,13 +102,13 @@ class ESIData
             ];
 
             if ($forceUpdate) {
-                $characterData = $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 360000);
+                $characterData = $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 3600);
             } else {
                 $characterData = $this->characters->findOneOrNull($query, ['projection' => ['_id' => 0, 'error' => 0]]);
                 if (isset($characterData['deleted']) && $characterData['deleted'] === true) {
                     return $this->deletedCharacterInfo($characterId);
-                } else if ($characterData === null) {
-                    $characterData = $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 360000);
+                } elseif ($characterData === null) {
+                    $characterData = $this->esiCharacters->getCharacterInfo($characterId, cacheTime: 3600);
                 }
             }
 
@@ -119,7 +119,7 @@ class ESIData
                         return $this->deletedCharacterInfo($characterId);
                         break;
                     default:
-                        throw new \Exception($error);
+                        throw new \Exception("Error occurred while fetching character info: $error");
                         break;
                 }
             }
@@ -185,7 +185,7 @@ class ESIData
             // Remove character from processing list
             $this->processingCharacters = array_filter(
                 $this->processingCharacters,
-                fn($id) => $id !== $characterId
+                fn ($id) => $id !== $characterId
             );
         }
     }
@@ -211,11 +211,11 @@ class ESIData
             ];
 
             if ($forceUpdate) {
-                $corporationData = $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 360000);
+                $corporationData = $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 3600);
             } else {
                 $corporationData = $this->corporations->findOneOrNull($query, ['projection' => ['error' => 0]]);
                 if ($corporationData === null) {
-                    $corporationData = $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 360000);
+                    $corporationData = $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 3600);
                 }
             }
 
@@ -299,7 +299,7 @@ class ESIData
             // Remove corporation from processing list
             $this->processingCorporations = array_filter(
                 $this->processingCorporations,
-                fn($id) => $id !== $corporationId
+                fn ($id) => $id !== $corporationId
             );
         }
     }
@@ -325,11 +325,11 @@ class ESIData
             ];
 
             if ($forceUpdate) {
-                $allianceData = $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 360000);
+                $allianceData = $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 3600);
             } else {
                 $allianceData = $this->alliances->findOneOrNull($query, ['projection' => ['error' => 0]]);
                 if ($allianceData === null) {
-                    $allianceData = $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 360000);
+                    $allianceData = $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 3600);
                 }
             }
 
@@ -377,7 +377,7 @@ class ESIData
             // Remove alliance from processing list
             $this->processingAlliances = array_filter(
                 $this->processingAlliances,
-                fn($id) => $id !== $allianceId
+                fn ($id) => $id !== $allianceId
             );
         }
     }
