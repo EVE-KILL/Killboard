@@ -112,8 +112,6 @@ class ESIData
                 }
             }
 
-
-
             $error = isset($characterData['error']) ? $characterData['error'] : null;
             if ($error) {
                 switch ($error) {
