@@ -146,7 +146,7 @@ class ESIData
 
             $characterInfo = [
                 'character_id' => $characterData['character_id'],
-                'name' => $characterData['name'] ?? 'Unknown',
+                'name' => $characterData['name'],
                 'description' => $characterData['description'] ?? '',
                 'birthday' => new UTCDateTime($this->handleDate($characterData['birthday'] ?? '2003-01-01 00:00:00') * 1000),
                 'gender' => $characterData['gender'] ?? '',
