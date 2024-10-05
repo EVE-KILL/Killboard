@@ -207,13 +207,16 @@ class ESIData
         try {
             $query = [
                 'corporation_id' => $corporationId,
-                'last_modified' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
+                'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)],
             ];
 
             if ($forceUpdate) {
                 $corporationData = $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 360000);
             } else {
-                $corporationData = $this->corporations->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 360000);
+                $corporationData = $this->corporations->findOneOrNull($query, ['projection' => ['error' => 0]]);
+                if ($corporationData === null) {
+                    $corporationData = $this->esiCorporations->getCorporationInfo($corporationId, cacheTime: 360000);
+                }
             }
 
             // Store the corporation name early to assist in recursive calls
@@ -318,13 +321,16 @@ class ESIData
         try {
             $query = [
                 'alliance_id' => $allianceId,
-                'last_modified' => ['$gte' => new UTCDateTime(time() - (((7 * 24) * 60) * 60) * 1000)],
+                'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)],
             ];
 
             if ($forceUpdate) {
                 $allianceData = $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 360000);
             } else {
-                $allianceData = $this->alliances->findOneOrNull($query, ['projection' => ['error' => 0]]) ?? $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 360000);
+                $allianceData = $this->alliances->findOneOrNull($query, ['projection' => ['error' => 0]]);
+                if ($allianceData === null) {
+                    $allianceData = $this->esiAlliances->getAllianceInfo($allianceId, cacheTime: 360000);
+                }
             }
 
             // Store the alliance name early to assist in recursive calls
