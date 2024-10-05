@@ -20,7 +20,7 @@ class Fetcher
     protected string $bucketName = "global";
     protected bool $useProxy = false;
     protected int $rateLimit = 1000;
-    protected int $timeout = 30;
+    protected int $timeout = 15;
     protected LimiterInterface $limiter;
 
     public function __construct(
@@ -83,8 +83,8 @@ class Fetcher
         }
 
         // Use the rate limiter to prevent spamming the endpoint
-        $limit = $this->limiter->reserve(1);
-        $limit->wait();
+        //$limit = $this->limiter->reserve(1);
+        //$limit->wait();
 
         // Start time for the request
         $startTime = microtime(true);
