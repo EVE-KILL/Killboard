@@ -44,7 +44,7 @@ class Corporations
 
     public function getCorporationHistory(int $corporationId, int $cacheTime = 300): array
     {
-        $data = $this->history->fetch('/latest/corporations/' . $corporationId . '/alliancehistory', cacheTime: $cacheTime);
+        $data = $this->esiFetcher->fetch('/latest/corporations/' . $corporationId . '/alliancehistory', cacheTime: $cacheTime);
         $corporationHistory = json_validate($data['body']) ? json_decode($data['body'], true) : [];
 
         ksort($corporationHistory);

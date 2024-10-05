@@ -40,7 +40,7 @@ class Characters
 
     public function getCharacterHistory(int $characterId, int $cacheTime = 300): array
     {
-        $characterHistory = $this->history->fetch('/latest/characters/' . $characterId . '/corporationhistory', cacheTime: $cacheTime);
+        $characterHistory = $this->esiFetcher->fetch('/latest/characters/' . $characterId . '/corporationhistory', cacheTime: $cacheTime);
         $characterHistory = json_validate($characterHistory['body']) ? json_decode($characterHistory['body'], true) : [];
 
         ksort($characterHistory);
