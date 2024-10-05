@@ -182,7 +182,7 @@ class Fetcher
         $span = $this->startSpan('http.getClient', 'Get the HTTP client');
 
         $client = new Client([
-            'base_uri' => $this->useProxy ? $this->proxyUrl : $this->baseUri,
+            'base_uri' => $this->baseUri,
             "headers" => [
                 "User-Agent" => $this->userAgent,
                 'Connection' => 'close'
