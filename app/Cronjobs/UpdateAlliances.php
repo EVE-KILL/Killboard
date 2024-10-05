@@ -6,6 +6,7 @@ use EK\Api\Abstracts\Cronjob;
 use EK\Jobs\UpdateAlliance;
 use EK\Logger\StdOutLogger;
 use EK\Models\Alliances;
+use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliances extends Cronjob
 {
@@ -23,8 +24,11 @@ class UpdateAlliances extends Cronjob
     {
         $this->logger->info("Updating alliances");
 
+        $timeAgo = new UTCDateTime((time() - 7 * 86400) * 1000);
         // Find all alliances, and update them
-        $staleAlliances = $this->alliances->find([]);
+        $staleAlliances = $this->alliances->find([
+            'last_modified' => ['$lt' => $timeAgo],
+        ], ['projection' => ['_id' => 0, 'alliance_id' => 1]]);
 
         $updates = [];
         foreach($staleAlliances as $alliance) {
