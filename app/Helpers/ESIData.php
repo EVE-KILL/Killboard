@@ -135,7 +135,7 @@ class ESIData
                 }
                 return $errorString;
             };
-            $this->dump($characterData);
+            dump($characterData);
             throw new \Exception("Error occurred while fetching character info: " . $errors($validator->getMessages()));
         }
 
@@ -246,7 +246,7 @@ class ESIData
                 }
                 return $errorString;
             };
-            $this->dump($corporationData);
+            dump($corporationData);
             throw new \Exception("Error occurred while fetching corporation info: " . $errors($validator->getMessages()));
         }
 
@@ -375,7 +375,7 @@ class ESIData
                 }
                 return $errorString;
             };
-            $this->dump($allianceData);
+            dump($allianceData);
             throw new \Exception("Error occurred while fetching alliance info: " . $errors($validator->getMessages()));
         }
 
