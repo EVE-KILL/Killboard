@@ -11,7 +11,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCharacters extends ConsoleCommand
 {
-    protected string $signature = 'update:characters { characterId? : Process a single characterId } { --all } { --forceUpdate } { --updateHistory }';
+    protected string $signature = 'update:characters { characterId? : Process a single characterId } { --all } { --updateHistory }';
     protected string $description = 'Update the characters in the database (Default 30 days)';
 
     public function __construct(
@@ -38,11 +38,10 @@ class UpdateCharacters extends ConsoleCommand
     protected function handleSingleCharacter(): void
     {
         $characterId = (int) $this->characterId;
-        $forceUpdate = $this->forceUpdate ?? false;
         $updateHistory = $this->updateHistory ?? false;
 
         $this->out("Updating character with ID: {$characterId}");
-        $this->esiData->getCharacterInfo($characterId, $forceUpdate, $updateHistory);
+        $this->esiData->getCharacterInfo($characterId, $updateHistory);
     }
 
     /**
@@ -53,8 +52,6 @@ class UpdateCharacters extends ConsoleCommand
         $updatedCriteria = ['last_modified' => ['$lt' => new UTCDateTime(strtotime('-30 days') * 1000)]];
         $characterCount = $this->characters->count($this->all ? [] : $updatedCriteria);
         $this->out('Characters to update: ' . $characterCount);
-        $forceUpdate = $this->forceUpdate ?? false;
-        $updateHistory = $this->updateHistory ?? false;
 
         $progress = $this->progressBar($characterCount);
         $charactersToUpdate = [];
@@ -67,8 +64,7 @@ class UpdateCharacters extends ConsoleCommand
 
         foreach ($cursor as $character) {
             $charactersToUpdate[] = [
-                'character_id' => $character['character_id'],
-                'force_update' => $forceUpdate
+                'character_id' => $character['character_id']
             ];
 
             if ($this->updateHistory) {

@@ -24,12 +24,12 @@ class UpdateAlliance extends Jobs
     public function handle(array $data): void
     {
         $allianceId = $data["alliance_id"];
-        $forceUpdate = $data["force_update"] ?? false;
+        $updateHistory = $data["update_history"] ?? false;
         if ($allianceId === 0) {
             return;
         }
 
-        $allianceData = $this->esiData->getAllianceInfo($allianceId, $forceUpdate);
+        $allianceData = $this->esiData->getAllianceInfo($allianceId, $updateHistory);
 
         $this->updateMeilisearch->enqueue([
             'id' => $allianceId,

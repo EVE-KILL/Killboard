@@ -10,7 +10,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateAlliances extends ConsoleCommand
 {
-    protected string $signature = 'update:alliances { allianceId? : Process a single allianceId } { --all } { --forceUpdate }';
+    protected string $signature = 'update:alliances { allianceId? : Process a single allianceId } { --all } { --updateHistory }';
     protected string $description = 'Update the alliances in the database';
 
     public function __construct(
@@ -36,10 +36,10 @@ class UpdateAlliances extends ConsoleCommand
     protected function handleSingleAlliance(): void
     {
         $allianceId = $this->allianceId;
-        $forceUpdate = $this->forceUpdate ?? false;
+        $updateHistory = $this->updateHistory ?? false;
 
         $this->out("Updating alliance with ID: {$allianceId}");
-        $this->esiData->getAllianceInfo($allianceId, $forceUpdate);
+        $this->esiData->getAllianceInfo($allianceId, $updateHistory);
     }
 
     /**
@@ -50,13 +50,13 @@ class UpdateAlliances extends ConsoleCommand
         $updatedCriteria = ['updated' => ['$lt' => new UTCDateTime(strtotime('-7 days') * 1000)]];
         $allianceCount = $this->alliances->count($this->all ? [] : $updatedCriteria);
         $this->out('Alliances to update: ' . $allianceCount);
-        $forceUpdate = $this->forceUpdate ?? false;
+        $updateHistory = $this->updateHistory ?? false;
 
         $progress = $this->progressBar($allianceCount);
         $alliancesToUpdate = [];
 
         foreach ($this->alliances->find($this->all ? [] : $updatedCriteria) as $alliance) {
-            $alliancesToUpdate[] = ['alliance_id' => $alliance['alliance_id'], 'force_update' => $forceUpdate];
+            $alliancesToUpdate[] = ['alliance_id' => $alliance['alliance_id'], 'update_history' => $updateHistory];
             $progress->advance();
         }
 

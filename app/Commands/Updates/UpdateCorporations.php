@@ -11,7 +11,7 @@ use MongoDB\BSON\UTCDateTime;
 
 class UpdateCorporations extends ConsoleCommand
 {
-    protected string $signature = 'update:corporations { corporationId? : Process a single corporationId } { --all } { --forceUpdate } { --updateHistory }';
+    protected string $signature = 'update:corporations { corporationId? : Process a single corporationId } { --all } { --updateHistory }';
     protected string $description = 'Update the corporations in the database';
 
     public function __construct(
@@ -38,11 +38,10 @@ class UpdateCorporations extends ConsoleCommand
     protected function handleSingleCorporation(): void
     {
         $corporationId = $this->corporationId;
-        $forceUpdate = $this->forceUpdate ?? false;
         $updateHistory = $this->updateHistory ?? false;
 
         $this->out("Updating corporation with ID: {$corporationId}");
-        $this->esiData->getCorporationInfo($corporationId, $forceUpdate, $updateHistory);
+        $this->esiData->getCorporationInfo($corporationId, $updateHistory);
     }
 
     /**
@@ -53,8 +52,6 @@ class UpdateCorporations extends ConsoleCommand
         $updatedCriteria = ['updated' => ['$lt' => new UTCDateTime(strtotime('-7 days') * 1000)]];
         $corporationCount = $this->corporations->count($this->all ? [] : $updatedCriteria);
         $this->out('Corporations to update: ' . $corporationCount);
-        $forceUpdate = $this->forceUpdate ?? false;
-        $updateHistory = $this->updateHistory ?? false;
         $progress = $this->progressBar($corporationCount);
         $corporationsToUpdate = [];
         $corporationsToUpdateHistory = [];
@@ -66,8 +63,7 @@ class UpdateCorporations extends ConsoleCommand
 
         foreach ($cursor as $corporation) {
             $corporationsToUpdate[] = [
-                'corporation_id' => $corporation['corporation_id'],
-                'force_update' => $forceUpdate
+                'corporation_id' => $corporation['corporation_id']
             ];
 
             if ($this->updateHistory) {

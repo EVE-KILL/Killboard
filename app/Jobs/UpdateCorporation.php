@@ -24,13 +24,12 @@ class UpdateCorporation extends Jobs
     public function handle(array $data): void
     {
         $corporationId = $data["corporation_id"];
-        $forceUpdate = $data["force_update"] ?? false;
         $updateHistory = $data["update_history"] ?? false;
         if ($corporationId === 0) {
             return;
         }
 
-        $corporationData = $this->esiData->getCorporationInfo($corporationId, $forceUpdate, $updateHistory);
+        $corporationData = $this->esiData->getCorporationInfo($corporationId, $updateHistory);
 
         $this->updateMeilisearch->enqueue([
             'id' => $corporationId,

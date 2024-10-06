@@ -24,13 +24,12 @@ class UpdateCharacter extends Jobs
     public function handle(array $data): void
     {
         $characterId = $data["character_id"];
-        $forceUpdate = $data["force_update"] ?? false;
         $updateHistory = $data["update_history"] ?? false;
         if ($characterId === 0) {
             return;
         }
 
-        $characterData = $this->esiData->getCharacterInfo($characterId, $forceUpdate, $updateHistory);
+        $characterData = $this->esiData->getCharacterInfo($characterId, $updateHistory);
 
         $this->updateMeilisearch->enqueue([
             'id' => $characterId,
