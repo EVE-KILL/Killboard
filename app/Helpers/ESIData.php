@@ -367,6 +367,6 @@ class ESIData
 
     private function dump(mixed $data): void
     {
-        dump($data);
+        //dump($data);
     }
 }
