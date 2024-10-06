@@ -28,7 +28,7 @@ class BackfillAlliances extends ConsoleCommand
         $progress = $this->progressBar(count($alliances));
 
         foreach ($alliances as $allianceId) {
-            $this->updateAlliance->enqueue(['alliance_id' => $allianceId, 'force_update' => true]);
+            $this->updateAlliance->enqueue(['alliance_id' => $allianceId, 'update_history' => true]);
             $progress->advance();
         }
 

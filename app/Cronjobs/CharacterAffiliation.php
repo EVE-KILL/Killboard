@@ -93,12 +93,12 @@ class CharacterAffiliation extends Cronjob
 
         if (!empty($updates)) {
             foreach ($updates as $update) {
-                $this->updateCharacter->enqueue(['character_id' => $update['character_id'], 'force_update' => true, 'update_history' => true], priority: 10);
+                $this->updateCharacter->enqueue(['character_id' => $update['character_id'], 'update_history' => true], priority: 10);
                 if (isset($update['corporation_id'])) {
-                    $this->updateCorporation->enqueue(['corporation_id' => $update['corporation_id'], 'force_update' => true, 'update_history' => true], priority: 10);
+                    $this->updateCorporation->enqueue(['corporation_id' => $update['corporation_id'], 'update_history' => true], priority: 10);
                 }
                 if (isset($update['alliance_id'])) {
-                    $this->updateAlliance->enqueue(['alliance_id' => $update['alliance_id'], 'force_update' => true], priority: 10);
+                    $this->updateAlliance->enqueue(['alliance_id' => $update['alliance_id'], 'update_history' => true], priority: 10);
                 }
             }
             $this->logger->info("Dispatched update jobs for " . count($updates) . " characters.");
@@ -148,7 +148,7 @@ class CharacterAffiliation extends Cronjob
                 dump("error, max attempts reached, submitting to regular updateCharacter job");
                 $updates = [];
                 foreach($characters as $character) {
-                    $updates[] = ['character_id' => $character['character_id'], 'force_update' => true, 'update_history' => true];
+                    $updates[] = ['character_id' => $character['character_id'], 'update_history' => true];
                 }
                 $this->updateCharacter->massEnqueue($updates);
                 return [];

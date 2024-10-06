@@ -61,13 +61,13 @@ class UpdateEntitiesFromKillmailsESI extends ConsoleCommand
     {
         switch ($type) {
             case 'character':
-                $this->updateCharacter->enqueue(['character_id' => $entityId, 'force_update' => true, 'update_history' => true]);
+                $this->updateCharacter->enqueue(['character_id' => $entityId, 'update_history' => true]);
                 break;
             case 'corporation':
-                $this->updateCorporation->enqueue(['corporation_id' => $entityId, 'force_update' => true, 'update_history' => true]);
+                $this->updateCorporation->enqueue(['corporation_id' => $entityId, 'update_history' => true]);
                 break;
             case 'alliance':
-                $this->updateAlliance->enqueue(['alliance_id' => $entityId, 'force_update' => true]);
+                $this->updateAlliance->enqueue(['alliance_id' => $entityId, 'update_history' => true]);
                 break;
         }
     }
