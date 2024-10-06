@@ -25,7 +25,7 @@ class UpdateCharacter extends Jobs
     {
         $characterId = $data["character_id"];
         $updateHistory = $data["update_history"] ?? false;
-        if ($characterId === 0) {
+        if ($characterId === 0 || $characterId === null) {
             return;
         }
 

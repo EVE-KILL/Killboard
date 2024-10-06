@@ -25,7 +25,7 @@ class UpdateCorporation extends Jobs
     {
         $corporationId = $data["corporation_id"];
         $updateHistory = $data["update_history"] ?? false;
-        if ($corporationId === 0) {
+        if ($corporationId === 0 || $corporationId === null) {
             return;
         }
 
