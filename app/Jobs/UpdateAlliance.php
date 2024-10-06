@@ -24,7 +24,6 @@ class UpdateAlliance extends Jobs
     public function handle(array $data): void
     {
         $allianceId = $data["alliance_id"];
-        $updateHistory = $data["update_history"] ?? false;
         if ($allianceId === 0) {
             return;
         }

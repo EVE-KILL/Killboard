@@ -15,16 +15,6 @@ use Sirius\Validation\Validator;
 
 class ESIData
 {
-    // Tracking properties
-    protected array $processedCharacters = [];
-    protected array $processedCorporations = [];
-    protected array $processedAlliances = [];
-
-    // Partial data caches
-    protected array $characterNames = [];
-    protected array $corporationNames = [];
-    protected array $allianceNames = [];
-
     public function __construct(
         protected ESICharacters $esiCharacters,
         protected ESICorporations $esiCorporations,
@@ -38,60 +28,15 @@ class ESIData
 
     }
 
-    /**
-     * Helper function to check if an entity is already in the call stack.
-     *
-     * @param string $type The type of the entity (e.g., 'corporation', 'alliance', 'character').
-     * @param int $id The ID of the entity.
-     * @param string $cameFrom The current call stack.
-     * @return bool Returns true if the entity is already in the call stack; otherwise, false.
-     */
-    protected function isInCallStack(string $type, int $id, string $cameFrom): bool
+    public function getCharacterInfo(int $characterId, bool $updateHistory = false): array
     {
-        // Split the call stack into individual entities
-        if ($cameFrom === '') {
-            return false;
-        }
-
-        $stack = explode('/', $cameFrom);
-        foreach ($stack as $entity) {
-            [$entityType, $entityId] = explode(':', $entity);
-            if ($entityType === $type && (int)$entityId === $id) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Adds the current entity to the call stack.
-     *
-     * @param string $type The type of the entity.
-     * @param int $id The ID of the entity.
-     * @param string $cameFrom The existing call stack.
-     * @return string The updated call stack.
-     */
-    protected function addToCallStack(string $type, int $id, string $cameFrom): string
-    {
-        return $cameFrom === '' ? "{$type}:{$id}" : "{$cameFrom}/{$type}:{$id}";
-    }
-
-    public function getCharacterInfo(int $characterId, bool $updateHistory = false, string $cameFrom = ''): array
-    {
-        // Check if already processed
-        if (isset($this->processedCharacters[$characterId])) {
-            $this->dump("Character already processed: $characterId");
-            return $this->processedCharacters[$characterId];
-        }
-
-        // Add current character to the call stack
-        $newCameFrom = $this->addToCallStack('character', $characterId, $cameFrom);
-
         $query = [
             'character_id' => $characterId,
             'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)],
             'name' => ['$nin' => ['Unknown', '', null]],
-            'corporation_name' => ['$nin' => ['Unknown', '', null]],
+            'bloodline_id' => ['$exists' => true],
+            'race_id' => ['$exists' => true],
+            'security_status' => ['$exists' => true],
         ];
 
         $this->dump("Character getting info for $characterId");
@@ -104,8 +49,6 @@ class ESIData
                 return $this->deletedCharacterInfo($characterId);
             }
         }
-
-        $this->dump($characterData);
 
         $error = $characterData['error'] ?? null;
         if ($error) {
@@ -139,29 +82,12 @@ class ESIData
             throw new \Exception("Error occurred while fetching character info: " . $errors($validator->getMessages()));
         }
 
-        // Store the character name early to assist in recursive calls
-        $this->characterNames[$characterId] = $characterData['name'] ?? 'Unknown';
-
-        $corporationData = [];
         $factionData = [];
-        $allianceData = [];
-
         $corporationId = $characterData['corporation_id'];
-        if (is_numeric($corporationId) && $corporationId > 0 && !$this->isInCallStack('corporation', $corporationId, $newCameFrom)) {
-            $this->dump("Character getting corporation info for $corporationId");
-            $corporationData = $this->getCorporationInfo($corporationId, $updateHistory, $newCameFrom);
-        }
-
+        $allianceId = $characterData['alliance_id'] ?? 0;
         $factionId = $characterData['faction_id'] ?? 0;
         if (is_numeric($factionId) && $factionId > 0) {
-            $this->dump("Character getting faction info for $factionId");
             $factionData = $this->getFactionInfo($factionId);
-        }
-
-        $allianceId = $characterData['alliance_id'] ?? 0;
-        if (is_numeric($allianceId) && $allianceId > 0 && !$this->isInCallStack('alliance', $allianceId, $newCameFrom)) {
-            $this->dump("Character getting alliance info for $allianceId");
-            $allianceData = $this->getAllianceInfo($allianceId, $updateHistory, $newCameFrom);
         }
 
         $characterInfo = [
@@ -173,10 +99,8 @@ class ESIData
             'race_id' => $characterData['race_id'] ?? 0,
             'security_status' => (float) number_format($characterData['security_status'], 2) ?? 0,
             'bloodline_id' => $characterData['bloodline_id'] ?? 0,
-            'corporation_id' => $characterData['corporation_id'] ?? 0,
-            'corporation_name' => $corporationData['name'] ?? 'Unknown',
-            'alliance_id' => $allianceData['alliance_id'] ?? 0,
-            'alliance_name' => $allianceData['name'] ?? '',
+            'corporation_id' => $corporationId,
+            'alliance_id' => $allianceId,
             'faction_id' => $factionData['faction_id'] ?? 0,
             'faction_name' => $factionData['name'] ?? '',
             'last_modified' => new UTCDateTime(),
@@ -200,31 +124,17 @@ class ESIData
             'character_id' => $characterId,
         ], $characterInfo, ['upsert' => true]);
 
-        // Cache the result
-        $this->processedCharacters[$characterId] = $characterInfo;
-
         return $characterInfo;
     }
 
-    public function getCorporationInfo(int $corporationId, bool $updateHistory = false, string $cameFrom = ''): array
+    public function getCorporationInfo(int $corporationId, bool $updateHistory = false): array
     {
-        // Check if already processed
-        if (isset($this->processedCorporations[$corporationId])) {
-            return $this->processedCorporations[$corporationId];
-        }
-
-        // Add current corporation to the call stack
-        $newCameFrom = $this->addToCallStack('corporation', $corporationId, $cameFrom);
-
-        // Existing processing logic...
         $query = [
             'corporation_id' => $corporationId,
             'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)],
             'name' => ['$nin' => ['Unknown', '', null]],
             'ticker' => ['$nin' => ['Unknown', '', null]],
-            'ceo_name' => ['$nin' => ['Unknown', '', null]],
             'ceo_id' => ['$ne' => 1],
-            'creator_name' => ['$nin' => ['Unknown', '', null]],
         ];
 
         $corporationData = $this->corporations->findOneOrNull($query, ['projection' => ['error' => 0]]);
@@ -250,37 +160,16 @@ class ESIData
             throw new \Exception("Error occurred while fetching corporation info: " . $errors($validator->getMessages()));
         }
 
-        // Store the corporation name early to assist in recursive calls
-        $this->corporationNames[$corporationId] = $corporationData['name'] ?? 'Unknown';
-
         $factionData = [];
-        $allianceData = [];
-        $ceoData = [];
-        $creatorData = [];
         $locationData = [];
-
         $factionId = $corporationData['faction_id'] ?? 0;
         if (is_numeric($factionId) && $factionId > 0) {
             $factionData = $this->getFactionInfo($factionId);
         }
 
         $allianceId = $corporationData['alliance_id'] ?? 0;
-        if (is_numeric($allianceId) && $allianceId > 0 && !$this->isInCallStack('alliance', $allianceId, $newCameFrom)) {
-            $this->dump("Corporation getting alliance info for $allianceId");
-            $allianceData = $this->getAllianceInfo($allianceId, $updateHistory, $newCameFrom);
-        }
-
         $ceoId = $corporationData['ceo_id'] ?? 0;
-        if (is_numeric($ceoId) && $ceoId > 0 && !$this->isInCallStack('character', $ceoId, $newCameFrom)) {
-            $this->dump("Corporation getting ceo info for $ceoId");
-            $ceoData = $this->getCharacterInfo($ceoId, $updateHistory, $newCameFrom);
-        }
-
         $creatorId = $corporationData['creator_id'] ?? 0;
-        if (is_numeric($creatorId) && $creatorId > 0 && !$this->isInCallStack('character', $creatorId, $newCameFrom)) {
-            $this->dump("Corporation getting creator info for $creatorId");
-            $creatorData = $this->getCharacterInfo($creatorId, $updateHistory, $newCameFrom);
-        }
 
         $homeStationId = $corporationData['home_station_id'] ?? 0;
         if (is_numeric($homeStationId) && $homeStationId > 0) {
@@ -295,13 +184,10 @@ class ESIData
             'description' => $corporationData['description'],
             'date_founded' => new UTCDateTime($this->handleDate($corporationData['date_founded'] ?? '2003-01-01 00:00:00') * 1000),
             'alliance_id' => $allianceId,
-            'alliance_name' => $allianceData['name'] ?? 'Unknown',
             'faction_id' => $factionId,
             'faction_name' => $factionData['name'] ?? '',
             'ceo_id' => $ceoId,
-            'ceo_name' => $ceoData['name'] ?? 'Unknown',
             'creator_id' => $creatorId,
-            'creator_name' => $creatorData['name'] ?? 'Unknown',
             'home_station_id' => $homeStationId,
             'home_station_name' => $locationData['item_name'] ?? '',
             'member_count' => $corporationData['member_count'] ?? 0,
@@ -330,30 +216,16 @@ class ESIData
             'corporation_id' => $corporationId,
         ], $corporationInfo, ['upsert' => true]);
 
-        // Cache the result
-        $this->processedCorporations[$corporationId] = $corporationInfo;
-
         return $corporationInfo;
     }
 
-    public function getAllianceInfo(int $allianceId, bool $updateHistory = false, string $cameFrom = ''): array
+    public function getAllianceInfo(int $allianceId): array
     {
-        // Check if already processed
-        if (isset($this->processedAlliances[$allianceId])) {
-            return $this->processedAlliances[$allianceId];
-        }
-
-        // Add current alliance to the call stack
-        $newCameFrom = $this->addToCallStack('alliance', $allianceId, $cameFrom);
-
-        // Existing processing logic...
         $query = [
             'alliance_id' => $allianceId,
             'last_modified' => ['$gte' => new UTCDateTime(time() - (((30 * 24) * 60) * 60) * 1000)],
             'name' => ['$nin' => ['Unknown', '', null]],
-            'ticker' => ['$nin' => ['Unknown', '', null]],
-            'creator_name' => ['$nin' => ['Unknown', '', null]],
-            'creator_corporation_name' => ['$nin' => ['Unknown', '', null]],
+            'ticker' => ['$nin' => ['Unknown', '', null]]
         ];
 
         $allianceData = $this->alliances->findOneOrNull($query, ['projection' => ['error' => 0]]);
@@ -379,50 +251,23 @@ class ESIData
             throw new \Exception("Error occurred while fetching alliance info: " . $errors($validator->getMessages()));
         }
 
-        // Store the alliance name early to assist in recursive calls
-        $this->allianceNames[$allianceId] = $allianceData['name'] ?? 'Unknown';
-
-        $creatorData = [];
-        $creatorCorporationData = [];
-        $executorCorporationData = [];
-
         $creatorId = $allianceData['creator_id'] ?? 0;
-        if (is_numeric($creatorId) && $creatorId > 0 && !$this->isInCallStack('character', $creatorId, $newCameFrom)) {
-            $this->dump("Alliance getting creator info for $creatorId");
-            $creatorData = $this->getCharacterInfo($creatorId, $updateHistory, $newCameFrom);
-        }
-
         $creatorCorporationId = $allianceData['creator_corporation_id'] ?? 0;
-        if (is_numeric($creatorCorporationId) && $creatorCorporationId > 0 && !$this->isInCallStack('corporation', $creatorCorporationId, $newCameFrom)) {
-            $this->dump("Alliance getting creator corporation info for $creatorCorporationId");
-            $creatorCorporationData = $this->getCorporationInfo($creatorCorporationId, $updateHistory, $newCameFrom);
-        }
-
         $executorCorporationId = $allianceData['executor_corporation_id'] ?? 0;
-        if (is_numeric($executorCorporationId) && $executorCorporationId > 0 && !$this->isInCallStack('corporation', $executorCorporationId, $newCameFrom)) {
-            $this->dump("Alliance getting executor corporation info for $executorCorporationId");
-            $executorCorporationData = $this->getCorporationInfo($executorCorporationId, $updateHistory, $newCameFrom);
-        }
 
         $allianceInfo = [
             'alliance_id' => $allianceData['alliance_id'],
             'name' => $allianceData['name'],
             'ticker' => $allianceData['ticker'],
             'creator_id' => $creatorId,
-            'creator_name' => $creatorData['name'] ?? 'Unknown',
             'creator_corporation_id' => $creatorCorporationId,
-            'creator_corporation_name' => $creatorCorporationData['name'] ?? 'Unknown',
             'executor_corporation_id' => $executorCorporationId,
-            'executor_corporation_name' => $executorCorporationData['name'] ?? 'Unknown',
             'last_modified' => new UTCDateTime(),
         ];
 
         $this->alliances->collection->replaceOne([
             'alliance_id' => $allianceId,
         ], $allianceInfo, ['upsert' => true]);
-
-        // Cache the result
-        $this->processedAlliances[$allianceId] = $allianceInfo;
 
         return $allianceInfo;
     }
@@ -491,35 +336,14 @@ class ESIData
             'character_id' => $characterId,
         ]);
 
-        if ($existingData === null) {
-            $returnData = [
-                'character_id' => $characterId,
-                'name' => 'Deleted',
-                'corporation_id' => 1000001,
-                'corporation_name' => 'Doomheim',
-                'alliance_id' => 0,
-                'faction_id' => 0,
-                'bloodline_id' => 0,
-                'race_id' => 0,
-                'security_status' => 0,
-                'last_modified' => new UTCDateTime(),
-            ];
-
-            if ($deleted) {
-                $returnData['deleted'] = true;
-            }
-
-            return $returnData;
-        }
-
         $deletedCharacter = [
             'character_id' => $characterId,
-            'name' => $existingData['name'] ?? 'Unknown',
+            'name' => $existingData['name'] ?? 'Deleted',
             'description' => $existingData['description'] ?? '',
             'birthday' => new UTCDateTime($this->handleDate($existingData['birthday'] ?? '2003-01-01 00:00:00') * 1000),
             'gender' => $existingData['gender'] ?? '',
             'race_id' => $existingData['race_id'] ?? 0,
-            'security_status' => (float) number_format($existingData['security_status'], 2),
+            'security_status' => (float) number_format($existingData['security_status'] ?? 0, 2),
             'bloodline_id' => $existingData['bloodline_id'] ?? 0,
             'corporation_id' => $existingData['corporation_id'] ?? 0,
             'corporation_name' => $existingData['corporation_name'] ?? 'Unknown',
@@ -543,6 +367,6 @@ class ESIData
 
     private function dump(mixed $data): void
     {
-        //dump($data);
+        dump($data);
     }
 }

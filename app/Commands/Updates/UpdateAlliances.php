@@ -56,7 +56,7 @@ class UpdateAlliances extends ConsoleCommand
         $alliancesToUpdate = [];
 
         foreach ($this->alliances->find($this->all ? [] : $updatedCriteria) as $alliance) {
-            $alliancesToUpdate[] = ['alliance_id' => $alliance['alliance_id'], 'update_history' => $updateHistory];
+            $alliancesToUpdate[] = ['alliance_id' => $alliance['alliance_id']];
             $progress->advance();
         }
 

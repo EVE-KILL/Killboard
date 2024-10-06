@@ -15,6 +15,14 @@ class ESI extends Fetcher
     protected string $bucketName = 'esi_global';
     protected int $rateLimit = 1000;
     protected bool $useProxy = false;
+    protected array $errors = [
+        // ESI errors
+        'The datasource tranquility is temporarily unavailable',
+        'Timeout contacting tranquility',
+        // Character errors
+        'Character has been deleted!',
+        'Character not found',
+    ];
 
     public function __construct(
         protected Cache $cache,
