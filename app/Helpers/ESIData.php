@@ -62,7 +62,6 @@ class ESIData
             }
         }
 
-        // Validate the character data
         $validator = new Validator();
         $validator->add('name', 'required');
         $validator->add('corporation_id', 'required');
@@ -109,17 +108,17 @@ class ESIData
         if ($updateHistory) {
             $characterInfo['history'] = $this->getCharacterHistory($characterId);
         } else {
-            // Get the character from the database and re-attach the history if it exists
             $characterHistory = $this->characters->findOneOrNull([
                 'character_id' => $characterId,
             ], ['projection' => ['history' => 1]]);
 
             if ($characterHistory && isset($characterHistory['history'])) {
                 $characterInfo['history'] = $characterHistory['history'];
+            } else {
+                $characterInfo['history'] = $this->getCharacterHistory($characterId);
             }
         }
 
-        // Completely replace the character in the database (Remove the old data)
         $this->characters->collection->replaceOne([
             'character_id' => $characterId,
         ], $characterInfo, ['upsert' => true]);
@@ -201,17 +200,17 @@ class ESIData
         if ($updateHistory) {
             $corporationInfo['history'] = $this->getCorporationHistory($corporationId);
         } else {
-            // Get the corporation from the database and re-attach the history if it exists
             $corporationHistory = $this->corporations->findOneOrNull([
                 'corporation_id' => $corporationId,
             ], ['projection' => ['history' => 1]]);
 
             if ($corporationHistory && isset($corporationHistory['history'])) {
                 $corporationInfo['history'] = $corporationHistory['history'];
+            } else {
+                $corporationInfo['history'] = $this->getCorporationHistory($corporationId);
             }
         }
 
-        // Completely replace the corporation in the database (Remove the old data)
         $this->corporations->collection->replaceOne([
             'corporation_id' => $corporationId,
         ], $corporationInfo, ['upsert' => true]);
@@ -274,7 +273,6 @@ class ESIData
 
     public function getFactionInfo(int $factionId): array
     {
-        // This is basically the same as the corporation info
         $factionData = $this->factions->findOneOrNull([
             'faction_id' => $factionId
         ]);
@@ -319,7 +317,6 @@ class ESIData
             return $date->toDateTime()->getTimestamp();
         }
 
-        // Convert to unixtimestamp
         return strtotime($date);
     }
 
