@@ -64,7 +64,7 @@ class Derp extends ConsoleCommand
                 ['ceo_name' => null],
                 ['ceo_name' => ''],
                 ['ceo_name' => 'Unknown'],
-            ]]);
+            ], 'ceo_id' => ['$ne' => 1]]);
             $corporations = iterator_to_array($corporations);
             $this->out('Found ' . count($corporations) . ' corporations to update');
             $progressBar = $this->progressBar(count($corporations));
