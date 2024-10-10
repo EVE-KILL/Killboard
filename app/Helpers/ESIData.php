@@ -143,7 +143,6 @@ class ESIData
 
         $validator = new Validator();
         $validator->add('name', 'required');
-        $validator->add('ticker', 'required');
         $validator->add('ceo_id', 'required');
         $validator->add('creator_id', 'required');
 
@@ -234,7 +233,6 @@ class ESIData
 
         $validator = new Validator();
         $validator->add('name', 'required');
-        $validator->add('ticker', 'required');
         $validator->add('creator_id', 'required');
         $validator->add('creator_corporation_id', 'required');
 
