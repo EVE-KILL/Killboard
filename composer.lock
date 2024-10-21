@@ -633,16 +633,16 @@
         },
         {
             "name": "kcs/class-finder",
-            "version": "0.5.3",
+            "version": "0.5.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/alekitto/class-finder.git",
-                "reference": "a8cad24d6e1b759ca806708bc688d188e4abdce8"
+                "reference": "d5a77ac72b2f47328dee13ab062a4dedb382cad3"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/alekitto/class-finder/zipball/a8cad24d6e1b759ca806708bc688d188e4abdce8",
-                "reference": "a8cad24d6e1b759ca806708bc688d188e4abdce8",
+                "url": "https://api.github.com/repos/alekitto/class-finder/zipball/d5a77ac72b2f47328dee13ab062a4dedb382cad3",
+                "reference": "d5a77ac72b2f47328dee13ab062a4dedb382cad3",
                 "shasum": ""
             },
             "require": {
@@ -684,7 +684,7 @@
             "description": "Utility classes to help discover other classes/namespaces",
             "support": {
                 "issues": "https://github.com/alekitto/class-finder/issues",
-                "source": "https://github.com/alekitto/class-finder/tree/0.5.3"
+                "source": "https://github.com/alekitto/class-finder/tree/0.5.4"
             },
             "funding": [
                 {
@@ -692,7 +692,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2024-08-30T12:42:24+00:00"
+            "time": "2024-10-14T14:29:20+00:00"
         },
         {
             "name": "league/container",
