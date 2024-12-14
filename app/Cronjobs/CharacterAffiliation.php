@@ -131,7 +131,7 @@ class CharacterAffiliation extends Cronjob
     {
         $affiliations = [];
         $maxAttempts = 3;
-        $characters = array_map(function($character) {
+        $characters = array_map(function ($character) {
             return $character['character_id'];
         }, $characters);
 
@@ -141,13 +141,13 @@ class CharacterAffiliation extends Cronjob
             $request = $this->esi->fetch($url, 'POST', [], json_encode($characters), cacheTime: 0);
             $affiliationResponse = json_validate($request['body']) ? json_decode($request['body'], true) : null;
             $affiliations = array_merge($affiliations, $affiliationResponse);
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             dump("error, splitting in half");
             // If $attempts is === $maxAttempts, we submit all the characters to the regular updateCharacter job
             if ($attempts === $maxAttempts) {
                 dump("error, max attempts reached, submitting to regular updateCharacter job");
                 $updates = [];
-                foreach($characters as $character) {
+                foreach ($characters as $character) {
                     $updates[] = ['character_id' => $character['character_id'], 'update_history' => true];
                 }
                 $this->updateCharacter->massEnqueue($updates);
