@@ -35,21 +35,21 @@ class Characters extends Controller
             return $this->json($cachedResult, $this->cache->getTTL($cacheKey));
         }
 
-        $charactersGenerator = $this->characters->find(
+        $charactersGenerator = $this->characters->aggregate(
             [
-                ['$or' => [
-                    'deleted' => ['$exists' => false],
-                    'deleted' => false,
-                ]]
+                ['$match' => [
+                    '$or' => [
+                        ['deleted' => ['$exists' => false]],
+                        ['deleted' => false],
+                    ]
+                ]],
+                ['$sort' => ['character_id' => 1]],
+                ['$skip' => $skip],
+                ['$limit' => $limit],
+                ['$project' => ['_id' => 0, 'character_id' => 1]],
             ],
-            [
-                'limit' => $limit,
-                'skip' => $skip,
-                'sort' => ['character_id' => 1],
-                'projection' => ['character_id' => 1]
-            ],
-            300,
-            false
+            [],
+            300
         );
 
         $characters = [];
