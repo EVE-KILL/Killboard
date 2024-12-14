@@ -398,7 +398,7 @@ abstract class Controller
             if (is_array($value)) {
                 // If the array has the structure containing $date and $numberLong
                 if (isset($value['$date']['$numberLong'])) {
-                    $returnData[$key] = (new UTCDateTime($value['$date']['$numberLong']))->toDateTime()->getTimestamp();
+                    $returnData[$key] = (new UTCDateTime((int)$value['$date']['$numberLong']))->toDateTime()->getTimestamp();
                 } else {
                     // Recursively process nested arrays
                     $returnData[$key] = $this->cleanupTimestamps($value);
