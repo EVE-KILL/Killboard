@@ -37,7 +37,10 @@ class Characters extends Controller
 
         $charactersGenerator = $this->characters->find(
             [
-                'deleted' => false,
+                '$or' => [
+                    'deleted' => ['$exists' => false],
+                    'deleted' => false,
+                ]
             ],
             [
                 'limit' => $limit,
